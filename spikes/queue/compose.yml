@@ -1,0 +1,16 @@
+name: spike-queue
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment: { POSTGRES_USER: spike, POSTGRES_PASSWORD: spike, POSTGRES_DB: spike }
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U spike"], interval: 2s, retries: 30 }
+  redis:
+    image: redis:7.4-alpine
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 2s, retries: 30 }
+  runner:
+    build: .
+    depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy } }
+    environment:
+      PG_DSN: postgresql://spike:spike@postgres:5432/spike
+      REDIS_HOST: redis
+    command: ["python", "bench.py"]

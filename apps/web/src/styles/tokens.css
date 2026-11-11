@@ -1,0 +1,132 @@
+/*
+ * Design tokens — the single source for colour, type, spacing, radius, elevation and motion.
+ * Light is the base; dark applies when the system prefers dark (and the user has not chosen
+ * light), or when the user picks dark. Charts and the 3D view read these same variables.
+ */
+
+:root {
+  /* Typography */
+  --font-sans: "Inter", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: clamp(2rem, 1.4rem + 2.4vw, 2.75rem);
+  --leading-tight: 1.2;
+  --leading-normal: 1.55;
+  --weight-regular: 400;
+  --weight-medium: 550;
+  --weight-bold: 680;
+
+  /* Spacing (4px grid) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Motion */
+  --dur-fast: 120ms;
+  --dur-med: 220ms;
+  --dur-slow: 420ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Layout */
+  --content-max: 72rem;
+  --header-h: 3.75rem;
+
+  /* Colour — light */
+  color-scheme: light;
+  --c-bg: #f6f7fb;
+  --c-surface: #ffffff;
+  --c-surface-2: #eef1f7;
+  --c-border: #d9deea;
+  --c-border-strong: #b8c0d4;
+  --c-text: #141a2b;
+  --c-text-muted: #545e78;
+  --c-accent: #2f5bea;
+  --c-accent-hover: #2349c8;
+  --c-accent-soft: #e5ecff;
+  --c-on-accent: #ffffff;
+  --c-success: #157a4a;
+  --c-success-soft: #e1f5ea;
+  --c-warning: #8a5a00;
+  --c-warning-soft: #fff1d6;
+  --c-danger: #b42318;
+  --c-danger-soft: #fde7e5;
+  --c-focus: #2f5bea;
+  --shadow-1: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 8%);
+  --shadow-2: 0 8px 24px rgb(16 24 40 / 10%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --c-bg: #0d111c;
+    --c-surface: #151b2b;
+    --c-surface-2: #1c2438;
+    --c-border: #2a3550;
+    --c-border-strong: #3c4a6b;
+    --c-text: #e8ecf6;
+    --c-text-muted: #a3aec8;
+    --c-accent: #7b9bff;
+    --c-accent-hover: #9bb3ff;
+    --c-accent-soft: #1f2b4d;
+    --c-on-accent: #0b1020;
+    --c-success: #5ad69a;
+    --c-success-soft: #113325;
+    --c-warning: #f2c46b;
+    --c-warning-soft: #3a2c0e;
+    --c-danger: #ff8a80;
+    --c-danger-soft: #3d1614;
+    --c-focus: #9bb3ff;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
+    --shadow-2: 0 10px 30px rgb(0 0 0 / 45%);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --c-bg: #0d111c;
+  --c-surface: #151b2b;
+  --c-surface-2: #1c2438;
+  --c-border: #2a3550;
+  --c-border-strong: #3c4a6b;
+  --c-text: #e8ecf6;
+  --c-text-muted: #a3aec8;
+  --c-accent: #7b9bff;
+  --c-accent-hover: #9bb3ff;
+  --c-accent-soft: #1f2b4d;
+  --c-on-accent: #0b1020;
+  --c-success: #5ad69a;
+  --c-success-soft: #113325;
+  --c-warning: #f2c46b;
+  --c-warning-soft: #3a2c0e;
+  --c-danger: #ff8a80;
+  --c-danger-soft: #3d1614;
+  --c-focus: #9bb3ff;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-2: 0 10px 30px rgb(0 0 0 / 45%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-med: 0ms;
+    --dur-slow: 0ms;
+  }
+}

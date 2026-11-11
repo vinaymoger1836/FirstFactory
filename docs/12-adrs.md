@@ -102,3 +102,11 @@ Status values: **Accepted**, Proposed, Superseded. New or changed decisions duri
 ### ADR-018 — Power bank test policy: 100% functional + sampled capacity test (toggle to 100% capacity)
 **Status:** Accepted
 **Consequences:** 8 vs 398 capacity channels in the golden case — shown to users as a design lever.
+
+### ADR-019 — Postgres-backed job queue (procrastinate) instead of arq + Redis
+**Status:** Proposed (P0, spike e; awaiting owner approval)
+**Context:** docs/02 §3 left the worker queue open ("arq + Redis or a Postgres-backed queue; P0 decides"). Jobs are few and long (CAD extraction, CP-SAT up to 60 s, simulation for minutes). docs/02 §7 requires a crashed worker's job to be retried. The VM is 2 OCPU / 12 GB, and Postgres is already the system of record (ADR-003).
+**Decision:** Use procrastinate 3.x on the existing Postgres. Each worker runs at concurrency 1 on its own queue (`engines`, `cad`). A periodic sweep retries jobs whose worker missed heartbeats (stalled after 30 s). Redis stays for rate limits, token buckets and heartbeats only; it holds no durable job state.
+**Alternatives:** arq + Redis. arq is in maintenance-only mode (its README), pins `redis<6`, and recovers a killed job only after `job_timeout + 10 s`, so a long job's timeout would delay recovery by the same amount. Hand-rolled `SKIP LOCKED` was rejected as more code to own.
+**Evidence (P0, amd64, one worker at concurrency 1):** enqueue→start p50 6.4 ms / p95 25 ms (arq: seconds, poll-bound); 200-job drain 1.3 s (arq 10–100 s depending on `poll_delay`); SIGKILL mid-job, then recovered in 30.5 s (arq 38 s with a 30 s `job_timeout`); idle worker RSS about 48 MB for both.
+**Consequences:** One fewer durable store to back up. Jobs can later be enqueued in the same transaction as the `stage_run` row. The cad-worker needs Postgres access on its internal network: give it a dedicated DB role limited to the queue tables (P9). Procrastinate is also looking for maintainers; its scope is small enough to replace if needed.

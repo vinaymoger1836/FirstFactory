@@ -1,0 +1,260 @@
+"""End-to-end check (`make e2e` / `uv run scripts/e2e.py`). Standard library only.
+
+P0 scope: build + start the stack, then verify through Caddy:
+  - liveness and readiness (Postgres+pgvector, Redis, worker and cad-worker heartbeats)
+  - project create → only the token hash is stored → token resolves; a bad token is rejected
+  - SSE demo streams every progress event and a final `done` event
+  - a job round-trips through the queue on each worker (engines and cad)
+Golden cases G1-G7 (docs/14 §4) are listed and reported as not yet implemented; later phases
+replace those entries with real runs.
+
+Options: --no-build  skip image build     --down  stop the stack afterwards
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+COMPOSE = ["docker", "compose", "--env-file", ".env", "-f", "infra/docker-compose.yml"]
+GOLDEN = {
+    "G1": "Power bank: demand, takt, PCT, test positions/channels",
+    "G2": "BLDC fan: demand, takt, PCT, run-in positions, varnish ovens",
+    "G3": "Utilities: MD 180 kVA → transformer 250 kVA",
+    "G4": "Finance: NPV 8.14, IRR 15.24%",
+    "G5": "Balancing: Scholl SALBP-1 optima",
+    "G6": "Layout: QAP equals brute force",
+    "G7": "Simulation: serial line throughput; M/M/1 L=4",
+}
+
+results: list[dict] = []
+
+
+def env_value(key: str, default: str) -> str:
+    for line in (ROOT / ".env").read_text(encoding="utf-8").splitlines():
+        if line.startswith(f"{key}="):
+            return line.split("=", 1)[1].split("#", 1)[0].strip() or default
+    return default
+
+
+def record(name: str, ok: bool, detail: str = "") -> bool:
+    results.append({"check": name, "ok": ok, "detail": detail})
+    mark = "PASS" if ok else "FAIL"
+    print(f"  [{mark}] {name}" + (f" — {detail}" if detail else ""), flush=True)
+    return ok
+
+
+def http(
+    method: str,
+    url: str,
+    body: dict | None = None,
+    headers: dict | None = None,
+    timeout: float = 10,
+) -> tuple[int, dict | str]:
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(url, data=data, method=method)  # noqa: S310 (local URL)
+    req.add_header("Content-Type", "application/json")
+    for k, v in (headers or {}).items():
+        req.add_header(k, v)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310
+            raw = r.read().decode()
+            status = r.status
+    except urllib.error.HTTPError as e:
+        raw, status = e.read().decode(), e.code
+    try:
+        return status, json.loads(raw)
+    except json.JSONDecodeError:
+        return status, raw
+
+
+def sh(args: list[str], check: bool = True, capture: bool = False) -> subprocess.CompletedProcess:
+    return subprocess.run(args, cwd=ROOT, check=check, text=True, capture_output=capture)
+
+
+def compose_exec(service: str, code: str) -> subprocess.CompletedProcess:
+    return sh([*COMPOSE, "exec", "-T", service, "python", "-c", code], check=False, capture=True)
+
+
+def wait_ready(base: str, timeout: float) -> tuple[int, dict | str]:
+    end = time.time() + timeout
+    status, body = 0, ""
+    while time.time() < end:
+        try:
+            status, body = http("GET", f"{base}/health/ready", timeout=5)
+            if status == 200:
+                return status, body
+        except OSError:
+            pass
+        time.sleep(2)
+    return status, body
+
+
+QUEUE_ROUNDTRIP = """
+import asyncio, sys
+from fl_worker.queue import app, {task}
+async def main():
+    async with app.open_async():
+        job_id = await {task}.defer_async()
+        for _ in range(120):
+            jobs = await app.job_manager.list_jobs_async(id=job_id)
+            if not jobs:            # successful jobs are deleted (delete_jobs="successful")
+                print("done"); return
+            status = getattr(jobs[0].status, "value", jobs[0].status)
+            if status == "succeeded":
+                print("done"); return
+            if status in ("failed", "cancelled", "aborted"):
+                print("job", status); sys.exit(1)
+            await asyncio.sleep(0.5)
+        print("timeout"); sys.exit(1)
+asyncio.run(main())
+"""
+
+
+def main() -> int:
+    # Windows consoles default to cp1252; keep output readable everywhere.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--no-build", action="store_true")
+    ap.add_argument("--down", action="store_true")
+    args = ap.parse_args()
+
+    if not (ROOT / ".env").exists():
+        shutil.copy(ROOT / ".env.example", ROOT / ".env")
+        print("Created .env from .env.example (placeholder values; git-ignored).")
+    port = env_value("CADDY_HTTP_PORT", "8080")
+    base = f"http://localhost:{port}"
+
+    print("==> Starting stack" + (" (no build)" if args.no_build else " (build)"), flush=True)
+    up = [*COMPOSE, "up", "-d", "--remove-orphans", "--wait", "--wait-timeout", "300"]
+    up += [] if args.no_build else ["--build"]
+    t0 = time.time()
+    if sh(up, check=False).returncode != 0:
+        record("compose up", False, "docker compose up failed")
+        return finish(args)
+    record("compose up", True, f"{time.time() - t0:.0f} s")
+
+    print("==> Health", flush=True)
+    status, body = wait_ready(base, timeout=180)
+    s_live, live = http("GET", f"{base}/health")
+    record("GET /health", s_live == 200 and isinstance(live, dict) and live.get("status") == "ok")
+    checks = body.get("checks", {}) if isinstance(body, dict) else {}
+    record("GET /health/ready", status == 200, f"HTTP {status}")
+    for name in ("postgres", "redis", "worker", "cad-worker"):
+        c = checks.get(name, {})
+        extra = (
+            c.get("pgvector")
+            or c.get("error")
+            or " ".join(str(c[k]) for k in ("arch", "host") if c.get(k))
+        )
+        record(f"  ready: {name}", bool(c.get("ok")), str(extra or ""))
+
+    print("==> Projects (capability token)", flush=True)
+    s, created = http("POST", f"{base}/projects", {"name": "E2E power bank"})
+    token = created.get("token", "") if isinstance(created, dict) else ""
+    record("POST /projects → 201 + 128-bit token", s == 201 and len(token) == 22, f"HTTP {s}")
+    if token:
+        s, cur = http("GET", f"{base}/projects/current", headers={"X-Project-Token": token})
+        record(
+            "token resolves the project",
+            s == 200 and isinstance(cur, dict) and cur.get("name") == "E2E power bank",
+        )
+        s, _ = http("GET", f"{base}/projects/current", headers={"X-Project-Token": "A" * 22})
+        record("unknown token → 404", s == 404)
+        user, db = env_value("POSTGRES_USER", "factory"), env_value("POSTGRES_DB", "factory")
+        q = sh(
+            [
+                *COMPOSE,
+                "exec",
+                "-T",
+                "postgres",
+                "psql",
+                "-U",
+                user,
+                "-d",
+                db,
+                "-tAc",
+                f"SELECT token_hash FROM project WHERE id = '{created['id']}'",  # noqa: S608
+            ],
+            check=False,
+            capture=True,
+        )
+        stored = q.stdout.strip()
+        record(
+            "DB stores SHA-256 hash, not the token",
+            stored == hashlib.sha256(token.encode()).hexdigest() and token not in stored,
+        )
+
+    print("==> SSE", flush=True)
+    events: list[str] = []
+    try:
+        req = urllib.request.Request(f"{base}/events/demo?interval_ms=30")  # noqa: S310
+        with urllib.request.urlopen(req, timeout=15) as r:  # noqa: S310
+            ctype = r.headers.get("content-type", "")
+            for line in r:
+                line = line.decode().strip()
+                if line.startswith("event:"):
+                    events.append(line.split(":", 1)[1].strip())
+                    if events[-1] == "done":
+                        break
+        record(
+            "GET /events/demo streams via Caddy",
+            events.count("progress") == 7
+            and events[-1] == "done"
+            and ctype.startswith("text/event-stream"),
+            f"{events.count('progress')} progress + {events[-1] if events else 'none'}",
+        )
+    except OSError as exc:
+        record("GET /events/demo streams via Caddy", False, str(exc))
+
+    print("==> Queue round-trip", flush=True)
+    for service, task in (("worker", "ping"), ("cad-worker", "cad_ping")):
+        p = compose_exec(service, QUEUE_ROUNDTRIP.format(task=task))
+        record(
+            f"job `{task}` completes on {service}",
+            p.returncode == 0 and "done" in p.stdout,
+            (p.stdout + p.stderr).strip()[-200:],
+        )
+
+    print("==> Golden cases (docs/14 §4)", flush=True)
+    for gid, desc in GOLDEN.items():
+        print(f"  [TODO] {gid} {desc} — not implemented in P0")
+
+    return finish(args)
+
+
+def finish(args: argparse.Namespace) -> int:
+    out = ROOT / "e2e-results"
+    out.mkdir(exist_ok=True)
+    ok = all(r["ok"] for r in results) and bool(results)
+    summary = {
+        "phase": "P0",
+        "ok": ok,
+        "checks": results,
+        "golden": dict.fromkeys(GOLDEN, "not implemented (P0)"),
+        "host": {"platform": sys.platform, "machine": os.environ.get("PROCESSOR_ARCHITECTURE", "")},
+        "finished_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+    }
+    (out / "p0.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    passed = sum(r["ok"] for r in results)
+    print(f"\n{'PASSED' if ok else 'FAILED'}: {passed}/{len(results)} checks · e2e-results/p0.json")
+    if args.down:
+        sh([*COMPOSE, "down"], check=False)
+    else:
+        print("Stack left running. Stop with: make down")
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

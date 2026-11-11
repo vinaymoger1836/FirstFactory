@@ -1,0 +1,96 @@
+# Builds the multi-arch images (linux/amd64 + linux/arm64). Build only: no tests run in CI
+# (CLAUDE.md owner's rule 3). Pushing to GHCR is opt-in via manual dispatch (deploy is P9).
+name: images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - "apps/worker/**"
+      - "packages/**"
+      - "!packages/ts-types/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "infra/docker/**"
+      - ".dockerignore"
+      - ".github/workflows/images.yml"
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - "apps/worker/**"
+      - "packages/**"
+      - "!packages/ts-types/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "infra/docker/**"
+      - ".dockerignore"
+      - ".github/workflows/images.yml"
+  workflow_dispatch:
+    inputs:
+      push:
+        description: "Push images to GHCR"
+        type: boolean
+        default: false
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [api, worker, cad-worker]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      # arm64 is emulated with QEMU. For faster arm64 builds switch to a matrix over
+      # platforms with native `ubuntu-24.04-arm` runners where the plan allows it.
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.push }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/factory-${{ matrix.target }}
+          tags: |
+            type=sha,format=short
+            type=ref,event=branch
+
+      - name: Build ${{ matrix.target }} (linux/amd64, linux/arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/python.Dockerfile
+          target: ${{ matrix.target }}
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name == 'workflow_dispatch' && inputs.push }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
+          cache-from: type=gha,scope=${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}

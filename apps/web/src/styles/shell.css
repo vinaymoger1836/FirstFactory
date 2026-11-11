@@ -1,0 +1,202 @@
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: -4rem;
+  z-index: 100;
+  padding: var(--space-2) var(--space-4);
+  background: var(--c-accent);
+  color: var(--c-on-accent);
+  border-radius: var(--radius-md);
+  font-weight: var(--weight-medium);
+  transition: top var(--dur-fast) var(--ease-out);
+}
+.skip-link:focus {
+  top: var(--space-2);
+  color: var(--c-on-accent);
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--c-surface) 86%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--c-border);
+}
+.site-header__inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+  min-height: var(--header-h);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-bold);
+  color: var(--c-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.brand:hover {
+  color: var(--c-text);
+}
+.brand__mark {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+/* ── Main menu ─────────────────────────────────────────────── */
+.main-nav {
+  margin-left: auto;
+}
+.main-nav__list {
+  display: flex;
+  gap: var(--space-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.main-nav__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--c-text-muted);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+.main-nav__link:hover {
+  color: var(--c-text);
+  background: var(--c-surface-2);
+}
+.main-nav__link[aria-current="page"] {
+  color: var(--c-accent);
+  background: var(--c-accent-soft);
+}
+.main-nav__icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+}
+.menu-toggle {
+  display: none;
+}
+
+/* ── Theme switch (radio group) ───────────────────────────── */
+.theme-switch {
+  display: inline-flex;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-pill);
+  padding: 2px;
+  margin: 0;
+  background: var(--c-surface-2);
+}
+.theme-switch label {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2rem;
+  border-radius: var(--radius-pill);
+  color: var(--c-text-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.theme-switch input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.theme-switch label:has(input:checked) {
+  background: var(--c-surface);
+  color: var(--c-text);
+  box-shadow: var(--shadow-1);
+}
+.theme-switch label:has(input:focus-visible) {
+  outline: 3px solid var(--c-focus);
+  outline-offset: 1px;
+}
+.theme-switch svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+/* ── Content ──────────────────────────────────────────────── */
+.site-main {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) var(--space-8);
+}
+.site-main:focus {
+  outline: none;
+}
+.site-footer {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-6);
+  color: var(--c-text-muted);
+  font-size: var(--text-sm);
+  border-top: 1px solid var(--c-border);
+}
+
+/* ── Small screens: disclosure menu ───────────────────────── */
+@media (max-width: 760px) {
+  .menu-toggle {
+    display: inline-flex;
+    margin-left: auto;
+    padding: 0 var(--space-3);
+  }
+  .main-nav {
+    position: absolute;
+    inset: var(--header-h) 0 auto 0;
+    margin: 0;
+    background: var(--c-surface);
+    border-bottom: 1px solid var(--c-border);
+    box-shadow: var(--shadow-2);
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    transform-origin: top;
+    transition:
+      opacity var(--dur-med) var(--ease-out),
+      transform var(--dur-med) var(--ease-out),
+      visibility var(--dur-med);
+  }
+  .main-nav[data-open="false"] {
+    opacity: 0;
+    transform: translateY(-6px);
+    visibility: hidden;
+  }
+  .main-nav__list {
+    flex-direction: column;
+  }
+  .main-nav__link {
+    width: 100%;
+    min-height: 2.75rem;
+  }
+}
+
+/* Phones: keep header on one row without horizontal scroll (brand link keeps its aria-label). */
+@media (max-width: 480px) {
+  .site-header__inner {
+    gap: var(--space-2);
+  }
+  .brand span {
+    display: none;
+  }
+  .theme-switch label {
+    width: 2rem;
+  }
+}

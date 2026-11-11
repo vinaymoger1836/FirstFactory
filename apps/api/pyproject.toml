@@ -1,0 +1,24 @@
+[project]
+name = "fl-api"
+version = "0.0.0"
+description = "FastAPI app: routes, SSE, capability-token access"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fl-domain",
+  "fastapi>=0.120",
+  "uvicorn[standard]>=0.38",
+  "sse-starlette>=3.0",
+  "pydantic>=2.12",
+  "pydantic-settings>=2.11",
+  "sqlalchemy[asyncio]>=2.0.44",
+  "asyncpg>=0.30",
+  "alembic>=1.17",
+  "redis>=6.4",
+]
+
+[project.scripts]
+fl-api = "fl_api.main:run"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.13"]
+build-backend = "uv_build"

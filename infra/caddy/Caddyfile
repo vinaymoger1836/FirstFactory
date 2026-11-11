@@ -1,0 +1,25 @@
+{
+	admin off
+}
+
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		X-Frame-Options DENY
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	}
+
+	reverse_proxy api:8000 {
+		# Stream SSE immediately (stage progress).
+		flush_interval -1
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

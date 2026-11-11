@@ -1,0 +1,20 @@
+# Keep the build context small and secret-free
+.git
+.env
+.env.*
+!.env.example
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.mypy_cache
+**/.ruff_cache
+**/.pytest_cache
+**/node_modules
+apps/web
+packages/ts-types
+spikes
+docs
+golden
+data
+e2e-results
+**/*.log

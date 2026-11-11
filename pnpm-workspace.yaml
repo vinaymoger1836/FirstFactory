@@ -1,0 +1,10 @@
+packages:
+  - apps/web
+  - packages/ts-types
+
+# Supply-chain guard: only install versions published at least 14 days ago.
+minimumReleaseAge: 20160
+
+# Only these packages may run install scripts.
+allowBuilds:
+  esbuild: true

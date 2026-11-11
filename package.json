@@ -1,0 +1,12 @@
+{
+  "name": "factory-layout-platform",
+  "private": true,
+  "packageManager": "pnpm@11.18.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "pnpm -C apps/web dev",
+    "build": "pnpm -r --filter \"./apps/*\" --filter \"./packages/*\" build",
+    "lint": "pnpm -r --filter \"./apps/*\" --filter \"./packages/*\" lint",
+    "typecheck": "pnpm -r --filter \"./apps/*\" --filter \"./packages/*\" typecheck"
+  }
+}
