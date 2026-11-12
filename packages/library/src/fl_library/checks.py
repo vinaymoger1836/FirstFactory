@@ -154,22 +154,40 @@ def check_catalog(catalog: Catalog) -> list[Issue]:
                     out.append(_err("catalog.units", f"bad uom '{c.uom}'", where))
             mparams = _machine_params(catalog, e.machine_class)
             if e.batch and e.batch.batch_size_param not in mparams:
-                out.append(_err("catalog.ref", f"machine param '{e.batch.batch_size_param}' "
-                                               f"missing on {e.machine_class}", where))
+                out.append(
+                    _err(
+                        "catalog.ref",
+                        f"machine param '{e.batch.batch_size_param}' missing on {e.machine_class}",
+                        where,
+                    )
+                )
             cases = param_sets(catalog, e)
             if not cases:
-                out.append(_err("catalog.formula", "no archetype example or example_params to "
-                                                   "test the formula", where))
+                out.append(
+                    _err(
+                        "catalog.formula",
+                        "no archetype example or example_params to test the formula",
+                        where,
+                    )
+                )
             env = {**mparams, **e.constants}
             for label, params, units in cases:
-                _check_formula(out, where, label, e.time_model.formula, e.time_model.variables,
-                               params, units, env)
+                _check_formula(
+                    out,
+                    where,
+                    label,
+                    e.time_model.formula,
+                    e.time_model.variables,
+                    params,
+                    units,
+                    env,
+                )
                 if e.batch:
-                    _check_formula(out, where, label, e.batch.cycle_formula, {}, params, units,
-                                   env)
+                    _check_formula(out, where, label, e.batch.cycle_formula, {}, params, units, env)
                 for c in e.consumables:
-                    _check_formula(out, where, label, c.qty_expr, {}, params, units, env,
-                                   positive=False)
+                    _check_formula(
+                        out, where, label, c.qty_expr, {}, params, units, env, positive=False
+                    )
         elif isinstance(e, MachineClassEntry):
             _ordered(out, e.price_inr, where)
         elif isinstance(e, CheckTypeEntry):
@@ -212,21 +230,31 @@ def _check_archetype(catalog: Catalog, a: ArchetypeEntry, where: str) -> list[Is
     for s in a.bom_skeleton:
         _ref(out, catalog.codes("commodity_class"), [s.commodity], "commodity", where)
         if s.parent is not None and s.parent not in refs:
-            out.append(_err("catalog.ref", f"skeleton {s.ref}: unknown parent '{s.parent}'",
-                            where))
+            out.append(_err("catalog.ref", f"skeleton {s.ref}: unknown parent '{s.parent}'", where))
         if not is_valid_unit(s.uom):
             out.append(_err("catalog.units", f"skeleton {s.ref}: bad uom '{s.uom}'", where))
         for v in a.example_variants:
-            _check_formula(out, f"{where}.bom_skeleton.{s.ref}", v.code, s.qty_expr, {},
-                           v.params, declared, {}, positive=False)
+            _check_formula(
+                out,
+                f"{where}.bom_skeleton.{s.ref}",
+                v.code,
+                s.qty_expr,
+                {},
+                v.params,
+                declared,
+                {},
+                positive=False,
+            )
     for step in a.typical_routing:
         proc = by_code.get(step.process)
         if not isinstance(proc, ProcessEntry):
-            out.append(_err("catalog.ref", f"typical routing: unknown process '{step.process}'",
-                            where))
+            out.append(
+                _err("catalog.ref", f"typical routing: unknown process '{step.process}'", where)
+            )
         elif a.code not in proc.applies_to.archetype:
-            out.append(_err("catalog.ref", f"process '{step.process}' does not apply to "
-                                           f"{a.code}", where))
+            out.append(
+                _err("catalog.ref", f"process '{step.process}' does not apply to {a.code}", where)
+            )
     return out
 
 
@@ -253,8 +281,12 @@ def check_pack(pack: Pack, today: date | None = None) -> list[Issue]:
             )
             out.append(_err("pack.expired", f"{key}: {reason} on {as_of}"))
         elif len(active) > 1:
-            out.append(_err("pack.overlap", f"{key}: {len(active)} values active on {as_of}; "
-                                            "mark older ones superseded"))
+            out.append(
+                _err(
+                    "pack.overlap",
+                    f"{key}: {len(active)} values active on {as_of}; mark older ones superseded",
+                )
+            )
         for v in vals:
             if v.unit and not is_valid_unit(v.unit):
                 out.append(_err("pack.units", f"{key}: bad unit '{v.unit}'"))
@@ -273,8 +305,12 @@ def check_cross(catalog: Catalog, pack: Pack) -> list[Issue]:
         if isinstance(e, ArchetypeEntry):
             for k in e.compliance_pack_keys:
                 if k not in keys:
-                    out.append(_err("cross.pack_key", f"archetype {e.code}: pack key {k} "
-                                                      f"missing in {pack.manifest.state}"))
+                    out.append(
+                        _err(
+                            "cross.pack_key",
+                            f"archetype {e.code}: pack key {k} missing in {pack.manifest.state}",
+                        )
+                    )
     return out
 
 

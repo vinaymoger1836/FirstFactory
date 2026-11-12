@@ -1,0 +1,38 @@
+# Statutory loading on wages (central schemes, applicable in Karnataka). The EPFO and ESIC
+# pages did not render their rate text to a script, so a payroll summary is cited; all marked
+# verify. The Code on Social Security 2020 (in force 21 Nov 2025) keeps these schemes.
+
+x-payroll: &payroll
+  group: statutory
+  effective_from: 2025-11-21
+  source_kind: secondary
+  source_url: https://boundlesshq.com/blog/employer-taxes-social-security-india/
+  source_title: "Boundless: Employer taxes and social security contributions in India 2026"
+  retrieved_at: 2026-11-12
+  confidence: 0.75
+  verify: true
+
+values:
+  - {key: statutory.epf_employer_pct, title: EPF employer contribution (of basic + DA), value: 12, unit: "%", <<: *payroll,
+     note: "Split 3.67% EPF + 8.33% EPS (EPS on wages up to the ceiling)."}
+  - {key: statutory.epf_admin_pct, title: EPF administration charge, value: 0.5, unit: "%", <<: *payroll}
+  - {key: statutory.edli_pct, title: EDLI contribution, value: 0.5, unit: "%", <<: *payroll}
+  - {key: statutory.epf_wage_ceiling, title: EPF statutory wage ceiling, value: 15000, unit: INR/month, <<: *payroll}
+  - {key: statutory.esi_employer_pct, title: ESI employer contribution (of gross wages), value: 3.25, unit: "%", <<: *payroll,
+     source_url: "https://www.esic.gov.in/contribution", source_title: "ESIC contribution page (rate text not machine-readable; figure from payroll summaries)"}
+  - {key: statutory.esi_wage_ceiling, title: ESI coverage wage ceiling, value: 21000, unit: INR/month, <<: *payroll}
+  - {key: statutory.bonus_min_pct, title: Minimum statutory bonus, value: 8.33, unit: "%", <<: *payroll,
+     note: "Applies to eligible wages; establishments below 20 employees may be outside scope."}
+  - key: statutory.gratuity_provision_pct
+    group: statutory
+    title: Gratuity provision as a share of basic wages
+    value: 4.81
+    unit: "%"
+    effective_from: 2025-11-21
+    source_kind: derived
+    source_url: https://boundlesshq.com/blog/employer-taxes-social-security-india/
+    source_title: "Derived from 15 days' wages per completed year of service (26 working days per month)"
+    retrieved_at: 2026-11-12
+    confidence: 0.7
+    verify: true
+    note: 15 / 26 / 12 = 4.81% of monthly basic per month of service; a provision, not a cash payment.

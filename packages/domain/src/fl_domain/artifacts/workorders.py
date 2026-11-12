@@ -29,7 +29,12 @@ __all__ = [
 class WorkOrderTemplate(DomainModel):
     header_fields: list[str] = Field(
         default_factory=lambda: [
-            "wo_no", "variant", "quantity", "due_date", "routing_version", "bom_version"
+            "wo_no",
+            "variant",
+            "quantity",
+            "due_date",
+            "routing_version",
+            "bom_version",
         ]
     )
     includes_operation_list: bool = True

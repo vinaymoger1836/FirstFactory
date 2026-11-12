@@ -1,0 +1,45 @@
+# G2 wizard input (ProductTemplate v1, docs/03 §1.2).
+template_version: 1
+product:
+  name: BLDC ceiling fan (golden G2)
+  category: mechanical
+  archetype: ceiling_fan
+  description: >
+    BLDC ceiling fan in 1200 mm and 900 mm sweeps with remote. Controller PCBA, die-cast rotor
+    shell and blades are bought; stator winding, varnishing, motor and final assembly and test
+    are in-house (ADR-017). Blades are packed separately.
+  variants:
+    - code: F1200
+      name: BLDC ceiling fan 1200 mm
+      mix_pct: 70
+      differences: 1200 mm blades, larger rotor shell, 80 turns per coil
+    - code: F900
+      name: BLDC ceiling fan 900 mm
+      mix_pct: 30
+      differences: 900 mm blades, smaller rotor shell, 70 turns per coil
+  demand:
+    annual_volume: 100000
+  targets:
+    quality_level: standard
+    automation_level: manual
+site:
+  state: KA
+  district: Tumakuru
+  mode: existing_shed
+  shed:
+    length_m: 60
+    width_m: 30
+    clear_height_m: 8
+    column_grid_m: [10, 15]
+    doors:
+      - {id: D1, wall: S, offset_m: 5, width_m: 4, height_m: 4.5, kind: roller_shutter}
+      - {id: D2, wall: N, offset_m: 50, width_m: 1.2, height_m: 2.1, kind: emergency}
+operating_pattern:
+  shifts_per_day: 1
+  days_per_week: 6
+  target_oee: 0.85
+finance_inputs:
+  debt_equity: [70, 30]
+  discount_rate_pct: 12
+  horizon_years: 5
+attachments: []

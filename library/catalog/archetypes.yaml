@@ -1,0 +1,187 @@
+# Archetypes (docs/10 §1.1, docs/03 §4.1): parameter list (names used by process formulas,
+# each with a unit), example variants (the golden products G1/G2 use exactly these values),
+# BoM skeleton, typical routing, compliance keys (data pack) and variant deltas.
+kind: archetype
+
+x-est: &est
+  source: catalog-estimate
+  as_of: "2026-11"
+  confidence: 0.5
+  note: Skeleton and example parameters follow docs/03 §4.1 and the golden cases (docs/14 §4).
+
+entries:
+  - code: power_bank
+    name: Power bank (Li-ion, USB-C/USB-A)
+    category: electronics
+    description: Portable battery pack of cylindrical Li-ion cells, BMS and charge PCBA, moulded enclosure.
+    aliases: [powerbank, portable charger, battery bank]
+    parameters:
+      - {name: cells_per_pack, unit: unit, description: Number of cells in the pack}
+      - {name: capacity_mah, unit: mAh, description: Rated capacity of the pack}
+      - {name: charge_current_ma, unit: mA, description: Charge current used in the capacity test}
+      - {name: discharge_current_ma, unit: mA, description: Discharge current used in the capacity test}
+      - {name: n_screws, unit: unit, description: Enclosure screws per unit}
+      - {name: n_solder_joints, unit: unit, description: Pack-to-PCBA solder joints (incl. thermistor)}
+      - {name: n_labels, unit: unit, description: "Labels applied per unit (rating and QR)"}
+      - {name: n_leds, unit: unit, description: Indicator LEDs}
+      - {name: n_ports, unit: unit, description: Output and input ports}
+      - {name: units_per_carton, unit: unit, description: Unit boxes per shipper carton}
+    example_variants:
+      - code: PB10K
+        name: Power bank 10,000 mAh
+        params: {cells_per_pack: 2, capacity_mah: 10000, charge_current_ma: 5000, discharge_current_ma: 5000,
+                 n_screws: 4, n_solder_joints: 4, n_labels: 2, n_leds: 4, n_ports: 3, units_per_carton: 20}
+      - code: PB20K
+        name: Power bank 20,000 mAh
+        params: {cells_per_pack: 4, capacity_mah: 20000, charge_current_ma: 5000, discharge_current_ma: 5000,
+                 n_screws: 6, n_solder_joints: 4, n_labels: 2, n_leds: 4, n_ports: 3, units_per_carton: 10}
+    bom_skeleton:
+      - {ref: core, name: Core assembly (cell pack + PCBA), kind: assembly, qty_expr: "1", uom: unit, make_or_buy: make, subassembly: core}
+      - {ref: cell_pack, name: Cell pack, kind: assembly, qty_expr: "1", uom: unit, make_or_buy: make, subassembly: cell pack, parent: core}
+      - {ref: cells, name: Li-ion cell 21700, commodity: li_ion_cell, kind: part, qty_expr: cells_per_pack, uom: unit, make_or_buy: buy, subassembly: cell pack, parent: cell_pack}
+      - {ref: nickel, name: Nickel strip, commodity: nickel_strip, kind: consumable, qty_expr: "cells_per_pack * 0.06", uom: m, make_or_buy: buy, subassembly: cell pack, parent: cell_pack}
+      - {ref: fish_paper, name: Fish paper ring, commodity: insulation_paper, kind: part, qty_expr: cells_per_pack, uom: unit, make_or_buy: buy, subassembly: cell pack, parent: cell_pack}
+      - {ref: kapton, name: Kapton tape, commodity: insulation_tape, kind: consumable, qty_expr: "cells_per_pack * 0.05", uom: m, make_or_buy: buy, subassembly: cell pack, parent: cell_pack}
+      - {ref: foam, name: Foam pad, commodity: foam_pad, kind: part, qty_expr: "2", uom: unit, make_or_buy: buy, subassembly: cell pack, parent: cell_pack}
+      - {ref: pcba, name: BMS + charge PCBA (USB-C/USB-A on board), commodity: pcba, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: core, parent: core}
+      - {ref: solder, name: Solder wire, commodity: consumable_solder, kind: consumable, qty_expr: "n_solder_joints * 0.15", uom: g, make_or_buy: buy, subassembly: core, parent: core}
+      - {ref: flux, name: Flux, commodity: flux, kind: consumable, qty_expr: "n_solder_joints * 0.02", uom: ml, make_or_buy: buy, subassembly: core, parent: core}
+      - {ref: enclosure_top, name: Enclosure top (PC/ABS), commodity: molded_enclosure, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: enclosure_bottom, name: Enclosure bottom (PC/ABS), commodity: molded_enclosure, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: light_pipe, name: LED light pipe, commodity: light_pipe_button, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: button, name: Button, commodity: light_pipe_button, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: screws, name: Screws, commodity: fasteners, kind: part, qty_expr: n_screws, uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: adhesive, name: Adhesive, commodity: adhesive, kind: consumable, qty_expr: "0.2", uom: g, make_or_buy: buy, subassembly: final assembly}
+      - {ref: rating_label, name: Rating label, commodity: labels, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: qr_label, name: QR label, commodity: labels, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: manual, name: User manual, commodity: user_manual, kind: packaging, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: packing}
+      - {ref: unit_box, name: Retail box, commodity: packaging_carton, kind: packaging, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: packing}
+      - {ref: shipper, name: Shipper carton, commodity: packaging_carton, kind: packaging, qty_expr: "1 / units_per_carton", uom: unit, make_or_buy: buy, subassembly: packing}
+    typical_routing:
+      - {process: iqc_cell_grading}
+      - {process: cell_sort_match}
+      - {process: spot_weld_nickel}
+      - {process: pack_insulation_wrap}
+      - {process: manual_solder}
+      - {process: pack_voltage_ir_test}
+      - {process: enclosure_assembly}
+      - {process: screw_drive}
+      - {process: functional_test_pb}
+      - {process: capacity_cycle_test, sample_pct: 2, note: "Sampled per ADR-018; toggle to 100%."}
+      - {process: label_apply}
+      - {process: pack_unit_box}
+      - {process: carton_pack}
+    compliance_pack_keys:
+      - compliance.power_bank.bis_crs_product
+      - compliance.power_bank.bis_crs_cells
+      - compliance.power_bank.rated_capacity_verification
+    test_policy:
+      default: functional_100_capacity_sampled
+      capacity_sample_pct: 2
+      alternative: capacity_100
+    variant_deltas: >
+      Variants differ by cell count (2 vs 4 × 21700), rated capacity, enclosure size and screw
+      count; PCBA and ports are common in the golden case.
+    provenance: *est
+
+  - code: ceiling_fan
+    name: BLDC ceiling fan
+    category: mechanical
+    description: Outer-rotor BLDC ceiling fan with bought controller PCBA, die-cast rotor shell and blades; in-house stator winding.
+    aliases: [ceiling fan, BLDC fan, energy efficient fan]
+    parameters:
+      - {name: sweep_mm, unit: mm, description: Blade sweep}
+      - {name: slots, unit: unit, description: Stator slots}
+      - {name: turns_per_coil, unit: unit, description: Turns per coil}
+      - {name: copper_kg, unit: kg, description: Copper wire per stator}
+      - {name: n_blades, unit: unit, description: Blades per fan}
+      - {name: n_bearings, unit: unit, description: Bearings per motor}
+      - {name: n_screws, unit: unit, description: Screws in final assembly}
+      - {name: n_connectors, unit: unit, description: Harness connectors to the controller}
+      - {name: n_solder_joints, unit: unit, description: Solder joints (winding leads to harness)}
+      - {name: n_speeds, unit: unit, description: Speed steps tested}
+      - {name: n_labels, unit: unit, description: "Labels applied (rating and BEE star label)"}
+      - {name: units_per_carton, unit: unit, description: Fans per shipper carton}
+    example_variants:
+      - code: F1200
+        name: BLDC ceiling fan 1200 mm
+        params: {sweep_mm: 1200, slots: 18, turns_per_coil: 80, copper_kg: 0.35, n_blades: 3, n_bearings: 2,
+                 n_screws: 8, n_connectors: 4, n_solder_joints: 3, n_speeds: 5, n_labels: 2, units_per_carton: 1}
+      - code: F900
+        name: BLDC ceiling fan 900 mm
+        params: {sweep_mm: 900, slots: 18, turns_per_coil: 70, copper_kg: 0.28, n_blades: 3, n_bearings: 2,
+                 n_screws: 8, n_connectors: 4, n_solder_joints: 3, n_speeds: 5, n_labels: 2, units_per_carton: 1}
+    bom_skeleton:
+      - {ref: motor, name: Motor assembly, kind: assembly, qty_expr: "1", uom: unit, make_or_buy: make, subassembly: motor}
+      - {ref: stator, name: Wound and varnished stator, kind: assembly, qty_expr: "1", uom: unit, make_or_buy: make, subassembly: stator, parent: motor}
+      - {ref: lamination, name: Stator lamination stack, commodity: stator_lamination, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: stator, parent: stator}
+      - {ref: copper, name: Enamelled copper wire, commodity: copper_winding_wire, kind: consumable, qty_expr: copper_kg, uom: kg, make_or_buy: buy, subassembly: stator, parent: stator}
+      - {ref: slot_liner, name: Slot liner, commodity: insulation_paper, kind: part, qty_expr: slots, uom: unit, make_or_buy: buy, subassembly: stator, parent: stator}
+      - {ref: varnish, name: Insulating varnish, commodity: varnish_resin, kind: consumable, qty_expr: "0.04", uom: l, make_or_buy: buy, subassembly: stator, parent: stator}
+      - {ref: rotor_shell, name: Die-cast rotor shell with magnets, commodity: die_cast_rotor, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: motor, parent: motor}
+      - {ref: shaft, name: Shaft, commodity: shaft, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: motor, parent: motor}
+      - {ref: bearings, name: Bearings, commodity: bearings, kind: part, qty_expr: n_bearings, uom: unit, make_or_buy: buy, subassembly: motor, parent: motor}
+      - {ref: controller, name: BLDC controller PCBA, commodity: pcba, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: motor, parent: motor}
+      - {ref: harness, name: Wiring harness, commodity: wiring_harness, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: motor, parent: motor}
+      - {ref: remote, name: Remote and receiver, commodity: remote_control, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: canopy, name: Canopy, commodity: sheet_metal_parts, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: downrod_kit, name: "Down-rod, shackle and mounting kit", commodity: sheet_metal_parts, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: screws, name: Screws and washers, commodity: fasteners, kind: part, qty_expr: n_screws, uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: split_pins, name: Split pins, commodity: fasteners, kind: part, qty_expr: "2", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: blades, name: Blades, commodity: fan_blade, kind: part, qty_expr: n_blades, uom: unit, make_or_buy: buy, subassembly: packing}
+      - {ref: rating_label, name: Rating label, commodity: labels, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: bee_label, name: BEE star label, commodity: labels, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: manual, name: User manual, commodity: user_manual, kind: packaging, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: packing}
+      - {ref: carton, name: Fan carton, commodity: packaging_carton, kind: packaging, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: packing}
+      - {ref: blade_sleeve, name: Blade sleeve, commodity: packaging_carton, kind: packaging, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: packing}
+    typical_routing:
+      - {process: stator_winding}
+      - {process: winding_resistance_test}
+      - {process: hipot_test}
+      - {process: varnish_dip_cure}
+      - {process: bearing_press}
+      - {process: motor_assembly}
+      - {process: controller_fit_harness}
+      - {process: motor_test}
+      - {process: final_assembly_fan}
+      - {process: hipot_test, note: "100% final Hi-pot"}
+      - {process: fan_run_in}
+      - {process: functional_test_fan}
+      - {process: label_apply}
+      - {process: blade_pack}
+      - {process: pack_unit_box}
+    compliance_pack_keys:
+      - compliance.ceiling_fan.qco_2023
+      - compliance.ceiling_fan.bee_star_label
+    variant_deltas: >
+      1200 mm and 900 mm sweeps differ in blades, rotor shell and winding turns/copper; the
+      controller PCBA, canopy and down-rod kit are common in the golden case.
+    provenance: *est
+
+  - code: generic_electronics
+    name: Generic electronic product
+    category: electronics
+    description: Fallback archetype for electronics that are not power banks; used with SMT/THT/moulding processes.
+    parameters:
+      - {name: n_components, unit: unit, description: SMT components per board}
+      - {name: board_length_mm, unit: mm, description: Board length along the conveyor}
+      - {name: n_tht, unit: unit, description: Through-hole components per board}
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.3
+      note: Placeholder archetype; intake marks products classified here with a notice (docs/03 §3.2).
+
+  - code: generic_mechanical
+    name: Generic mechanical / electromechanical product
+    category: mechanical
+    description: Fallback archetype for mechanical products; used with moulding and joining processes.
+    parameters:
+      - {name: mould_cycle_s, unit: s, description: Moulding cycle time}
+      - {name: cavities, unit: unit, description: Mould cavities}
+      - {name: part_mass_g, unit: g, description: Moulded part mass}
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.3
+      note: Placeholder archetype; intake marks products classified here with a notice (docs/03 §3.2).

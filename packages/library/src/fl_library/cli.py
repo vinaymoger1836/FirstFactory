@@ -155,22 +155,28 @@ def cmd_pack_table(args: argparse.Namespace) -> int:
     print("|---|---|---|---|---|---|---|---|")
     for v in sorted(pack.values, key=lambda x: (x.group, x.key, x.effective_from)):
         eff = f"{v.effective_from}" + (f" → {v.effective_to}" if v.effective_to else " →")
-        status = "superseded" if v.superseded else (
-            "active" if v.active_on(pack.manifest.as_of) else "history/future"
+        status = (
+            "superseded"
+            if v.superseded
+            else ("active" if v.active_on(pack.manifest.as_of) else "history/future")
         )
-        src = f"[{_cell(v.source_title)}]({v.source_url})" if v.source_url else _cell(
-            v.source_title)
+        src = (
+            f"[{_cell(v.source_title)}]({v.source_url})" if v.source_url else _cell(v.source_title)
+        )
         value = "unknown" if v.value is None else _cell(v.value)
-        print(f"| `{v.key}` | {value} | {v.unit or ''} | {eff} | {status} | {src} | "
-              f"{v.source_kind} | {'**yes**' if v.verify else 'no'} |")
+        print(
+            f"| `{v.key}` | {value} | {v.unit or ''} | {eff} | {status} | {src} | "
+            f"{v.source_kind} | {'**yes**' if v.verify else 'no'} |"
+        )
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    ap = argparse.ArgumentParser(prog="fl-library", description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        prog="fl-library", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--library", help="library/ directory (default: auto)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("validate").set_defaults(fn=cmd_validate)

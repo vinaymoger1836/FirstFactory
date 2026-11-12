@@ -1,0 +1,97 @@
+# Building norms and construction cost. Industrial-area rules vary by authority (KIADB,
+# local planning authority); 2026 news reports describe a KIADB FAR/coverage revision but
+# the notification was not found, so planning limits stay unknown (null, verify).
+
+values:
+  - key: building.kiadb.ground_coverage_max_pct
+    group: building
+    title: Maximum ground coverage on KIADB industrial plots
+    value: null
+    unit: "%"
+    effective_from: 2026-11-12
+    source_kind: none
+    source_url: https://www.oneindia.com/bengaluru/karnataka-raises-building-limits-in-kiadb-areas-taller-projects-now-allowed-7992995.html
+    source_title: "Not confirmed. News (2026) reports a KIADB revision raising FAR and coverage; figures in reports conflict"
+    retrieved_at: 2026-11-12
+    confidence: 0
+    verify: true
+    note: Ask the user or the allotting authority; older zoning tables showed about 55% for 4,000-8,000 m² plots, news mentions 45-70%.
+
+  - key: building.kiadb.far_max
+    group: building
+    title: Maximum floor area ratio on KIADB industrial plots
+    value: null
+    unit: unit
+    effective_from: 2026-11-12
+    source_kind: none
+    source_url: https://www.oneindia.com/bengaluru/karnataka-raises-building-limits-in-kiadb-areas-taller-projects-now-allowed-7992995.html
+    source_title: "Not confirmed. News (2026): FAR earlier 3.25 on roads over 30 m; revision raises it (premium FAR)"
+    retrieved_at: 2026-11-12
+    confidence: 0
+    verify: true
+    note: Single-storey factories rarely hit FAR; coverage and setbacks matter more.
+
+  - key: building.setbacks_m
+    group: building
+    title: Setbacks by plot size and road width
+    value: null
+    unit: m
+    effective_from: 2026-11-12
+    source_kind: none
+    source_title: Not found in P1 research
+    retrieved_at: 2026-11-12
+    confidence: 0
+    verify: true
+    note: Depends on the authority and plot; the layout stage asks the user when unknown.
+
+  - key: building.parking_norm
+    group: building
+    title: Parking requirement for industrial buildings
+    value: null
+    effective_from: 2026-11-12
+    source_kind: none
+    source_title: Not found in P1 research
+    retrieved_at: 2026-11-12
+    confidence: 0
+    verify: true
+    note: Unknown; to research with the setbacks.
+
+  - key: building.exit_travel_distance_max_m
+    group: building
+    title: Maximum travel distance to an exit (industrial, moderate hazard)
+    value: 45
+    unit: m
+    effective_from: 2016-01-01
+    source_kind: none
+    source_url: https://www.bis.gov.in/standards/technical-department/national-building-code/
+    source_title: "NBC 2016 Part 4 (Fire and Life Safety) travel-distance table, not retrieved in P1"
+    retrieved_at: 2026-11-12
+    confidence: 0.3
+    verify: true
+    note: Working value for layout checks only; confirm against NBC 2016 Part 4 and the Karnataka fire NOC conditions (high-hazard storage such as the Li-ion store may have a lower limit).
+
+  - key: building.peb_cost_inr_per_m2
+    group: building
+    title: Pre-engineered building cost per m² of built-up area
+    value: {low: 3500, base: 5000, high: 7500}
+    unit: INR/m**2
+    effective_from: 2026-11-12
+    source_kind: estimate
+    source_title: Engineering estimate (structure, cladding, roof; excludes foundations and flooring)
+    retrieved_at: 2026-11-12
+    confidence: 0.3
+    verify: true
+    note: Replace with vendor research (docs/09 §2, construction class).
+
+  - key: building.civil_cost_inr_per_m2
+    group: building
+    title: Civil works cost per m² (foundations, floor slab, drains, internal roads share)
+    value: {low: 1500, base: 2500, high: 4000}
+    unit: INR/m**2
+    effective_from: 2026-11-12
+    source_kind: estimate
+    source_title: Engineering estimate
+    retrieved_at: 2026-11-12
+    confidence: 0.3
+    verify: true
+    note: Replace with contractor quotes.

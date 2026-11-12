@@ -1,0 +1,471 @@
+# Machine classes (docs/10 §1.1). kW is nameplate per unit; heat_fraction is the share of
+# electrical input released as heat in the room (HVAC, docs/06 §3.3). Prices are INR ranges
+# per unit, ex-works, before GST; all catalog estimates unless provenance says otherwise.
+kind: machine_class
+
+x-est: &est
+  source: catalog-estimate
+  as_of: "2026-11"
+  confidence: 0.4
+  note: Engineering estimate for the POC seed; replace with vendor quotes (vendor stage).
+
+entries:
+  - code: cell_grader_ocv_ir
+    name: Cell grader (OCV + AC internal resistance)
+    description: Benchtop or semi-automatic cell tester with 1 kHz AC IR meter and sorting bins.
+    aliases: [IR tester, cell sorter, battery grader]
+    category: test
+    kw: 0.3
+    footprint_m2: 1.2
+    height_m: 1.2
+    price_inr: {low: 80000, base: 250000, high: 900000, as_of: "2026-11", source: catalog-estimate}
+    life_years: 8
+    provenance: *est
+
+  - code: spot_welder_cd
+    name: Capacitor-discharge battery spot welder
+    description: Dual-pulse CD welder with pneumatic or manual head for nickel strip on cylindrical cells.
+    aliases: [battery spot welder, CD welder, tab welder]
+    category: production
+    kw: 3.0
+    demand_factor: 0.4
+    footprint_m2: 1.2
+    height_m: 1.6
+    price_inr: {low: 60000, base: 120000, high: 250000, as_of: "2026-11", source: catalog-estimate}
+    life_years: 8
+    mtbf_h: 400
+    mttr_h: 1.5
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.4
+      note: Price range from docs/10 §1.2 example entry.
+
+  - code: spot_welder_ac
+    name: AC transformer spot welder
+    description: AC resistance welder; cheaper, less control than CD for thin nickel.
+    aliases: [AC spot welder, resistance welder]
+    category: production
+    kw: 10.0
+    demand_factor: 0.3
+    footprint_m2: 1.5
+    height_m: 1.6
+    price_inr: {low: 40000, base: 90000, high: 180000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: soldering_station
+    name: Temperature-controlled soldering station
+    description: ESD-safe station with fume extraction nozzle.
+    aliases: [solder iron, soldering iron]
+    category: production
+    kw: 0.15
+    demand_factor: 0.7
+    footprint_m2: 0.3
+    height_m: 0.4
+    price_inr: {low: 8000, base: 25000, high: 60000, as_of: "2026-11", source: catalog-estimate}
+    life_years: 5
+    provenance: *est
+
+  - code: fume_extractor
+    name: Solder fume extractor (2-arm)
+    description: Filtered extraction unit serving two soldering positions.
+    aliases: [fume extraction]
+    category: utility
+    kw: 0.25
+    demand_factor: 0.8
+    footprint_m2: 0.4
+    height_m: 1.0
+    price_inr: {low: 30000, base: 60000, high: 120000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: pack_ir_tester
+    name: Battery pack voltage / IR tester
+    description: Pack-level voltage, IR and BMS wake-up tester with pass/fail output.
+    aliases: [pack tester, battery IR meter]
+    category: test
+    kw: 0.2
+    footprint_m2: 0.8
+    height_m: 1.2
+    price_inr: {low: 40000, base: 90000, high: 200000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: screwdriver_electric
+    name: Torque-controlled electric screwdriver
+    description: Brushless DC screwdriver with torque control, balancer arm optional.
+    aliases: [electric screwdriver, torque driver, nutrunner]
+    category: production
+    kw: 0.05
+    demand_factor: 0.5
+    footprint_m2: 0
+    price_inr: {low: 8000, base: 20000, high: 60000, as_of: "2026-11", source: catalog-estimate}
+    life_years: 5
+    provenance: *est
+
+  - code: pb_functional_tester
+    name: Power bank functional test fixture
+    description: One-position test fixture with programmable electronic loads per port, protection trip tests and LED camera/sensor.
+    aliases: [functional test fixture, EOL tester, ATE fixture]
+    category: test
+    kw: 0.3
+    demand_factor: 0.7
+    heat_fraction: 1.0
+    footprint_m2: 1.0
+    height_m: 1.5
+    price_inr: {low: 150000, base: 350000, high: 800000, as_of: "2026-11", source: catalog-estimate}
+    life_years: 6
+    provenance: *est
+
+  - code: battery_tester_channel
+    name: Battery charge-discharge test channel
+    description: One channel of a rack-mounted battery cycler (non-regenerative; discharge energy becomes heat).
+    aliases: [battery cycler, capacity tester, charge discharge channel]
+    category: test
+    kw: 0.06
+    demand_factor: 0.8
+    heat_fraction: 1.0
+    footprint_m2: 0.05
+    height_m: 2.0
+    price_inr: {low: 8000, base: 15000, high: 30000, as_of: "2026-11", source: catalog-estimate}
+    life_years: 8
+    params:
+      rack_hours_per_day: 22
+      sizing_margin: 0.15
+      channels_per_rack: 32
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.5
+      note: 22 rack-h/day and 15% margin are the docs/05 §3.2 golden sizing inputs.
+
+  - code: label_printer
+    name: Thermal-transfer label printer with scanner
+    description: Desktop printer with barcode/QR verification scanner.
+    aliases: [label printer, barcode printer, QR printer]
+    category: it
+    kw: 0.2
+    demand_factor: 0.5
+    footprint_m2: 0.5
+    height_m: 0.4
+    price_inr: {low: 25000, base: 60000, high: 150000, as_of: "2026-11", source: catalog-estimate}
+    life_years: 5
+    provenance: *est
+
+  - code: carton_sealer
+    name: Semi-automatic carton taping machine
+    description: Top-bottom carton sealer.
+    aliases: [carton taping, case sealer]
+    category: production
+    kw: 0.4
+    demand_factor: 0.3
+    footprint_m2: 2.0
+    height_m: 1.5
+    price_inr: {low: 60000, base: 120000, high: 250000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: winding_machine_2spindle
+    name: Stator winding machine (2 spindles)
+    description: Needle/flyer winder for BLDC outer-rotor stators with programmable turns.
+    aliases: [coil winding machine, needle winder, stator winder]
+    category: production
+    kw: 1.5
+    demand_factor: 0.6
+    air_l_min: 50
+    footprint_m2: 2.5
+    height_m: 1.9
+    price_inr: {low: 400000, base: 1200000, high: 3000000, as_of: "2026-11", source: catalog-estimate}
+    life_years: 10
+    mtbf_h: 300
+    mttr_h: 2
+    params:
+      spindle_rpm: 1200
+      spindles: 2
+    provenance: *est
+
+  - code: winding_resistance_tester
+    name: Winding resistance / balance tester
+    description: Low-resistance meter with fixture for three-phase stator windings.
+    aliases: [milliohm meter, winding tester, surge tester]
+    category: test
+    kw: 0.1
+    footprint_m2: 0.8
+    height_m: 1.2
+    price_inr: {low: 40000, base: 100000, high: 300000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: hipot_tester
+    name: Hi-pot tester with interlocked fixture
+    description: AC/DC withstand tester with guarded, interlocked test fixture.
+    aliases: [dielectric tester, flash tester, HV tester]
+    category: test
+    kw: 0.5
+    demand_factor: 0.5
+    footprint_m2: 1.0
+    height_m: 1.4
+    price_inr: {low: 50000, base: 120000, high: 300000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: varnish_dip_tank
+    name: Varnish dip tank with drain rack
+    description: Covered dip tank with drip tray and local exhaust.
+    aliases: [dipping tank, impregnation tank]
+    category: production
+    kw: 0.2
+    footprint_m2: 3.0
+    height_m: 1.5
+    price_inr: {low: 50000, base: 120000, high: 300000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: cure_oven_batch
+    name: Batch curing oven (electric, forced air)
+    description: Walk-in or cabinet oven with trolley for curing varnished stators.
+    aliases: [varnish oven, curing oven, batch oven]
+    category: production
+    kw: 18
+    demand_factor: 0.8
+    heat_fraction: 0.3
+    footprint_m2: 6.0
+    height_m: 2.2
+    price_inr: {low: 300000, base: 650000, high: 1500000, as_of: "2026-11", source: catalog-estimate}
+    life_years: 12
+    params:
+      batch_capacity: 60
+      availability: 0.85
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.5
+      note: 60 stators per batch and 0.85 availability are the docs/05 §3.2 golden inputs.
+
+  - code: bearing_press_pneumatic
+    name: Pneumatic bearing press
+    description: Bench press with locating fixture.
+    aliases: [arbor press, press]
+    category: production
+    kw: 0.2
+    demand_factor: 0.4
+    air_l_min: 80
+    footprint_m2: 1.0
+    height_m: 1.6
+    price_inr: {low: 30000, base: 80000, high: 200000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: motor_test_bench
+    name: Motor no-load test bench
+    description: Supply, controller interface, tachometer and current measurement.
+    aliases: [motor tester]
+    category: test
+    kw: 0.5
+    demand_factor: 0.5
+    footprint_m2: 1.5
+    height_m: 1.4
+    price_inr: {low: 80000, base: 200000, high: 500000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: run_in_rack
+    name: Fan run-in rack position
+    description: One hanging position on a run-in rack with supply and current monitoring.
+    aliases: [burn-in rack, run-in position]
+    category: test
+    kw: 0.06
+    demand_factor: 0.9
+    heat_fraction: 1.0
+    footprint_m2: 1.5
+    height_m: 2.8
+    price_inr: {low: 10000, base: 25000, high: 60000, as_of: "2026-11", source: catalog-estimate}
+    params:
+      positions_per_rack: 10
+    provenance: *est
+
+  - code: fan_test_bench
+    name: Fan functional test bench
+    description: Power analyser, optical tachometer, remote pairing station, noise check.
+    aliases: [fan tester, rpm power test]
+    category: test
+    kw: 0.3
+    demand_factor: 0.6
+    footprint_m2: 2.0
+    height_m: 2.5
+    price_inr: {low: 100000, base: 250000, high: 600000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: dynamic_balancer
+    name: Dynamic balancing machine (small rotors)
+    description: Soft-bearing balancer for outer-rotor fan motors.
+    aliases: [balancing machine]
+    category: production
+    kw: 1.0
+    demand_factor: 0.5
+    footprint_m2: 2.0
+    height_m: 1.5
+    price_inr: {low: 300000, base: 700000, high: 1500000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: smt_pick_place
+    name: SMT pick-and-place machine (mid-speed)
+    description: Mid-speed placer with feeders; part of an SMT line.
+    aliases: [pick and place, chip shooter]
+    category: production
+    kw: 4.0
+    demand_factor: 0.7
+    air_l_min: 100
+    footprint_m2: 4.0
+    height_m: 1.5
+    price_inr: {low: 2500000, base: 6000000, high: 15000000, as_of: "2026-11", source: catalog-estimate}
+    life_years: 10
+    provenance: *est
+
+  - code: reflow_oven
+    name: Convection reflow oven (8 zone)
+    description: Forced-convection reflow with nitrogen option.
+    aliases: [reflow]
+    category: production
+    kw: 20
+    demand_factor: 0.6
+    heat_fraction: 0.8
+    footprint_m2: 8.0
+    height_m: 1.5
+    price_inr: {low: 1000000, base: 2500000, high: 6000000, as_of: "2026-11", source: catalog-estimate}
+    life_years: 10
+    provenance: *est
+
+  - code: aoi_machine
+    name: Automated optical inspection machine
+    description: 2D/3D AOI after reflow.
+    aliases: [AOI]
+    category: test
+    kw: 1.5
+    demand_factor: 0.6
+    footprint_m2: 2.0
+    height_m: 1.6
+    price_inr: {low: 1000000, base: 2500000, high: 6000000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: injection_molding_machine
+    name: Injection moulding machine (100-150 t)
+    description: Servo-hydraulic moulding machine with dryer and chiller connection.
+    aliases: [IMM, moulding machine, molding press]
+    category: production
+    kw: 30
+    demand_factor: 0.6
+    heat_fraction: 0.5
+    footprint_m2: 12.0
+    height_m: 2.5
+    price_inr: {low: 2000000, base: 3500000, high: 6000000, as_of: "2026-11", source: catalog-estimate}
+    life_years: 15
+    provenance: *est
+
+  - code: ultrasonic_welder
+    name: Ultrasonic plastic welder (20 kHz)
+    description: Bench welder with horn and nest fixture.
+    aliases: [sonic welder]
+    category: production
+    kw: 2.0
+    demand_factor: 0.4
+    air_l_min: 60
+    footprint_m2: 1.0
+    height_m: 1.8
+    price_inr: {low: 150000, base: 350000, high: 800000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: glue_dispenser
+    name: Timed adhesive dispenser
+    description: Pneumatic time-pressure dispenser with foot pedal.
+    aliases: [glue gun, dispenser]
+    category: production
+    kw: 0.1
+    demand_factor: 0.5
+    air_l_min: 20
+    footprint_m2: 0.3
+    height_m: 0.4
+    price_inr: {low: 15000, base: 40000, high: 100000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: workbench_esd
+    name: ESD workbench with grounding and lighting
+    description: 1.5 m bench, ESD mat, wrist-strap monitor, task light, parts bins.
+    aliases: [ESD bench, workstation]
+    category: production
+    kw: 0.05
+    footprint_m2: 1.2
+    height_m: 1.8
+    price_inr: {low: 20000, base: 40000, high: 80000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: workbench_std
+    name: Standard assembly workbench
+    description: 1.5 m steel bench with task light and bins.
+    aliases: [assembly bench, workstation]
+    category: production
+    kw: 0.04
+    footprint_m2: 1.2
+    height_m: 1.8
+    price_inr: {low: 10000, base: 25000, high: 50000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: drop_tester
+    name: Drop tester (packaged product)
+    description: Free-fall drop tester for packaged goods.
+    aliases: [drop test machine]
+    category: lab
+    kw: 0.5
+    footprint_m2: 2.0
+    height_m: 2.5
+    price_inr: {low: 80000, base: 200000, high: 500000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: hand_pallet_truck
+    name: Hand pallet truck (2.5 t)
+    description: Manual pallet jack.
+    aliases: [pallet jack, HPT]
+    category: handling
+    footprint_m2: 0
+    price_inr: {low: 12000, base: 20000, high: 35000, as_of: "2026-11", source: catalog-estimate}
+    params: {moves_per_hour: 12}
+    provenance: *est
+
+  - code: battery_stacker
+    name: Battery-operated pallet stacker (1.2 t)
+    description: Walkie stacker for racking up to about 3.5 m.
+    aliases: [stacker, walkie stacker]
+    category: handling
+    kw: 1.5
+    demand_factor: 0.3
+    footprint_m2: 0
+    price_inr: {low: 250000, base: 450000, high: 800000, as_of: "2026-11", source: catalog-estimate}
+    params: {moves_per_hour: 10}
+    provenance: *est
+
+  - code: selective_pallet_rack
+    name: Selective pallet racking (per pallet position)
+    description: Beam racking, cost per pallet position.
+    aliases: [pallet rack, racking]
+    category: storage
+    footprint_m2: 0
+    price_inr: {low: 3000, base: 5000, high: 8000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: esd_shelving
+    name: ESD shelving (per bay)
+    description: Grounded shelving bay for PCBAs.
+    aliases: [ESD rack]
+    category: storage
+    footprint_m2: 0.6
+    height_m: 2.0
+    price_inr: {low: 15000, base: 30000, high: 60000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: air_compressor_screw
+    name: Rotary screw air compressor (7.5 kW class)
+    description: Oil-injected screw compressor with dryer and receiver.
+    aliases: [compressor, screw compressor]
+    category: utility
+    kw: 7.5
+    demand_factor: 0.7
+    heat_fraction: 0.9
+    footprint_m2: 3.0
+    height_m: 1.5
+    price_inr: {low: 250000, base: 450000, high: 800000, as_of: "2026-11", source: catalog-estimate}
+    params:
+      free_air_l_min: 1100
+      specific_power_kw_per_m3_min: 7.0
+    provenance: *est

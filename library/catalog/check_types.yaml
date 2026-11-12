@@ -1,0 +1,200 @@
+# Check types (docs/10 §1.1, docs/05 §2). `standards` are names for orientation only; the
+# compliance list in the data pack is the dated, sourced reference (verify with a
+# certification body).
+kind: check_type
+
+x-est: &est
+  source: catalog-estimate
+  as_of: "2026-11"
+  confidence: 0.4
+  note: Method and time are engineering estimates for the POC seed.
+
+entries:
+  - code: cell_ocv_ir
+    name: Cell OCV and internal resistance
+    layers: [iqc]
+    method: Measure OCV and 1 kHz AC IR; grade into bins; reject out-of-band cells.
+    measures: [open-circuit voltage, AC internal resistance]
+    time_s: 4
+    process: iqc_cell_grading
+    machine_class: cell_grader_ocv_ir
+    sampling: 100pct
+    standards: ["IS 16046 (Part 2):2018 (cell safety, registration under CRS)"]
+    provenance: *est
+
+  - code: pack_voltage_ir
+    name: Pack voltage and IR
+    layers: [ipqc]
+    method: Inline test of pack voltage, IR and BMS wake-up after soldering.
+    measures: [pack voltage, pack IR, BMS wake]
+    time_s: 12
+    process: pack_voltage_ir_test
+    machine_class: pack_ir_tester
+    sampling: 100pct
+    provenance: *est
+
+  - code: weld_pull_test
+    name: Weld pull/peel test
+    layers: [ipqc]
+    method: Destructive peel test on sample welds at start of shift and after changeover.
+    measures: [peel force, nugget size]
+    time_s: 60
+    sampling: periodic
+    provenance: *est
+
+  - code: solder_joint_inspection
+    name: Solder joint inspection
+    layers: [ipqc]
+    method: Visual (or AOI) inspection of solder joints against acceptance criteria.
+    measures: [wetting, bridging, voids]
+    time_s: 8
+    sampling: 100pct
+    standards: ["IPC-A-610 (workmanship, orientation only)"]
+    provenance: *est
+
+  - code: functional_pb
+    name: Power bank functional test
+    layers: [eol]
+    method: Output V/I per port, protection trips (OCP/SCP/OVP), LEDs, charge input.
+    measures: [output voltage, output current, protection trip, LED state]
+    time_s: 60
+    process: functional_test_pb
+    machine_class: pb_functional_tester
+    sampling: 100pct
+    standards: ["IS 13252 (Part 1):2010 / IEC 62368-1 (safety; finished product under CRS)"]
+    provenance: *est
+
+  - code: capacity_test
+    name: Capacity verification (charge-discharge)
+    layers: [eol, lab]
+    method: Full charge and discharge at stated currents; compare delivered mAh with rating.
+    measures: [delivered capacity mAh, efficiency]
+    process: capacity_cycle_test
+    machine_class: battery_tester_channel
+    sampling: sampled_pct
+    standards: ["BIS rated-capacity verification guidelines for lithium cells and batteries (verify)"]
+    provenance: *est
+
+  - code: winding_resistance
+    name: Winding resistance and balance
+    layers: [ipqc]
+    method: Measure phase resistances; check balance within tolerance.
+    measures: [phase resistance, imbalance]
+    time_s: 10
+    process: winding_resistance_test
+    machine_class: winding_resistance_tester
+    sampling: 100pct
+    provenance: *est
+
+  - code: hipot
+    name: Hi-pot (dielectric withstand)
+    layers: [ipqc, eol]
+    method: Apply test voltage between live parts and body for the set time; leakage below limit.
+    measures: [leakage current, breakdown]
+    time_s: 15
+    process: hipot_test
+    machine_class: hipot_tester
+    sampling: 100pct
+    standards: ["IS 374:2019 (electric ceiling type fans)"]
+    provenance: *est
+
+  - code: insulation_resistance
+    name: Insulation resistance
+    layers: [ipqc, eol]
+    method: Megger test at 500 V DC between live parts and body.
+    measures: [insulation resistance]
+    time_s: 10
+    machine_class: hipot_tester
+    sampling: 100pct
+    provenance: *est
+
+  - code: motor_no_load_test
+    name: Motor no-load test
+    layers: [ipqc]
+    method: Run motor without load; check speed, current, direction.
+    measures: [rpm, current, direction]
+    time_s: 40
+    process: motor_test
+    machine_class: motor_test_bench
+    sampling: 100pct
+    provenance: *est
+
+  - code: functional_fan
+    name: Fan functional test
+    layers: [eol]
+    method: RPM at each speed step, input power, remote pairing, direction, noise by ear/meter.
+    measures: [rpm per speed, input power, remote, noise]
+    process: functional_test_fan
+    machine_class: fan_test_bench
+    sampling: 100pct
+    standards: ["IS 374:2019"]
+    provenance: *est
+
+  - code: run_in_test
+    name: Fan run-in
+    layers: [eol]
+    method: Run at rated speed for the set time; watch current, noise and wobble.
+    measures: [current drift, noise, wobble]
+    time_s: 300
+    process: fan_run_in
+    machine_class: run_in_rack
+    sampling: 100pct
+    provenance: *est
+
+  - code: air_delivery_test
+    name: Air delivery and service value (lab)
+    layers: [lab]
+    method: Periodic air delivery (m³/min) and service value check in a test chamber, per star-label method.
+    measures: [air delivery, service value, power]
+    time_s: 1800
+    sampling: periodic
+    standards: ["IS 374:2019 test method; BEE star label for ceiling fans (verify)"]
+    provenance: *est
+
+  - code: noise_check
+    name: Noise check
+    layers: [eol, lab]
+    method: Sound level at set distance in a quiet booth (lab) or subjective on line.
+    measures: [dB(A)]
+    time_s: 20
+    sampling: sampled_pct
+    provenance: *est
+
+  - code: drop_test
+    name: Packaged drop test
+    layers: [oqc, lab]
+    method: Drop packaged units from set height on edges, corners and faces; inspect.
+    measures: [damage, function after drop]
+    time_s: 600
+    machine_class: drop_tester
+    sampling: periodic
+    provenance: *est
+
+  - code: visual_inspection
+    name: Visual inspection
+    layers: [iqc, ipqc, oqc]
+    method: Visual check against the defect catalogue.
+    measures: [cosmetic defects, missing parts]
+    time_s: 15
+    sampling: aql
+    default_aql: 1.0
+    provenance: *est
+
+  - code: dimensional_check
+    name: Dimensional check
+    layers: [iqc]
+    method: Gauge or calliper check of critical dimensions on sampled parts.
+    measures: [critical dimensions]
+    time_s: 60
+    sampling: aql
+    default_aql: 1.0
+    provenance: *est
+
+  - code: label_verification
+    name: Label verification
+    layers: [eol, oqc]
+    method: Scan and compare label content (serial, rating, BEE/CRS marks) with the work order.
+    measures: [barcode grade, content match]
+    time_s: 3
+    sampling: 100pct
+    provenance: *est

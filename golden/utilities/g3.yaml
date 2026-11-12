@@ -1,0 +1,8 @@
+# G3: transformer sizing (docs/06 §3.1). Asserted by the utilities engine from P5.
+# Standard ratings listed in docs/06 §3.1; P5 moves them into the catalog with a source.
+max_demand_kva: 180
+transformer_headroom: 1.25
+standard_ratings_kva: [100, 160, 200, 250, 315, 400, 500, 630, 1000]
+expected:
+  required_kva: 225            # 180 × 1.25
+  transformer_kva: 250         # next standard rating ≥ 225

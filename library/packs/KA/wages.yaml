@@ -1,0 +1,49 @@
+# Karnataka minimum wages, revision effective 22 May 2026. Monthly totals = basic + VDA
+# (VDA ₹1,030.80/month), as summarised by HR Informative. The gazette notification itself
+# was not read; the scheduled-employment scope (e.g. engineering industry) and whether other
+# summaries' lower figures are basic-only were not confirmed. All marked verify.
+
+x-mw2026: &mw2026
+  group: wages
+  unit: INR/month
+  effective_from: 2026-05-22
+  source_kind: secondary
+  source_url: https://hrinformative.com/karnataka-minimum-wages-revised-from-22-may-2026/
+  source_title: "HR Informative: Karnataka Minimum Wages revised from 22 May 2026 (basic + VDA)"
+  retrieved_at: 2026-11-12
+  confidence: 0.6
+  verify: true
+
+values:
+  - key: wages.zone_definition
+    group: wages
+    title: Wage zones
+    value:
+      zone1: Greater Bengaluru
+      zone2: Other city corporations and district headquarters
+      zone3: All other areas
+    effective_from: 2026-05-22
+    source_kind: secondary
+    source_url: https://hrinformative.com/karnataka-minimum-wages-revised-from-22-may-2026/
+    source_title: "HR Informative: Karnataka Minimum Wages revised from 22 May 2026"
+    retrieved_at: 2026-11-12
+    confidence: 0.6
+    verify: true
+
+  - key: wages.vda_monthly
+    title: Variable dearness allowance included in the totals
+    value: 1030.80
+    <<: *mw2026
+
+  - {key: wages.min_monthly.zone1.highly_skilled, title: "Minimum wage, zone 1, highly skilled", value: 32144.82, <<: *mw2026}
+  - {key: wages.min_monthly.zone1.skilled, title: "Minimum wage, zone 1, skilled", value: 29316.27, <<: *mw2026}
+  - {key: wages.min_monthly.zone1.semi_skilled, title: "Minimum wage, zone 1, semi-skilled", value: 26744.87, <<: *mw2026}
+  - {key: wages.min_monthly.zone1.unskilled, title: "Minimum wage, zone 1, unskilled", value: 24407.23, <<: *mw2026}
+  - {key: wages.min_monthly.zone2.highly_skilled, title: "Minimum wage, zone 2, highly skilled", value: 29316.27, <<: *mw2026}
+  - {key: wages.min_monthly.zone2.skilled, title: "Minimum wage, zone 2, skilled", value: 26744.87, <<: *mw2026}
+  - {key: wages.min_monthly.zone2.semi_skilled, title: "Minimum wage, zone 2, semi-skilled", value: 24407.23, <<: *mw2026}
+  - {key: wages.min_monthly.zone2.unskilled, title: "Minimum wage, zone 2, unskilled", value: 22282.10, <<: *mw2026}
+  - {key: wages.min_monthly.zone3.highly_skilled, title: "Minimum wage, zone 3, highly skilled", value: 26744.87, <<: *mw2026}
+  - {key: wages.min_monthly.zone3.skilled, title: "Minimum wage, zone 3, skilled", value: 24407.23, <<: *mw2026}
+  - {key: wages.min_monthly.zone3.semi_skilled, title: "Minimum wage, zone 3, semi-skilled", value: 22282.10, <<: *mw2026}
+  - {key: wages.min_monthly.zone3.unskilled, title: "Minimum wage, zone 3, unskilled", value: 20350.16, <<: *mw2026}

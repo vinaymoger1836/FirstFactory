@@ -1,0 +1,8 @@
+# G4: NPV and IRR (docs/09 §1.4). Asserted by the finance engine from P8.
+# Year 0 outflow, then five equal inflows; end-of-year discounting.
+cash_flows: [-100, 30, 30, 30, 30, 30]
+discount_rate_pct: 12
+expected:
+  npv: 8.14                    # rounded to 2 decimals
+  irr_pct: 15.24               # rounded to 2 decimals
+  rounding: 2

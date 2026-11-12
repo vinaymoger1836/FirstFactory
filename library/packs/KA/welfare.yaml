@@ -1,0 +1,87 @@
+# Welfare facility thresholds (OSH Code 2020 s.24 and rules). Commentaries disagree on some
+# thresholds; all marked verify until Karnataka's rules are confirmed.
+
+x-s24: &s24
+  source_kind: secondary
+  source_url: https://www.taxclue.in/blog/section-24-osh-code-2020-welfare-facilities-in-the-establishment/
+  source_title: "TaxClue: Section 24 OSH Code 2020, welfare facilities in the establishment"
+  retrieved_at: 2026-11-12
+  verify: true
+
+values:
+  - key: welfare.canteen_min_workers
+    group: welfare
+    title: Canteen required at or above this number of workers (incl. contract labour)
+    value: 100
+    unit: worker
+    effective_from: 2025-11-21
+    <<: *s24
+    confidence: 0.55
+    note: Most commentaries say 100; one 2021 analysis of the draft rules says 50. The Factories Act 1948 used 250.
+
+  - key: welfare.creche_min_workers
+    group: welfare
+    title: Creche required at or above this number of employees
+    value: 50
+    unit: worker
+    effective_from: 2025-11-21
+    <<: *s24
+    confidence: 0.7
+    note: OSH Code s.24(3); a common creche shared by establishments is allowed.
+
+  - key: welfare.welfare_officer_min_workers
+    group: welfare
+    title: Welfare officer required at or above this number of workers
+    value: 250
+    unit: worker
+    effective_from: 2025-11-21
+    <<: *s24
+    confidence: 0.7
+
+  - key: welfare.rest_room_min_workers
+    group: welfare
+    title: Rest rooms / shelters required above this number of workers
+    value: 50
+    unit: worker
+    effective_from: 2025-11-21
+    <<: *s24
+    confidence: 0.5
+
+  - key: welfare.ambulance_room_min_workers
+    group: welfare
+    title: Ambulance room required above this number of workers
+    value: 500
+    unit: worker
+    effective_from: 2025-11-21
+    <<: *s24
+    confidence: 0.5
+
+  - key: welfare.first_aid_box_per_workers
+    group: welfare
+    title: Workers per first-aid box
+    value: null
+    unit: worker
+    effective_from: 2025-11-21
+    source_kind: none
+    source_title: Not found in P1 research
+    retrieved_at: 2026-11-12
+    confidence: 0
+    verify: true
+    note: Unknown under the Code. (The Factories Act 1948 required one box per 150 workers; not applied.)
+
+  - key: welfare.water_closets_scale
+    group: welfare
+    title: Water-closets required in factories, by headcount
+    value:
+      male: {"1-15": 1, "16-35": 2, "36-65": 3, "66-100": 4, "101-200": "+3% of persons above 100", "over_200": "+2.5% of persons above 200"}
+      female: {"1-12": 1, "13-25": 2, "26-40": 3, "41-57": 4, "58-77": 5, "78-100": 6, "101-200": "+5% of persons above 100", "over_200": "+4% of persons above 200"}
+      washing_taps: "1 per 50 persons or part thereof"
+    unit: unit
+    effective_from: 1993-01-01
+    source_kind: primary
+    source_url: https://law.resource.org/pub/in/bis/S03/is.1172.1993.pdf
+    source_title: "IS 1172:1993 Code of basic requirements for water supply, drainage and sanitation, Table 3 Factories (p.10)"
+    retrieved_at: 2026-11-12
+    confidence: 0.7
+    verify: true
+    note: BIS standard text read directly. Karnataka factory rules may prescribe a different scale; NBC 2016 Part 9 carries the current equivalent. Exact publication date of IS 1172:1993 set to 1993-01-01.

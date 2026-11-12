@@ -1,0 +1,34 @@
+# G2 exact assertions (docs/14 §4, docs/05 §3.1-3.2). Asserted by the capacity engine from P4.
+case: G2
+assertions:
+  operating_pattern:
+    shifts_per_day: 1
+    days_per_week: 6
+    working_days_per_year: 300
+    shift_length_s: 28800
+    planned_stops_s: 1800
+    target_oee: 0.85
+  annual_volume: 100000
+  net_available_s_per_day: 27000
+  daily_demand: 333.3              # 100000 / 300 = 333.33…, shown to 1 decimal
+  daily_demand_by_variant: {F1200: 233.3, F900: 100.0}
+  takt_s: 81.0
+  pct_s: 68.85
+  run_in_test:
+    op: OP-110
+    test_s: 300
+    positions: 5                   # ceil(300 / 68.85)
+  varnish_oven:
+    op: OP-040
+    batch_size: 60
+    cycle_h: 2
+    available_h: 7.5
+    availability: 0.85
+    ovens: 2                       # ceil(ceil(333.3 / 60) × 2 / (7.5 × 0.85)) = ceil(1.88)
+catalog_inputs:
+  - {process: fan_run_in, variant: F1200, quantity: per_unit_s, expected: 300, why: "Run-in test 300 s"}
+  - {process: fan_run_in, variant: F900, quantity: per_unit_s, expected: 300, why: "Run-in test 300 s"}
+  - {process: hipot_test, variant: F1200, quantity: per_unit_s, expected: 15, why: "Hi-pot 15 s"}
+  - {process: varnish_dip_cure, variant: F1200, quantity: batch_cycle_s, expected: 7200, why: "Oven cure cycle 2 h"}
+  - {machine_class: cure_oven_batch, quantity: param, param: batch_capacity, expected: 60, why: "60 stators per batch"}
+  - {machine_class: cure_oven_batch, quantity: param, param: availability, expected: 0.85, why: "Oven availability 0.85"}

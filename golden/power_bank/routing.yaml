@@ -1,0 +1,20 @@
+# G1 routing in catalog process codes only (docs/05 §1.4):
+# IQC cells (OCV + IR) → sort/match → spot weld → insulation → pack-to-PCBA solder →
+# pack V/IR test → enclosure + screws → functional test (100%) → [capacity test, 2% sample] →
+# label + QR → unit box → shipper.
+operations:
+  - {op_no: OP-010, process: iqc_cell_grading, item: CELL-21700, produces: CELL-21700}
+  - {op_no: OP-020, process: cell_sort_match, item: CELL-21700, produces: CELL-21700}
+  - {op_no: OP-030, process: spot_weld_nickel, item: SA-CELLPACK, consumes: [CELL-21700, NI-STRIP], produces: SA-CELLPACK}
+  - {op_no: OP-040, process: pack_insulation_wrap, item: SA-CELLPACK, consumes: [INS-FISHPAPER, TAPE-KAPTON, FOAM-PAD], produces: SA-CELLPACK}
+  - {op_no: OP-050, process: manual_solder, item: SA-CORE, consumes: [SA-CELLPACK, PCBA-BMS, SOLDER-WIRE, FLUX], produces: SA-CORE}
+  - {op_no: OP-060, process: pack_voltage_ir_test, item: SA-CORE, produces: SA-CORE}
+  - {op_no: OP-070, process: enclosure_assembly, item: PB, consumes: [SA-CORE, ENC-TOP-10K, ENC-BOT-10K, ENC-TOP-20K, ENC-BOT-20K, LIGHT-PIPE, BUTTON, ADHESIVE], produces: PB}
+  - {op_no: OP-080, process: screw_drive, item: PB, consumes: [SCREW-M2], produces: PB}
+  - {op_no: OP-090, process: functional_test_pb, item: PB, produces: PB}
+  - {op_no: OP-100, process: capacity_cycle_test, item: PB, produces: PB, sample_pct: 2,
+     note: "Default policy (ADR-018): 2% sampled; toggle to 100% for the 398-channel case."}
+  - {op_no: OP-110, process: label_apply, item: PB, consumes: [LBL-RATING, LBL-QR], produces: PB}
+  - {op_no: OP-120, process: pack_unit_box, item: PB, consumes: [MANUAL, BOX-UNIT], produces: PB}
+  - {op_no: OP-130, process: carton_pack, item: PB, consumes: [CARTON-SHIPPER], produces: PB}
+precedence: sequential

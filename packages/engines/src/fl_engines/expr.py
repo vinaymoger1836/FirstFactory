@@ -124,8 +124,8 @@ def _eval(node: ast.AST, env: Mapping[str, float]) -> float:
     match node:
         case ast.Expression(body=body):
             return _eval(body, env)
-        case ast.Constant(value=v):
-            return _num(v)
+        case ast.Constant(value=int() | float() as v):
+            return _num(float(v))
         case ast.Name(id=name):
             if name not in env:
                 raise ExprError(f"unknown variable '{name}'")
@@ -149,9 +149,9 @@ def _eval(node: ast.AST, env: Mapping[str, float]) -> float:
             return float(all(vals) if isinstance(op, ast.And) else any(vals))
         case ast.Compare(left=left, ops=ops, comparators=comps):
             cur = _eval(left, env)
-            for op, comp in zip(ops, comps, strict=True):
+            for cop, comp in zip(ops, comps, strict=True):
                 nxt = _eval(comp, env)
-                if not _CMP[type(op)](cur, nxt):
+                if not _CMP[type(cop)](cur, nxt):
                     return 0.0
                 cur = nxt
             return 1.0

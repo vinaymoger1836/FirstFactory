@@ -1,0 +1,130 @@
+# Working hours and conditions. The four Labour Codes came into force on 21 Nov 2025; the
+# OSH (Central) Rules 2026 were notified as G.S.R. 345(E) on 8 May 2026. Central rules apply
+# to establishments in the central sphere; a Karnataka factory follows Karnataka's rules
+# under the OSH Code, whose status was NOT confirmed in P1. Hence every labour value is
+# marked verify. The gazette PDFs were not reachable; sources below are legal commentaries.
+
+x-osh-code: &osh_code
+  source_kind: secondary
+  source_url: https://acuitylaw.co.in/faqs/faqs-on-the-occupational-safety-health-and-working-conditions-code-2020-and-the-occupational-safety-health-and-working-conditions-central-rules-2026/
+  retrieved_at: 2026-11-12
+  verify: true
+
+x-central-rules: &central_rules
+  source_kind: secondary
+  source_url: https://blog.ipleaders.in/osh-central-rules-2026-registration-hours-contract-labour/
+  source_title: "iPleaders: OSH (Central) Rules 2026 (G.S.R. 345(E), 8 May 2026), Rules 64 and 69"
+  retrieved_at: 2026-11-12
+  applies_to: Central sphere; Karnataka state rules to be confirmed
+  verify: true
+
+x-ka-2023: &ka_2023
+  source_kind: secondary
+  source_url: https://www.khaitanco.com/thought-leaderships/Factories-Karnataka-Amendment-Act-2023-Key-Legislative-Amendments-in-the-Working-Structure-of-Factory-Based-Workforce
+  source_title: "Khaitan & Co: Factories (Karnataka Amendment) Act 2023 (also PRS bill summary)"
+  retrieved_at: 2026-11-12
+  applies_to: Karnataka factories (pre-Code amendment to the Factories Act 1948)
+  verify: true
+
+values:
+  - key: labour.daily_hours_max
+    group: labour
+    title: Maximum ordinary working hours per day
+    value: 8
+    unit: h
+    effective_from: 2025-11-21
+    <<: *osh_code
+    source_title: "OSH Code 2020 s.25(1)(a), via Acuity Law FAQ on the Code and Central Rules 2026"
+    confidence: 0.75
+    note: Karnataka's 2023 amendment allowed up to 12 h/day within 48 h/week (see labour.ka_flexible_daily_hours_max); whether that survives under the Code depends on Karnataka's OSH rules.
+
+  - key: labour.weekly_hours_max
+    group: labour
+    title: Maximum ordinary working hours per week
+    value: 48
+    unit: h
+    effective_from: 2026-05-08
+    <<: *central_rules
+    confidence: 0.8
+
+  - key: labour.overtime_cap_quarter_h
+    group: labour
+    title: Maximum overtime hours per quarter
+    value: 144
+    unit: h
+    effective_from: 2026-05-08
+    <<: *central_rules
+    confidence: 0.7
+    note: Central Rules 2026 Rule 69. The Factories (Karnataka Amendment) Act 2023 set 145 h per three months for Karnataka factories; use the lower value until Karnataka's OSH rules are confirmed.
+
+  - key: labour.overtime_wage_multiplier
+    group: labour
+    title: Overtime wage rate as a multiple of ordinary wages
+    value: 2
+    unit: unit
+    effective_from: 2025-11-21
+    <<: *osh_code
+    source_title: "OSH Code 2020 s.27(1) and Central Rules 2026 Rule 64(1): overtime at twice the rate of wages"
+    confidence: 0.85
+
+  - key: labour.weekly_rest_days
+    group: labour
+    title: Weekly rest days
+    value: 1
+    unit: day
+    effective_from: 2025-11-21
+    <<: *osh_code
+    source_title: "OSH Code 2020 s.26: no work on more than six days in a week"
+    confidence: 0.8
+
+  - key: labour.spread_over_max_h
+    group: labour
+    title: Maximum spread-over of a working day
+    value: 12
+    unit: h
+    effective_from: 2025-11-21
+    source_kind: secondary
+    source_url: https://getsleet.cloud/blog/osh-code-rest-interval-spread-over-weekly-holiday-rules
+    source_title: "Sleet blog: OSH Code rest interval, spread-over and weekly holiday rules"
+    retrieved_at: 2026-11-12
+    confidence: 0.4
+    verify: true
+    note: Sources conflict (one says the Central Rules set no spread-over limit). The Factories Act 1948 used 10.5 h. Confirm against the Karnataka rules.
+
+  - key: labour.leave_accrual_days_worked_per_day_leave
+    group: labour
+    title: Days worked per day of annual leave with wages (eligibility after 180 days)
+    value: 20
+    unit: day
+    effective_from: 2025-11-21
+    source_kind: none
+    source_title: "OSH Code 2020 s.32 (as understood; not confirmed against a source in P1)"
+    retrieved_at: 2026-11-12
+    confidence: 0.4
+    verify: true
+    note: Unconfirmed; used only for reliever sizing.
+
+  - key: labour.night_shift_women
+    group: labour
+    title: Conditions for employing women on night shifts
+    value:
+      allowed: true
+      window: "19:00-06:00"
+      conditions:
+        - written consent of the woman worker
+        - safety, holidays, working hours and transport conditions set by the appropriate government
+        - "Karnataka 2023 amendment (reported): at least one third of shift supervisors women; 12 consecutive hours rest when moving between day and night shifts"
+    effective_from: 2025-11-21
+    <<: *ka_2023
+    confidence: 0.5
+    note: OSH Code s.43 permits women at night with consent subject to conditions; the Karnataka-specific conditions are from bill-stage reporting and must be checked against the notified text.
+
+  - key: labour.ka_flexible_daily_hours_max
+    group: labour
+    title: Daily hours allowed under Karnataka's flexible-hours amendment (within 48 h/week)
+    value: 12
+    unit: h
+    effective_from: 2023-06-01
+    <<: *ka_2023
+    confidence: 0.5
+    note: Factories (Karnataka Amendment) Act 2023, notified 2023 (exact commencement date not confirmed; 2023-06-01 is a placeholder). Status after the OSH Code took effect (21 Nov 2025) is unclear; not used by the roster check, which uses labour.daily_hours_max.

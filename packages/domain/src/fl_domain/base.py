@@ -26,7 +26,14 @@ class DomainModel(BaseModel):
     being silently dropped.
     """
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, validate_default=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        populate_by_name=True,
+        validate_default=True,
+        # Serialized output always contains defaulted fields, so the serialization schema
+        # (and the generated TypeScript) marks them required.
+        json_schema_serialization_defaults_required=True,
+    )
 
 
 # Stable, readable IDs inside a project: OP-030, WC-WELD-01, Z-STORE-LI, PB10K, cell_21700.

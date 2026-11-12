@@ -1,0 +1,38 @@
+# G1 wizard input (ProductTemplate v1, docs/03 §1.2).
+template_version: 1
+product:
+  name: Power bank (golden G1)
+  category: electronics
+  archetype: power_bank
+  description: >
+    Li-ion power bank in two variants built from 21700 cells, a bought BMS + charge PCBA with
+    USB-C and USB-A ports, and a bought PC/ABS moulded enclosure. Cells and PCBA are bought;
+    grading, welding, assembly and test are in-house (ADR-017).
+  variants:
+    - code: PB10K
+      name: Power bank 10,000 mAh
+      mix_pct: 60
+      differences: 2 × 21700 cells, small enclosure, 4 screws
+    - code: PB20K
+      name: Power bank 20,000 mAh
+      mix_pct: 40
+      differences: 4 × 21700 cells, large enclosure, 6 screws
+  demand:
+    annual_volume: 300000
+  targets:
+    quality_level: standard
+    automation_level: manual
+site:
+  state: KA
+  district: Bengaluru Rural
+  mode: greenfield
+  plot: {length_m: 120, width_m: 80, road_side: N}
+operating_pattern:
+  shifts_per_day: 1
+  days_per_week: 6
+  target_oee: 0.85
+finance_inputs:
+  debt_equity: [70, 30]
+  discount_rate_pct: 12
+  horizon_years: 5
+attachments: []

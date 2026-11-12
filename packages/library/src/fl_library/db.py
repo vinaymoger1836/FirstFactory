@@ -110,8 +110,7 @@ def _load_catalog(cur: psycopg.Cursor[Any], cat: Catalog, warnings: list[Issue])
         )
     vid = _new_version(cur, "catalog", "catalog", version, digest, len(cat.entries), 0, warnings)
     with cur.copy(
-        "COPY catalog_entry (version_id, code, kind, name, data, search_text, embedding) "
-        "FROM STDIN"
+        "COPY catalog_entry (version_id, code, kind, name, data, search_text, embedding) FROM STDIN"
     ) as copy:
         for e in cat.entries:
             text = _search_text(e)
@@ -152,9 +151,23 @@ def _load_pack(cur: psycopg.Cursor[Any], pack: Pack, warnings: list[Issue]) -> L
            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
         [
             (
-                vid, v.key, v.group, v.title, Jsonb(v.value), v.unit, v.effective_from,
-                v.effective_to, v.superseded, v.applies_to, v.source_kind, v.source_url,
-                v.source_title, v.retrieved_at, v.confidence, v.verify, v.note,
+                vid,
+                v.key,
+                v.group,
+                v.title,
+                Jsonb(v.value),
+                v.unit,
+                v.effective_from,
+                v.effective_to,
+                v.superseded,
+                v.applies_to,
+                v.source_kind,
+                v.source_url,
+                v.source_title,
+                v.retrieved_at,
+                v.confidence,
+                v.verify,
+                v.note,
             )
             for v in pack.values
         ],
@@ -166,18 +179,22 @@ def load_library(
     url: str, catalog: Catalog, packs: list[Pack], warnings: list[Issue]
 ) -> list[LoadResult]:
     """Load (or confirm) the catalog and packs in one transaction."""
-    with psycopg.connect(psycopg_url(url), application_name="fl-library") as conn:
-        with conn.transaction(), conn.cursor() as cur:
-            cur.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (_LOCK_KEY,))
-            results = [_load_catalog(cur, catalog, warnings)]
-            results += [_load_pack(cur, p, warnings) for p in packs]
+    with (
+        psycopg.connect(psycopg_url(url), application_name="fl-library") as conn,
+        conn.transaction(),
+        conn.cursor() as cur,
+    ):
+        cur.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (_LOCK_KEY,))
+        results = [_load_catalog(cur, catalog, warnings)]
+        results += [_load_pack(cur, p, warnings) for p in packs]
     return results
 
 
 _SEARCH_SQL = """
 WITH v AS (
   SELECT id FROM library_version
-  WHERE kind = 'catalog' AND scope = 'catalog' AND (%(version)s::text IS NULL OR version = %(version)s)
+  WHERE kind = 'catalog' AND scope = 'catalog'
+    AND (%(version)s::text IS NULL OR version = %(version)s)
   ORDER BY string_to_array(version, '.')::int[] DESC LIMIT 1
 ),
 q AS (SELECT %(vec)s::vector AS vec, plainto_tsquery('english', %(text)s) AS tsq),

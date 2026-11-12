@@ -1,0 +1,22 @@
+# G7: simulation sanity cases (docs/08). Asserted by the simulation engine from P7.
+serial_line:
+  description: Deterministic serial line, no breakdowns, unlimited buffers, always-available input.
+  cycle_times_s: [20, 25, 22, 18]
+  warmup_s: 3600
+  run_length_s: 28800
+  expected:
+    throughput_per_h: 144        # 3600 / max(cycle) = 3600 / 25
+    bottleneck_index: 1
+    tolerance_per_h: 0.5         # end effects only; deterministic
+mm1:
+  description: M/M/1 queue, exponential arrivals and service.
+  arrival_rate_per_s: 0.8
+  service_rate_per_s: 1.0
+  rho: 0.8
+  replications: 30
+  seeds_from: 1
+  run_length_s: 200000
+  warmup_s: 10000
+  expected:
+    mean_in_system: 4.0          # L = ρ / (1 − ρ)
+    assert: 95% confidence interval across replications contains 4.0

@@ -1,0 +1,82 @@
+# Product compliance by archetype (informational and dated; verify with a certification body).
+# effective_from is the retrieval date where the original notification date was not confirmed.
+
+values:
+  - key: compliance.power_bank.bis_crs_product
+    group: compliance
+    title: Power banks under BIS Compulsory Registration Scheme (finished product)
+    value:
+      scheme: BIS CRS (Scheme-II registration)
+      standard: "IS 13252 (Part 1):2010 (IT equipment safety, IEC 60950-1 based; migration to IS/IEC 62368-1 announced)"
+      scope: Power banks for use in portable applications
+      marking: Standard mark with registration number (R-number)
+    effective_from: 2026-11-12
+    source_kind: secondary
+    source_url: https://www.compliancecalendar.in/learn/selling-power-banks-bis-crs-certification-rules
+    source_title: "ComplianceCalendar: selling power banks, BIS CRS rules; BIS Scheme-II page lists IS 13252 (Part 1)"
+    retrieved_at: 2026-11-12
+    confidence: 0.7
+    verify: true
+    note: "Cross-check with the BIS Scheme-II product list: https://www.bis.gov.in/product-certification/products-under-compulsory-certification/scheme-ii-registration-scheme"
+
+  - key: compliance.power_bank.bis_crs_cells
+    group: compliance
+    title: Lithium cells and batteries registered separately under CRS
+    value:
+      standard: "IS 16046 (Part 2):2018 (IEC 62133-2:2017), safety of secondary lithium cells and batteries"
+      scope: Cells used inside the power bank must carry their own CRS registration
+    effective_from: 2026-11-12
+    source_kind: secondary
+    source_url: https://www.compliancecalendar.in/learn/selling-power-banks-bis-crs-certification-rules
+    source_title: "ComplianceCalendar: power bank CRS rules (cells registered separately)"
+    retrieved_at: 2026-11-12
+    confidence: 0.65
+    verify: true
+
+  - key: compliance.power_bank.rated_capacity_verification
+    group: compliance
+    title: BIS guidelines for verification of rated capacity of lithium cells and batteries
+    value:
+      requirement: Registered lithium cells/batteries must meet BIS rated-capacity verification guidelines; non-compliance can lead to suspension of registration
+      test_support: capacity_test
+    effective_from: 2026-11-12
+    source_kind: secondary
+    source_url: https://admin.corpseed.com/knowledge-centre/bis-issues-new-guidelines-for-verification-of-rated-capacity-of-lithium-cells-and-batteries
+    source_title: "Corpseed: BIS issues new guidelines for verification of rated capacity of lithium cells and batteries"
+    retrieved_at: 2026-11-12
+    confidence: 0.4
+    verify: true
+    note: The page returned HTTP 404 to a script on 2026-11-12; content known only from search summaries. Find the BIS guideline itself (date, test method, tolerance).
+
+  - key: compliance.ceiling_fan.qco_2023
+    group: compliance
+    title: Electric Ceiling Type Fans (Quality Control) Order, 2023
+    value:
+      instrument: "Electric Ceiling Type Fans (Quality Control) Order, 2023 (DPIIT, August 2023)"
+      standard: "IS 374:2019 Electric ceiling type fans (covers induction and BLDC)"
+      certification: BIS licence (ISI mark) mandatory
+      msme_relaxation: Reported extra months for small and micro units
+    effective_from: 2024-03-01
+    source_kind: secondary
+    source_url: https://taxguru.in/?p=880889
+    source_title: "TaxGuru: Electric Ceiling Type Fans (Quality Control) Order, 2023"
+    retrieved_at: 2026-11-12
+    confidence: 0.7
+    verify: true
+    note: Order published Aug 2023 with effect six months after publication (per TaxGuru); 2024-03-01 is an approximation of that date. Confirm from the gazette.
+
+  - key: compliance.ceiling_fan.bee_star_label
+    group: compliance
+    title: BEE star labelling for ceiling fans
+    value:
+      programme: BEE Standards and Labelling, ceiling fans (1 to 5 stars)
+      status: Reported mandatory (CLASP); some databases still list it as voluntary
+      test_support: air_delivery_test
+    effective_from: 2023-01-01
+    source_kind: secondary
+    source_url: https://bis.alephindia.in/latest-update/new-compliance-for-electric-ceiling-fan-the-minist/292
+    source_title: "Aleph India: new compliance for electric ceiling fans (BEE star label); CLASP policy database"
+    retrieved_at: 2026-11-12
+    confidence: 0.5
+    verify: true
+    note: Sources conflict on mandatory status and start date (2023-01-01 is the commonly reported start). Confirm on beeindia.gov.in.

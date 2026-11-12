@@ -12,6 +12,7 @@ full-text ranking. A learned embedding can replace it later behind the same colu
 from __future__ import annotations
 
 import hashlib
+import itertools
 import math
 import re
 
@@ -26,10 +27,10 @@ _WEIGHTS = {"w": 1.0, "b": 0.6, "c": 0.35}
 def _features(text: str) -> list[tuple[str, float]]:
     tokens = _TOKEN.findall(text.lower().replace("_", " "))
     feats: list[tuple[str, float]] = [(f"w:{t}", _WEIGHTS["w"]) for t in tokens]
-    feats += [(f"b:{a}_{b}", _WEIGHTS["b"]) for a, b in zip(tokens, tokens[1:], strict=False)]
+    feats += [(f"b:{a}_{b}", _WEIGHTS["b"]) for a, b in itertools.pairwise(tokens)]
     for t in tokens:
         padded = f"#{t}#"
-        feats += [(f"c:{padded[i:i + 3]}", _WEIGHTS["c"]) for i in range(len(padded) - 2)]
+        feats += [(f"c:{padded[i : i + 3]}", _WEIGHTS["c"]) for i in range(len(padded) - 2)]
     return feats
 
 

@@ -67,11 +67,31 @@ def top_level_models() -> dict[str, type[BaseModel]]:
     return models
 
 
+def _strip_titles(node: Any) -> Any:
+    """Drop field-level titles (Pydantic adds one per field); keep model titles.
+
+    Code generators turn every titled sub-schema into its own named alias (``OpNo3``);
+    without field titles, field types are inlined and only models become named types.
+    """
+    if isinstance(node, dict):
+        if "$ref" in node:  # siblings of $ref (description) would make generators fork types
+            return {"$ref": node["$ref"]}
+        return {k: _strip_titles(v) for k, v in node.items() if k != "title"}
+    if isinstance(node, list):
+        return [_strip_titles(v) for v in node]
+    return node
+
+
 def build_schema(mode: Mode = "serialization") -> dict[str, Any]:
     models = top_level_models()
     refs, defs = models_json_schema(
         [(m, mode) for m in models.values()], ref_template="#/$defs/{model}"
     )
+    raw_defs: dict[str, Any] = defs.get("$defs", {})
+    clean_defs = {
+        name: {**_strip_titles(d), **({"title": d["title"]} if "title" in d else {})}
+        for name, d in raw_defs.items()
+    }
     properties = {name: refs[(model, mode)] for name, model in models.items()}
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -82,7 +102,7 @@ def build_schema(mode: Mode = "serialization") -> dict[str, Any]:
         "properties": properties,
         "required": sorted(properties),
         "additionalProperties": False,
-        "$defs": defs.get("$defs", {}),
+        "$defs": clean_defs,
     }
 
 

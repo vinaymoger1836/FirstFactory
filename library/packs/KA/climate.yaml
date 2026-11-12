@@ -1,0 +1,19 @@
+# Climate design defaults for HVAC (docs/06 §3.3). ISHRAE / ASHRAE design data for
+# Bengaluru were not retrieved in P1; these are labelled engineering estimates.
+
+x-est: &est
+  group: climate
+  effective_from: 2026-11-12
+  source_kind: estimate
+  retrieved_at: 2026-11-12
+  confidence: 0.3
+  verify: true
+  applies_to: Bengaluru region
+
+values:
+  - {key: climate.design_db_summer_c, title: Summer design dry-bulb temperature, value: 35, unit: degC, <<: *est,
+     source_title: "Engineering estimate", note: "Replace with the ISHRAE 0.4% dry-bulb for the site's nearest station."}
+  - {key: climate.design_wb_coincident_c, title: Coincident wet-bulb temperature, value: 21, unit: degC, <<: *est,
+     source_title: "Engineering estimate", note: "Replace with ISHRAE coincident wet-bulb."}
+  - {key: climate.envelope_heat_gain_w_m2, title: Envelope heat gain per m² floor (insulated PEB roof and walls), value: 25, unit: W/m**2, <<: *est,
+     source_title: "Engineering estimate", note: "Used only until a proper envelope load calculation is done."}

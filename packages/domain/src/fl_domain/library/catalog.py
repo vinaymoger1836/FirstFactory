@@ -217,7 +217,9 @@ class ZoneRule(DomainModel):
 
 class ZoneKindEntry(_Entry):
     kind: Literal["zone_kind"] = "zone_kind"
-    category: Literal["production", "storage", "quality", "logistics", "welfare", "office", "utility"]
+    category: Literal[
+        "production", "storage", "quality", "logistics", "welfare", "office", "utility"
+    ]
     lighting_w_m2: float = Field(ge=0)
     lux: float = Field(ge=0)
     default_height_m: float = Field(gt=0)

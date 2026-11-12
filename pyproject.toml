@@ -44,7 +44,8 @@ extend-exclude = ["spikes/**/out", "apps/web", "packages/ts-types", "docs", "*.m
 select = [
   "E", "W", "F", "I", "B", "UP", "SIM", "C4", "RUF", "S", "ASYNC", "PT", "N", "DTZ", "T20",
 ]
-ignore = ["S101"]
+# RUF001/2: messages and docs use × and – on purpose (₹, m², ×, as in the design docs).
+ignore = ["S101", "RUF001", "RUF002"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["fl_api", "fl_worker", "fl_domain", "fl_engines", "fl_agents", "fl_library"]

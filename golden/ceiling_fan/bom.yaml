@@ -1,0 +1,54 @@
+# G2 MBOM (make/buy per ADR-017: buy controller PCBA, rotor/shell, blades; make stator and motor).
+root: FAN
+items:
+  - {part_no: FAN, name: BLDC ceiling fan, kind: product, make_or_buy: make}
+  - {part_no: SA-MOTOR, name: Motor assembly with controller, kind: assembly, make_or_buy: make}
+  - {part_no: SA-STATOR, name: Wound and varnished stator, kind: assembly, make_or_buy: make}
+  - {part_no: STATOR-LAM, name: Stator lamination stack 18 slot, kind: part, commodity_class: stator_lamination, make_or_buy: buy}
+  - {part_no: CU-WIRE, name: Enamelled copper wire, kind: consumable, commodity_class: copper_winding_wire, make_or_buy: buy}
+  - {part_no: SLOT-LINER, name: Slot liner, kind: part, commodity_class: insulation_paper, make_or_buy: buy}
+  - {part_no: VARNISH, name: Insulating varnish, kind: consumable, commodity_class: varnish_resin, make_or_buy: buy}
+  - {part_no: ROTOR-1200, name: Rotor shell 1200 mm, kind: part, commodity_class: die_cast_rotor, make_or_buy: buy, variants: [F1200]}
+  - {part_no: ROTOR-900, name: Rotor shell 900 mm, kind: part, commodity_class: die_cast_rotor, make_or_buy: buy, variants: [F900]}
+  - {part_no: SHAFT, name: Motor shaft, kind: part, commodity_class: shaft, make_or_buy: buy}
+  - {part_no: BEARING, name: Ball bearing 6201, kind: part, commodity_class: bearings, make_or_buy: buy}
+  - {part_no: CTRL-PCBA, name: BLDC controller PCBA, kind: part, commodity_class: pcba, make_or_buy: buy}
+  - {part_no: HARNESS, name: Wiring harness, kind: part, commodity_class: wiring_harness, make_or_buy: buy}
+  - {part_no: REMOTE, name: Remote and receiver, kind: part, commodity_class: remote_control, make_or_buy: buy}
+  - {part_no: CANOPY, name: Canopy, kind: part, commodity_class: sheet_metal_parts, make_or_buy: buy}
+  - {part_no: DOWNROD-KIT, name: "Down-rod, shackle and mounting kit", kind: part, commodity_class: sheet_metal_parts, make_or_buy: buy}
+  - {part_no: SCREW-KIT, name: Screws and washers, kind: part, commodity_class: fasteners, make_or_buy: buy}
+  - {part_no: SPLIT-PIN, name: Split pin, kind: part, commodity_class: fasteners, make_or_buy: buy}
+  - {part_no: BLADE-1200, name: Blade 1200 mm, kind: part, commodity_class: fan_blade, make_or_buy: buy, variants: [F1200]}
+  - {part_no: BLADE-900, name: Blade 900 mm, kind: part, commodity_class: fan_blade, make_or_buy: buy, variants: [F900]}
+  - {part_no: LBL-RATING, name: Rating label, kind: part, commodity_class: labels, make_or_buy: buy}
+  - {part_no: LBL-BEE, name: BEE star label, kind: part, commodity_class: labels, make_or_buy: buy}
+  - {part_no: MANUAL, name: User manual, kind: packaging, commodity_class: user_manual, make_or_buy: buy}
+  - {part_no: CARTON-FAN, name: Fan carton, kind: packaging, commodity_class: packaging_carton, make_or_buy: buy}
+  - {part_no: BLADE-SLEEVE, name: Blade sleeve, kind: packaging, commodity_class: packaging_carton, make_or_buy: buy}
+mbom:
+  - {parent: FAN, child: SA-MOTOR, qty: 1, subassembly: motor}
+  - {parent: SA-MOTOR, child: SA-STATOR, qty: 1, subassembly: stator}
+  - {parent: SA-STATOR, child: STATOR-LAM, qty: 1, subassembly: stator}
+  - {parent: SA-STATOR, child: CU-WIRE, qty: 0.35, uom: kg, variant: F1200, subassembly: stator}
+  - {parent: SA-STATOR, child: CU-WIRE, qty: 0.28, uom: kg, variant: F900, subassembly: stator}
+  - {parent: SA-STATOR, child: SLOT-LINER, qty: 18, subassembly: stator}
+  - {parent: SA-STATOR, child: VARNISH, qty: 0.04, uom: l, subassembly: stator}
+  - {parent: SA-MOTOR, child: ROTOR-1200, qty: 1, variant: F1200, subassembly: motor}
+  - {parent: SA-MOTOR, child: ROTOR-900, qty: 1, variant: F900, subassembly: motor}
+  - {parent: SA-MOTOR, child: SHAFT, qty: 1, subassembly: motor}
+  - {parent: SA-MOTOR, child: BEARING, qty: 2, subassembly: motor}
+  - {parent: SA-MOTOR, child: CTRL-PCBA, qty: 1, subassembly: motor}
+  - {parent: SA-MOTOR, child: HARNESS, qty: 1, subassembly: motor}
+  - {parent: FAN, child: REMOTE, qty: 1, subassembly: final assembly}
+  - {parent: FAN, child: CANOPY, qty: 1, subassembly: final assembly}
+  - {parent: FAN, child: DOWNROD-KIT, qty: 1, subassembly: final assembly}
+  - {parent: FAN, child: SCREW-KIT, qty: 8, subassembly: final assembly}
+  - {parent: FAN, child: SPLIT-PIN, qty: 2, subassembly: final assembly}
+  - {parent: FAN, child: LBL-RATING, qty: 1, subassembly: final assembly}
+  - {parent: FAN, child: LBL-BEE, qty: 1, subassembly: final assembly}
+  - {parent: FAN, child: BLADE-1200, qty: 3, variant: F1200, subassembly: packing}
+  - {parent: FAN, child: BLADE-900, qty: 3, variant: F900, subassembly: packing}
+  - {parent: FAN, child: MANUAL, qty: 1, subassembly: packing}
+  - {parent: FAN, child: CARTON-FAN, qty: 1, subassembly: packing}
+  - {parent: FAN, child: BLADE-SLEEVE, qty: 1, subassembly: packing}

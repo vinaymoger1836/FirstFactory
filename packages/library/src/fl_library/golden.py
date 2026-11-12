@@ -128,8 +128,9 @@ def _time(
     for v in variants:
         unit_s, cycle_s = formula_value(catalog, proc.code, params[v])
         per[v] = TimeStandard(
-            cycle_s=Prov(value=unit_s, unit="s", source="library", confidence=0.4,
-                         ref=f"catalog:{proc.code}"),
+            cycle_s=Prov(
+                value=unit_s, unit="s", source="library", confidence=0.4, ref=f"catalog:{proc.code}"
+            ),
             setup_s=Prov(value=proc.setup_s, unit="s", source="library", confidence=0.4),
             method="catalog_formula",
             distribution=proc.time_model.distribution,
@@ -145,15 +146,11 @@ def _time(
                 availability=m.params.get("availability", 1.0),
             )
     first = per[variants[0]]
-    overrides = {
-        v: t for v, t in per.items() if t.cycle_s.value != first.cycle_s.value
-    }
+    overrides = {v: t for v, t in per.items() if t.cycle_s.value != first.cycle_s.value}
     return first, overrides, batch
 
 
-def _product_case(
-    gid: str, case_dir: Path, catalog: Catalog
-) -> GoldenReport:
+def _product_case(gid: str, case_dir: Path, catalog: Catalog) -> GoldenReport:
     issues: list[Issue] = []
     facts: dict[str, Any] = {}
     try:
@@ -163,8 +160,9 @@ def _product_case(
         fx_route = FxRouting.model_validate(read_yaml(case_dir / "routing.yaml"))
         expected = FxExpected.model_validate(read_yaml(case_dir / "expected.yaml"))
     except (ValidationError, OSError) as exc:
-        return GoldenReport(case=gid, ok=False,
-                            issues=[Issue(code="golden.schema", message=str(exc)[:2000])])
+        return GoldenReport(
+            case=gid, ok=False, issues=[Issue(code="golden.schema", message=str(exc)[:2000])]
+        )
     variants = [v.code for v in template.product.variants]
     if set(params.variants) != set(variants):
         issues.append(Issue(code="golden.params", message="params.yaml variants ≠ template"))
@@ -175,13 +173,26 @@ def _product_case(
         root=fx_bom.root,
         variants=variants,
         items=[
-            Item(part_no=i.part_no, name=i.name, kind=i.kind, commodity_class=i.commodity_class,
-                 make_or_buy=_p(i.make_or_buy), variants=i.variants)
+            Item(
+                part_no=i.part_no,
+                name=i.name,
+                kind=i.kind,
+                commodity_class=i.commodity_class,
+                make_or_buy=_p(i.make_or_buy),
+                variants=i.variants,
+            )
             for i in fx_bom.items
         ],
         mbom=[
-            BomLine(parent=ln.parent, child=ln.child, qty=_p(ln.qty, ln.uom), uom=ln.uom,
-                    variant=ln.variant, level="mbom", subassembly=ln.subassembly)
+            BomLine(
+                parent=ln.parent,
+                child=ln.child,
+                qty=_p(ln.qty, ln.uom),
+                uom=ln.uom,
+                variant=ln.variant,
+                level="mbom",
+                subassembly=ln.subassembly,
+            )
             for ln in fx_bom.mbom
         ],
         commodity_classes=sorted({i.commodity_class for i in fx_bom.items if i.commodity_class}),
@@ -191,12 +202,22 @@ def _product_case(
     for o in fx_route.operations:
         proc = by_code.get(o.process)
         if not isinstance(proc, ProcessEntry):
-            issues.append(Issue(code="golden.process", path=o.op_no,
-                                message=f"'{o.process}' is not a catalog process"))
+            issues.append(
+                Issue(
+                    code="golden.process",
+                    path=o.op_no,
+                    message=f"'{o.process}' is not a catalog process",
+                )
+            )
             continue
         if params.archetype not in proc.applies_to.archetype:
-            issues.append(Issue(code="golden.process", path=o.op_no,
-                                message=f"{o.process} does not apply to {params.archetype}"))
+            issues.append(
+                Issue(
+                    code="golden.process",
+                    path=o.op_no,
+                    message=f"{o.process} does not apply to {params.archetype}",
+                )
+            )
         op_vars = o.variants or variants
         try:
             time, overrides, batch = _time(catalog, proc, params.variants, op_vars)
@@ -214,8 +235,8 @@ def _product_case(
                 consumes=o.consumes,
                 produces=o.produces,
                 time=time,
-                quality_gate=o.quality_gate or (proc.quality_checks[0] if proc.quality_checks
-                                                else None),
+                quality_gate=o.quality_gate
+                or (proc.quality_checks[0] if proc.quality_checks else None),
                 sample_pct=o.sample_pct,
                 batch=batch,
                 variant_times=overrides,
@@ -223,12 +244,15 @@ def _product_case(
             )
         )
     if fx_route.precedence == "sequential":
-        prec = [Precedence(from_op=a.op_no, to_op=b.op_no)
-                for a, b in itertools.pairwise(fx_route.operations)]
+        prec = [
+            Precedence(from_op=a.op_no, to_op=b.op_no)
+            for a, b in itertools.pairwise(fx_route.operations)
+        ]
     else:
         prec = [Precedence(from_op=a, to_op=b) for a, b in fx_route.precedence]
-    routing = Routing(variants=variants, operations=ops, precedence=prec,
-                      catalog_version=catalog.manifest.version)
+    routing = Routing(
+        variants=variants, operations=ops, precedence=prec, catalog_version=catalog.manifest.version
+    )
 
     ctx = ValidationContext(catalog=catalog, bom=bom)
     issues += [i for i in validate_bom(bom, ctx) if i.severity == "error"]
@@ -244,9 +268,13 @@ def _product_case(
             got = unit_s if ci.quantity == "per_unit_s" else cycle_s
         label = ci.process or ci.machine_class or "?"
         if got is None or abs(got - ci.expected) > 1e-9:
-            issues.append(Issue(code="golden.catalog_input", path=label,
-                                message=f"{ci.why}: catalog gives {got}, fixture expects "
-                                        f"{ci.expected}"))
+            issues.append(
+                Issue(
+                    code="golden.catalog_input",
+                    path=label,
+                    message=f"{ci.why}: catalog gives {got}, fixture expects {ci.expected}",
+                )
+            )
         facts[f"{label}:{ci.variant or ci.param}:{ci.quantity}"] = got
     facts["operations"] = len(ops)
     facts["process_codes"] = sorted({o.process.code for o in ops})
@@ -288,13 +316,21 @@ def _qap_brute(flow: Sequence[Sequence[float]], dist: Sequence[Sequence[float]])
 
 def _aux_cases(golden: Path) -> list[GoldenReport]:
     reports: list[GoldenReport] = []
-    for gid, rel in (("G3", "utilities/g3.yaml"), ("G4", "finance/g4.yaml"),
-                     ("G7", "benchmarks/queueing/g7.yaml")):
+    for gid, rel in (
+        ("G3", "utilities/g3.yaml"),
+        ("G4", "finance/g4.yaml"),
+        ("G7", "benchmarks/queueing/g7.yaml"),
+    ):
         path = golden / rel
         ok = path.is_file() and isinstance(read_yaml(path), dict)
-        reports.append(GoldenReport(case=gid, ok=ok, facts={"file": rel},
-                                    issues=[] if ok else [Issue(code="golden.missing",
-                                                                message=rel)]))
+        reports.append(
+            GoldenReport(
+                case=gid,
+                ok=ok,
+                facts={"file": rel},
+                issues=[] if ok else [Issue(code="golden.missing", message=rel)],
+            )
+        )
     # G5: SALBP instances intact (n and Σt match Scholl's table).
     issues: list[Issue] = []
     salbp_dir = golden / "benchmarks" / "salbp"
@@ -307,17 +343,25 @@ def _aux_cases(golden: Path) -> list[GoldenReport]:
             issues.append(Issue(code="golden.salbp", message=f"{name}: n/Σt differ from table"))
         if any(not (1 <= a <= inst.n and 1 <= b <= inst.n) for a, b in arcs):
             issues.append(Issue(code="golden.salbp", message=f"{name}: arc out of range"))
-        facts[name] = {"n": len(times), "t_sum": sum(times), "arcs": len(arcs),
-                       "optima": inst.optima}
+        facts[name] = {
+            "n": len(times),
+            "t_sum": sum(times),
+            "arcs": len(arcs),
+            "optima": inst.optima,
+        }
     reports.append(GoldenReport(case="G5", ok=not issues, issues=issues, facts=facts))
     # G6: stored optimum equals brute force.
     qap = read_yaml(golden / "benchmarks" / "qap" / "g6.yaml")
     best = _qap_brute(qap["flow"], qap["distance"])
     ok = abs(best - float(qap["expected"]["optimal_cost"])) < 1e-9
-    reports.append(GoldenReport(
-        case="G6", ok=ok, facts={"brute_force_cost": best},
-        issues=[] if ok else [Issue(code="golden.qap", message=f"brute force {best} ≠ stored")],
-    ))
+    reports.append(
+        GoldenReport(
+            case="G6",
+            ok=ok,
+            facts={"brute_force_cost": best},
+            issues=[] if ok else [Issue(code="golden.qap", message=f"brute force {best} ≠ stored")],
+        )
+    )
     return reports
 
 

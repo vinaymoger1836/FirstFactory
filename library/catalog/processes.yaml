@@ -198,7 +198,7 @@ entries:
     price_inr: *fixture_m
     provenance: *doc
 
-  - code: capacity_test
+  - code: capacity_cycle_test
     name: Capacity test (charge-discharge cycle)
     description: Full charge and discharge on a battery test channel to verify rated capacity; runs unattended in racks.
     aliases: [capacity verification, charge discharge test, mAh test]
@@ -370,7 +370,7 @@ entries:
     aliases: [bearing fitting, press fit]
     applies_to: {archetype: [ceiling_fan, generic_mechanical], commodity: [bearings]}
     task_type: manual
-    machine_class: bearing_press
+    machine_class: bearing_press_pneumatic
     skill: semi_skilled
     time_model: {formula: "n_bearings * 8 + 5", distribution: triangular, spread_pct: 15}
     fpy: 0.997
@@ -436,7 +436,7 @@ entries:
     zone_kind: assembly_line
     provenance: *est
 
-  - code: run_in_test
+  - code: fan_run_in
     name: Fan run-in test (100%)
     description: Run each fan at rated speed for a fixed period; watch for noise, vibration, current drift.
     aliases: [burn in, run in, endurance short test]

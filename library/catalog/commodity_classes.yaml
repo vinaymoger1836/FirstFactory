@@ -1,0 +1,310 @@
+# Commodity classes (docs/10 §1.1): taxonomy for BoM lines, vendor search, IQC and storage.
+# Lead times are days from PO to receipt (imported cells long, local mouldings short).
+kind: commodity_class
+
+x-est: &est
+  source: catalog-estimate
+  as_of: "2026-11"
+  confidence: 0.4
+  note: Engineering estimate; vendor research (docs/09 §2) overrides lead times and prices.
+
+entries:
+  - code: li_ion_cell
+    name: Lithium-ion cells (cylindrical / pouch)
+    aliases: ["18650", "21700", battery cell, li-ion cell]
+    uom: unit
+    storage_class: li_ion_hazard
+    hazards: [li_ion]
+    lead_time_days: {low: 30, base: 60, high: 90}
+    pack_qty: 200
+    cartons_per_pallet: 20
+    iqc_checks: [cell_ocv_ir, visual_inspection]
+    default_aql: 0.65
+    unit_price_inr: {low: 150, base: 250, high: 400, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: pcba
+    name: Printed circuit board assemblies
+    aliases: [PCBA, BMS board, controller board, electronic assembly]
+    uom: unit
+    storage_class: esd
+    lead_time_days: {low: 15, base: 30, high: 60}
+    pack_qty: 100
+    cartons_per_pallet: 24
+    iqc_checks: [visual_inspection]
+    default_aql: 0.65
+    unit_price_inr: {low: 80, base: 180, high: 400, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: electronic_components
+    name: Electronic components (SMT/THT)
+    aliases: [components, ICs, passives]
+    uom: unit
+    storage_class: esd
+    lead_time_days: {low: 7, base: 30, high: 90}
+    pack_qty: 3000
+    provenance: *est
+
+  - code: bare_pcb
+    name: Bare printed circuit boards
+    aliases: [PCB, bare board]
+    uom: unit
+    storage_class: esd
+    lead_time_days: {low: 10, base: 20, high: 40}
+    pack_qty: 200
+    provenance: *est
+
+  - code: solder_paste
+    name: Solder paste
+    uom: g
+    storage_class: general_rack
+    lead_time_days: {low: 5, base: 10, high: 20}
+    pack_qty: 500
+    provenance: *est
+
+  - code: molded_enclosure
+    name: Moulded plastic enclosures
+    aliases: [housing, enclosure, plastic case, PC/ABS housing]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 7, base: 15, high: 30}
+    pack_qty: 100
+    cartons_per_pallet: 30
+    iqc_checks: [visual_inspection, dimensional_check]
+    default_aql: 1.0
+    unit_price_inr: {low: 15, base: 35, high: 80, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: plastic_resin
+    name: Thermoplastic resin (PC, ABS, PC/ABS)
+    uom: kg
+    storage_class: bulk_floor
+    lead_time_days: {low: 7, base: 15, high: 30}
+    pack_qty: 25
+    provenance: *est
+
+  - code: light_pipe_button
+    name: Light pipes and buttons
+    aliases: [light guide, push button, key cap]
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 7, base: 15, high: 30}
+    pack_qty: 1000
+    iqc_checks: [visual_inspection]
+    default_aql: 1.5
+    provenance: *est
+
+  - code: nickel_strip
+    name: Nickel strip for cell interconnects
+    aliases: [pure nickel strip, nickel plated steel strip]
+    uom: m
+    storage_class: small_parts_bin
+    lead_time_days: {low: 7, base: 20, high: 45}
+    pack_qty: 100
+    iqc_checks: [dimensional_check]
+    default_aql: 1.0
+    provenance: *est
+
+  - code: insulation_paper
+    name: Insulation paper and slot liners (fish paper, barley paper)
+    aliases: [fish paper, slot liner, barley paper]
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 7, base: 15, high: 30}
+    pack_qty: 1000
+    provenance: *est
+
+  - code: insulation_tape
+    name: Insulation tape (Kapton/polyimide, PVC)
+    aliases: [kapton tape, polyimide tape]
+    uom: m
+    storage_class: small_parts_bin
+    lead_time_days: {low: 5, base: 10, high: 20}
+    pack_qty: 33
+    provenance: *est
+
+  - code: foam_pad
+    name: Foam pads and adhesive spacers
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 5, base: 10, high: 20}
+    pack_qty: 1000
+    provenance: *est
+
+  - code: fasteners
+    name: Fasteners (screws, washers, split pins)
+    aliases: [screws, washers, split pin, nuts, bolts]
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 3, base: 7, high: 15}
+    pack_qty: 5000
+    iqc_checks: [dimensional_check]
+    default_aql: 2.5
+    unit_price_inr: {low: 0.3, base: 0.8, high: 2.0, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: labels
+    name: Labels (rating, QR, BEE)
+    aliases: [rating plate, sticker, nameplate]
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 3, base: 7, high: 15}
+    pack_qty: 2000
+    provenance: *est
+
+  - code: user_manual
+    name: User manuals and leaflets
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 5, base: 10, high: 20}
+    pack_qty: 500
+    provenance: *est
+
+  - code: packaging_carton
+    name: Packaging (unit boxes, shipper cartons, sleeves)
+    aliases: [carton, box, corrugated, mono carton]
+    uom: unit
+    storage_class: bulk_floor
+    lead_time_days: {low: 5, base: 10, high: 20}
+    pack_qty: 100
+    cartons_per_pallet: 10
+    iqc_checks: [visual_inspection, dimensional_check]
+    default_aql: 2.5
+    provenance: *est
+
+  - code: consumable_solder
+    name: Solder wire
+    aliases: [solder, lead-free solder wire]
+    uom: g
+    storage_class: general_rack
+    lead_time_days: {low: 3, base: 7, high: 15}
+    pack_qty: 500
+    provenance: *est
+
+  - code: flux
+    name: Soldering flux
+    uom: ml
+    storage_class: flammable
+    hazards: [flammable]
+    lead_time_days: {low: 3, base: 7, high: 15}
+    pack_qty: 1000
+    provenance: *est
+
+  - code: adhesive
+    name: Adhesives and potting compounds
+    uom: g
+    storage_class: flammable
+    hazards: [flammable]
+    lead_time_days: {low: 5, base: 10, high: 20}
+    pack_qty: 1000
+    provenance: *est
+
+  - code: copper_winding_wire
+    name: Enamelled copper winding wire
+    aliases: [magnet wire, enamelled wire, copper wire]
+    uom: kg
+    storage_class: general_rack
+    lead_time_days: {low: 7, base: 15, high: 30}
+    pack_qty: 25
+    iqc_checks: [dimensional_check]
+    default_aql: 1.0
+    unit_price_inr: {low: 900, base: 1100, high: 1400, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: stator_lamination
+    name: Stator lamination stacks (bought)
+    aliases: [stator core, lamination, CRGO stack]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 15, base: 30, high: 45}
+    pack_qty: 50
+    iqc_checks: [dimensional_check, visual_inspection]
+    default_aql: 1.0
+    provenance: *est
+
+  - code: varnish_resin
+    name: Insulating varnish and thinner
+    aliases: [varnish, impregnating resin]
+    uom: l
+    storage_class: flammable
+    hazards: [flammable]
+    lead_time_days: {low: 5, base: 10, high: 20}
+    pack_qty: 20
+    provenance: *est
+
+  - code: die_cast_rotor
+    name: Die-cast rotor / motor shell with magnets (bought)
+    aliases: [rotor, outer rotor, motor shell, magnet rotor]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 20, base: 35, high: 60}
+    pack_qty: 20
+    cartons_per_pallet: 12
+    iqc_checks: [dimensional_check, visual_inspection]
+    default_aql: 1.0
+    provenance: *est
+
+  - code: bearings
+    name: Ball bearings
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 7, base: 20, high: 45}
+    pack_qty: 500
+    iqc_checks: [dimensional_check]
+    default_aql: 0.65
+    provenance: *est
+
+  - code: shaft
+    name: Motor shafts
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 10, base: 20, high: 30}
+    pack_qty: 200
+    iqc_checks: [dimensional_check]
+    default_aql: 1.0
+    provenance: *est
+
+  - code: fan_blade
+    name: Fan blades (bought)
+    aliases: [blade, aluminium blade, ABS blade]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 10, base: 20, high: 40}
+    pack_qty: 60
+    cartons_per_pallet: 8
+    iqc_checks: [visual_inspection, dimensional_check]
+    default_aql: 1.5
+    provenance: *est
+
+  - code: wiring_harness
+    name: Wiring harnesses
+    aliases: [harness, cable assembly]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 7, base: 15, high: 30}
+    pack_qty: 200
+    iqc_checks: [visual_inspection]
+    default_aql: 1.0
+    provenance: *est
+
+  - code: sheet_metal_parts
+    name: Sheet-metal and tube parts (canopy, down-rod, brackets)
+    aliases: [canopy, downrod, shackle, bracket]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 10, base: 20, high: 30}
+    pack_qty: 50
+    iqc_checks: [visual_inspection, dimensional_check]
+    default_aql: 1.5
+    provenance: *est
+
+  - code: remote_control
+    name: Remote controls and receivers (bought)
+    aliases: [IR remote, RF remote]
+    uom: unit
+    storage_class: esd
+    lead_time_days: {low: 15, base: 30, high: 45}
+    pack_qty: 100
+    iqc_checks: [visual_inspection]
+    default_aql: 1.0
+    provenance: *est

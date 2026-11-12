@@ -1,0 +1,55 @@
+# Water demand and rainwater harvesting.
+
+values:
+  - key: water.domestic_lpcd_factory_with_bath
+    group: water
+    title: Domestic water per person per day, factories with bathrooms
+    value: 45
+    unit: l/person/day
+    effective_from: 1993-01-01
+    source_kind: primary
+    source_url: https://law.resource.org/pub/in/bis/S03/is.1172.1993.pdf
+    source_title: "IS 1172:1993 Table 1 (p.7): factories where bathrooms are required, 45 litres per head per day"
+    retrieved_at: 2026-11-12
+    confidence: 0.85
+    verify: false
+    note: NBC 2016 Part 9 is reported to carry the same 45 l (30 + 15 flushing). Exact publication date set to 1993-01-01.
+
+  - key: water.domestic_lpcd_factory_without_bath
+    group: water
+    title: Domestic water per person per day, factories without bathrooms
+    value: 30
+    unit: l/person/day
+    effective_from: 1993-01-01
+    source_kind: primary
+    source_url: https://law.resource.org/pub/in/bis/S03/is.1172.1993.pdf
+    source_title: "IS 1172:1993 Table 1 (p.7): factories where no bathrooms are required, 30 litres per head per day"
+    retrieved_at: 2026-11-12
+    confidence: 0.85
+    verify: false
+
+  - key: water.rwh_mandatory
+    group: water
+    title: Rainwater harvesting mandatory for industrial building structures
+    value: true
+    effective_from: 2025-02-01
+    source_kind: primary
+    source_url: https://investkarnataka.co.in/wp-content/uploads/2025/02/IndustrialPolicy2025_PrintPagesSingle_.pdf
+    source_title: "Karnataka Industrial Policy 2025-30, mandatory activities table (p.42): Rain Water Harvesting mandatory for building structures, small and above investments"
+    retrieved_at: 2026-11-12
+    confidence: 0.8
+    verify: true
+    note: Policy document read directly; effective date of the policy set to its publication month (Feb 2025), to confirm. Sizing rule not stated (see water.rwh_storage_l_per_m2_roof).
+
+  - key: water.rwh_storage_l_per_m2_roof
+    group: water
+    title: Rainwater storage required per m² of roof area
+    value: null
+    unit: l/m**2
+    effective_from: 2026-11-12
+    source_kind: none
+    source_title: Not found in P1 research
+    retrieved_at: 2026-11-12
+    confidence: 0
+    verify: true
+    note: Bengaluru (BWSSB) rules apply to plots inside its jurisdiction; KIADB areas may differ.

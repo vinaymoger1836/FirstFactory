@@ -1,0 +1,27 @@
+# Karnataka regional data pack (docs/10 §2, ADR-010).
+# Every value has effective dates, a source, a retrieval date, a confidence and a verify flag.
+# `verify: true` values go to the report's assumptions register automatically.
+# Bump `version` for any content change; the loader refuses to reload a version with
+# different content. Re-check quarterly (labour rules and tariffs change mid-cycle).
+state: KA
+version: "2026.11.1"
+as_of: 2026-11-12
+next_review: 2027-02-12
+description: >
+  Karnataka pack compiled in P1 (2026-11-12). Power tariffs are taken from the KERC Combined
+  Tariff Order 2025 (primary text) with the March 2026 review revision from news reports.
+  Labour values follow the four Labour Codes (in force 21 Nov 2025) and the OSH (Central)
+  Rules 2026; Karnataka's own rules under the OSH Code were not confirmed, so labour values
+  are marked verify. Unknown values are stored as null with verify: true rather than guessed.
+files:
+  - labour.yaml
+  - welfare.yaml
+  - wages.yaml
+  - statutory.yaml
+  - power.yaml
+  - building.yaml
+  - fire.yaml
+  - water.yaml
+  - climate.yaml
+  - compliance.yaml
+  - land.yaml

@@ -1,0 +1,57 @@
+# G1 MBOM (make/buy per ADR-017: buy PCBA and cells; make cell pack and core).
+root: PB
+items:
+  - {part_no: PB, name: Power bank, kind: product, make_or_buy: make}
+  - {part_no: SA-CORE, name: Core assembly (cell pack + PCBA), kind: assembly, make_or_buy: make}
+  - {part_no: SA-CELLPACK, name: Cell pack, kind: assembly, make_or_buy: make}
+  - {part_no: CELL-21700, name: Li-ion cell 21700 5000 mAh, kind: part, commodity_class: li_ion_cell, make_or_buy: buy}
+  - {part_no: NI-STRIP, name: Nickel strip 0.15 mm, kind: consumable, commodity_class: nickel_strip, make_or_buy: buy}
+  - {part_no: INS-FISHPAPER, name: Fish paper ring, kind: part, commodity_class: insulation_paper, make_or_buy: buy}
+  - {part_no: TAPE-KAPTON, name: Kapton tape, kind: consumable, commodity_class: insulation_tape, make_or_buy: buy}
+  - {part_no: FOAM-PAD, name: Foam pad, kind: part, commodity_class: foam_pad, make_or_buy: buy}
+  - {part_no: PCBA-BMS, name: BMS + charge PCBA (USB-C/USB-A), kind: part, commodity_class: pcba, make_or_buy: buy}
+  - {part_no: SOLDER-WIRE, name: Solder wire, kind: consumable, commodity_class: consumable_solder, make_or_buy: buy}
+  - {part_no: FLUX, name: Flux, kind: consumable, commodity_class: flux, make_or_buy: buy}
+  - {part_no: ENC-TOP-10K, name: Enclosure top 10K, kind: part, commodity_class: molded_enclosure, make_or_buy: buy, variants: [PB10K]}
+  - {part_no: ENC-BOT-10K, name: Enclosure bottom 10K, kind: part, commodity_class: molded_enclosure, make_or_buy: buy, variants: [PB10K]}
+  - {part_no: ENC-TOP-20K, name: Enclosure top 20K, kind: part, commodity_class: molded_enclosure, make_or_buy: buy, variants: [PB20K]}
+  - {part_no: ENC-BOT-20K, name: Enclosure bottom 20K, kind: part, commodity_class: molded_enclosure, make_or_buy: buy, variants: [PB20K]}
+  - {part_no: LIGHT-PIPE, name: LED light pipe, kind: part, commodity_class: light_pipe_button, make_or_buy: buy}
+  - {part_no: BUTTON, name: Button, kind: part, commodity_class: light_pipe_button, make_or_buy: buy}
+  - {part_no: ADHESIVE, name: Adhesive, kind: consumable, commodity_class: adhesive, make_or_buy: buy}
+  - {part_no: SCREW-M2, name: Screw M2 × 6, kind: part, commodity_class: fasteners, make_or_buy: buy}
+  - {part_no: LBL-RATING, name: Rating label, kind: part, commodity_class: labels, make_or_buy: buy}
+  - {part_no: LBL-QR, name: QR label, kind: part, commodity_class: labels, make_or_buy: buy}
+  - {part_no: MANUAL, name: User manual, kind: packaging, commodity_class: user_manual, make_or_buy: buy}
+  - {part_no: BOX-UNIT, name: Retail box, kind: packaging, commodity_class: packaging_carton, make_or_buy: buy}
+  - {part_no: CARTON-SHIPPER, name: Shipper carton, kind: packaging, commodity_class: packaging_carton, make_or_buy: buy}
+mbom:
+  - {parent: PB, child: SA-CORE, qty: 1, subassembly: core}
+  - {parent: SA-CORE, child: SA-CELLPACK, qty: 1, subassembly: cell pack}
+  - {parent: SA-CELLPACK, child: CELL-21700, qty: 2, variant: PB10K, subassembly: cell pack}
+  - {parent: SA-CELLPACK, child: CELL-21700, qty: 4, variant: PB20K, subassembly: cell pack}
+  - {parent: SA-CELLPACK, child: NI-STRIP, qty: 0.12, uom: m, variant: PB10K, subassembly: cell pack}
+  - {parent: SA-CELLPACK, child: NI-STRIP, qty: 0.24, uom: m, variant: PB20K, subassembly: cell pack}
+  - {parent: SA-CELLPACK, child: INS-FISHPAPER, qty: 2, variant: PB10K, subassembly: cell pack}
+  - {parent: SA-CELLPACK, child: INS-FISHPAPER, qty: 4, variant: PB20K, subassembly: cell pack}
+  - {parent: SA-CELLPACK, child: TAPE-KAPTON, qty: 0.1, uom: m, variant: PB10K, subassembly: cell pack}
+  - {parent: SA-CELLPACK, child: TAPE-KAPTON, qty: 0.2, uom: m, variant: PB20K, subassembly: cell pack}
+  - {parent: SA-CELLPACK, child: FOAM-PAD, qty: 2, subassembly: cell pack}
+  - {parent: SA-CORE, child: PCBA-BMS, qty: 1, subassembly: core}
+  - {parent: SA-CORE, child: SOLDER-WIRE, qty: 0.6, uom: g, subassembly: core}
+  - {parent: SA-CORE, child: FLUX, qty: 0.08, uom: ml, subassembly: core}
+  - {parent: PB, child: ENC-TOP-10K, qty: 1, variant: PB10K, subassembly: final assembly}
+  - {parent: PB, child: ENC-BOT-10K, qty: 1, variant: PB10K, subassembly: final assembly}
+  - {parent: PB, child: ENC-TOP-20K, qty: 1, variant: PB20K, subassembly: final assembly}
+  - {parent: PB, child: ENC-BOT-20K, qty: 1, variant: PB20K, subassembly: final assembly}
+  - {parent: PB, child: LIGHT-PIPE, qty: 1, subassembly: final assembly}
+  - {parent: PB, child: BUTTON, qty: 1, subassembly: final assembly}
+  - {parent: PB, child: ADHESIVE, qty: 0.2, uom: g, subassembly: final assembly}
+  - {parent: PB, child: SCREW-M2, qty: 4, variant: PB10K, subassembly: final assembly}
+  - {parent: PB, child: SCREW-M2, qty: 6, variant: PB20K, subassembly: final assembly}
+  - {parent: PB, child: LBL-RATING, qty: 1, subassembly: final assembly}
+  - {parent: PB, child: LBL-QR, qty: 1, subassembly: final assembly}
+  - {parent: PB, child: MANUAL, qty: 1, subassembly: packing}
+  - {parent: PB, child: BOX-UNIT, qty: 1, subassembly: packing}
+  - {parent: PB, child: CARTON-SHIPPER, qty: 0.05, variant: PB10K, subassembly: packing}
+  - {parent: PB, child: CARTON-SHIPPER, qty: 0.1, variant: PB20K, subassembly: packing}

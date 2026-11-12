@@ -1,0 +1,304 @@
+# Zone kinds (docs/10 §1.1, docs/07). Lighting W/m² and lux are design defaults; keep-apart
+# distances are layout rules of thumb until the fire/building pack values are confirmed.
+kind: zone_kind
+
+x-est: &est
+  source: catalog-estimate
+  as_of: "2026-11"
+  confidence: 0.4
+  note: Engineering default for the POC seed; confirm against NBC 2016 / IS 3646 and the fire NOC.
+
+entries:
+  - code: assembly_line
+    name: Assembly line area
+    category: production
+    lighting_w_m2: 8
+    lux: 500
+    default_height_m: 6
+    min_aspect: 1.5
+    max_aspect: 8
+    floor: epoxy
+    hvac: evaporative
+    fitout_inr_per_m2: {low: 800, base: 1500, high: 3000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: esd_assembly
+    name: ESD-protected assembly area
+    description: ESD flooring, grounding, humidity control; for cells, PCBAs and battery packs.
+    aliases: [EPA, ESD area, clean assembly]
+    category: production
+    lighting_w_m2: 10
+    lux: 750
+    default_height_m: 4.5
+    min_aspect: 1.2
+    max_aspect: 6
+    floor: esd
+    hvac: cooling
+    rules:
+      - {kind: esd}
+      - {kind: keep_apart, target_kind: canteen, distance_m: 10}
+    fitout_inr_per_m2: {low: 2500, base: 4500, high: 8000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: test_area
+    name: Test area (EOL test, run-in, battery racks)
+    description: Test positions and racks; battery test racks need detection, suppression and heat removal.
+    category: quality
+    lighting_w_m2: 8
+    lux: 500
+    default_height_m: 4.5
+    min_aspect: 1
+    max_aspect: 4
+    floor: esd
+    hvac: cooling
+    hazards: [li_ion, high_voltage]
+    rules:
+      - {kind: hazard_li_ion}
+      - {kind: keep_apart, target_kind: canteen, distance_m: 15}
+    fitout_inr_per_m2: {low: 2500, base: 4000, high: 7000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: packing_area
+    name: Packing and labelling area
+    category: production
+    lighting_w_m2: 7
+    lux: 300
+    default_height_m: 6
+    min_aspect: 1
+    max_aspect: 4
+    floor: epoxy
+    hvac: evaporative
+    rules:
+      - {kind: adjacent, target_kind: fg_warehouse}
+    provenance: *est
+
+  - code: varnish_area
+    name: Varnish dip and curing area
+    description: Enclosed, ventilated area for dip tank and curing ovens.
+    category: production
+    lighting_w_m2: 7
+    lux: 300
+    default_height_m: 5
+    min_aspect: 1
+    max_aspect: 3
+    floor: chemical_resistant
+    hvac: ventilation
+    hazards: [flammable, fumes, hot_surface]
+    rules:
+      - {kind: ventilated}
+      - {kind: on_boundary}
+      - {kind: keep_apart, target_kind: office, distance_m: 10}
+    provenance: *est
+
+  - code: rework_area
+    name: Rework and MRB bench area
+    category: quality
+    lighting_w_m2: 10
+    lux: 750
+    default_height_m: 4.5
+    min_aspect: 1
+    max_aspect: 3
+    floor: esd
+    hvac: cooling
+    provenance: *est
+
+  - code: iqc_area
+    name: Incoming quality inspection area
+    category: quality
+    lighting_w_m2: 10
+    lux: 750
+    default_height_m: 4.5
+    min_aspect: 1
+    max_aspect: 3
+    floor: esd
+    hvac: cooling
+    rules:
+      - {kind: adjacent, target_kind: dock}
+    provenance: *est
+
+  - code: quarantine_mrb
+    name: Quarantine / MRB hold area
+    description: Caged, labelled area for IQC holds and rejects.
+    category: quality
+    lighting_w_m2: 6
+    lux: 300
+    default_height_m: 6
+    min_aspect: 1
+    max_aspect: 3
+    floor: concrete
+    hvac: ventilation
+    provenance: *est
+
+  - code: lab
+    name: Quality and reliability lab
+    category: quality
+    lighting_w_m2: 10
+    lux: 750
+    default_height_m: 3.5
+    min_aspect: 1
+    max_aspect: 2.5
+    floor: tile
+    hvac: ac
+    area_per_person_m2: 10
+    provenance: *est
+
+  - code: li_ion_store
+    name: Lithium-ion hazardous store
+    description: Segregated, fire-rated store for cells and finished power banks; detection and suppression; quantity limit per compartment.
+    aliases: [battery store, hazardous store]
+    category: storage
+    lighting_w_m2: 5
+    lux: 200
+    default_height_m: 4
+    min_aspect: 1
+    max_aspect: 3
+    floor: concrete
+    hvac: cooling
+    hazards: [li_ion]
+    rules:
+      - {kind: hazard_li_ion}
+      - {kind: on_boundary}
+      - {kind: keep_apart, target_kind: canteen, distance_m: 15}
+      - {kind: keep_apart, target_kind: office, distance_m: 10}
+    fitout_inr_per_m2: {low: 6000, base: 10000, high: 18000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: flammables_store
+    name: Flammables store (varnish, solvents)
+    category: storage
+    lighting_w_m2: 5
+    lux: 200
+    default_height_m: 4
+    min_aspect: 1
+    max_aspect: 2
+    floor: chemical_resistant
+    hvac: ventilation
+    hazards: [flammable]
+    rules:
+      - {kind: ventilated}
+      - {kind: on_boundary}
+      - {kind: keep_apart, target_kind: canteen, distance_m: 15}
+    provenance: *est
+
+  - code: rack_storage
+    name: Raw material racking
+    category: storage
+    lighting_w_m2: 5
+    lux: 200
+    default_height_m: 7
+    min_aspect: 1
+    max_aspect: 4
+    floor: concrete
+    hvac: ventilation
+    rules:
+      - {kind: near_dock}
+    provenance: *est
+
+  - code: fg_warehouse
+    name: Finished goods warehouse
+    category: storage
+    lighting_w_m2: 5
+    lux: 200
+    default_height_m: 7
+    min_aspect: 1
+    max_aspect: 4
+    floor: concrete
+    hvac: ventilation
+    rules:
+      - {kind: near_dock}
+    provenance: *est
+
+  - code: dock
+    name: Receiving / dispatch dock
+    category: logistics
+    lighting_w_m2: 5
+    lux: 200
+    default_height_m: 6
+    min_aspect: 1
+    max_aspect: 6
+    floor: concrete
+    hvac: none
+    rules:
+      - {kind: on_boundary}
+    provenance: *est
+
+  - code: office
+    name: Office and planning
+    category: office
+    lighting_w_m2: 8
+    lux: 500
+    default_height_m: 3.2
+    min_aspect: 1
+    max_aspect: 3
+    floor: tile
+    hvac: ac
+    area_per_person_m2: 8
+    fitout_inr_per_m2: {low: 8000, base: 15000, high: 30000, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: canteen
+    name: Canteen
+    category: welfare
+    lighting_w_m2: 7
+    lux: 300
+    default_height_m: 3.5
+    min_aspect: 1
+    max_aspect: 3
+    floor: tile
+    hvac: ventilation
+    area_per_person_m2: 1.2
+    provenance: *est
+
+  - code: washrooms
+    name: Washrooms and toilets
+    category: welfare
+    lighting_w_m2: 6
+    lux: 200
+    default_height_m: 3
+    min_aspect: 1
+    max_aspect: 3
+    floor: tile
+    hvac: ventilation
+    provenance: *est
+
+  - code: first_aid_room
+    name: First-aid / ambulance room
+    category: welfare
+    lighting_w_m2: 8
+    lux: 500
+    default_height_m: 3
+    min_aspect: 1
+    max_aspect: 2
+    floor: tile
+    hvac: ac
+    provenance: *est
+
+  - code: creche
+    name: Creche
+    category: welfare
+    lighting_w_m2: 7
+    lux: 300
+    default_height_m: 3
+    min_aspect: 1
+    max_aspect: 2
+    floor: tile
+    hvac: ac
+    rules:
+      - {kind: keep_apart, target_kind: li_ion_store, distance_m: 30}
+    provenance: *est
+
+  - code: utility_yard
+    name: Utility yard (transformer, DG, compressor, tanks)
+    category: utility
+    lighting_w_m2: 3
+    lux: 100
+    default_height_m: 4
+    min_aspect: 1
+    max_aspect: 4
+    floor: paved
+    hvac: none
+    hazards: [high_voltage, noise]
+    rules:
+      - {kind: on_boundary}
+      - {kind: keep_apart, target_kind: office, distance_m: 10}
+    provenance: *est

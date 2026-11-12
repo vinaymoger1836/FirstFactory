@@ -1,0 +1,55 @@
+# MTM-style manual elements (docs/05 §1.2 method 3). Times in seconds per occurrence for a
+# trained operator at normal pace, rounded. These are catalog estimates in the spirit of
+# predetermined-time systems, NOT values copied from licensed MTM-1/MTM-UAS tables; replace
+# them with a licensed table or time studies before relying on them (tmu left empty).
+kind: mtm_element
+
+x-est: &est
+  source: catalog-estimate
+  as_of: "2026-11"
+  confidence: 0.35
+  note: Estimated element time; not taken from licensed MTM tables.
+
+entries:
+  - {code: reach_short, name: Reach up to 15 cm, category: reach_move, time_s: 0.35, provenance: *est}
+  - {code: reach_medium, name: Reach 15-45 cm, category: reach_move, time_s: 0.55, provenance: *est}
+  - {code: reach_long, name: Reach 45-80 cm, category: reach_move, time_s: 0.8, provenance: *est}
+  - {code: move_short, name: Move object up to 15 cm, category: reach_move, time_s: 0.4, provenance: *est}
+  - {code: move_medium, name: Move object 15-45 cm, category: reach_move, time_s: 0.65, provenance: *est}
+  - {code: move_long, name: Move object 45-80 cm, category: reach_move, time_s: 0.95, provenance: *est}
+  - {code: grasp_simple, name: Grasp easy-to-handle object, category: grasp_release, time_s: 0.1, provenance: *est}
+  - {code: grasp_small_part, name: Grasp small part from a jumbled bin, category: grasp_release, time_s: 0.45, provenance: *est}
+  - {code: grasp_flat_part, name: Grasp flat part from a surface, category: grasp_release, time_s: 0.35, provenance: *est}
+  - {code: regrasp, name: Regrasp in hand, category: grasp_release, time_s: 0.2, provenance: *est}
+  - {code: release, name: Release object, category: grasp_release, time_s: 0.05, provenance: *est}
+  - {code: place_loose, name: Place loosely (no alignment), category: position, time_s: 0.3, provenance: *est}
+  - {code: place_aligned, name: Place with alignment to a stop, category: position, time_s: 0.6, provenance: *est}
+  - {code: insert_snug, name: Insert with snug fit, category: position, time_s: 1.1, provenance: *est}
+  - {code: insert_press, name: Insert and press home (snap fit), category: position, time_s: 1.5, provenance: *est}
+  - {code: position_in_jig, name: Position part in jig or nest, category: position, time_s: 1.2, provenance: *est}
+  - {code: connect_connector, name: Mate a wire-to-board connector, category: position, time_s: 2.0, provenance: *est}
+  - {code: route_cable, name: Route a cable through a guide, category: position, time_s: 3.0, provenance: *est}
+  - {code: screw_start, name: Start a screw by hand, category: tool, time_s: 1.5, provenance: *est}
+  - {code: get_tool, name: Get power tool from balancer, category: tool, time_s: 0.8, provenance: *est}
+  - {code: aside_tool, name: Return tool to balancer, category: tool, time_s: 0.6, provenance: *est}
+  - {code: drive_screw_power, name: Drive screw with electric screwdriver (run-down), category: tool, time_s: 2.0, provenance: *est}
+  - {code: clamp_toggle, name: Close a toggle clamp, category: tool, time_s: 0.7, provenance: *est}
+  - {code: unclamp, name: Open a toggle clamp, category: tool, time_s: 0.5, provenance: *est}
+  - {code: press_button, name: Press a start button (two-hand), category: tool, time_s: 0.5, provenance: *est}
+  - {code: apply_pressure, name: Apply pressure to seat a part, category: position, time_s: 0.8, provenance: *est}
+  - {code: peel_liner, name: Peel adhesive liner, category: pack, time_s: 1.5, provenance: *est}
+  - {code: apply_tape, name: Apply a strip of tape, category: pack, time_s: 2.5, provenance: *est}
+  - {code: label_pick_apply, name: Pick and apply a printed label, category: pack, time_s: 3.0, provenance: *est}
+  - {code: scan_barcode, name: Scan a barcode or QR with a hand scanner, category: eye, time_s: 1.2, provenance: *est}
+  - {code: inspect_visual, name: Visual check of one feature, category: eye, time_s: 0.6, provenance: *est}
+  - {code: read_display, name: Read a value on a display, category: eye, time_s: 0.8, provenance: *est}
+  - {code: eye_travel, name: Eye travel and focus, category: eye, time_s: 0.3, provenance: *est}
+  - {code: write_mark, name: Write a mark or tick, category: eye, time_s: 1.5, provenance: *est}
+  - {code: fold_carton, name: Erect and fold a small carton, category: pack, time_s: 6.0, provenance: *est}
+  - {code: close_flaps, name: Close carton flaps, category: pack, time_s: 2.5, provenance: *est}
+  - {code: place_in_bag, name: Place item in a poly bag, category: pack, time_s: 2.0, provenance: *est}
+  - {code: seal_bag, name: Seal a poly bag, category: pack, time_s: 1.5, provenance: *est}
+  - {code: walk_step, name: Walk one step (0.8 m), category: body, time_s: 0.6, provenance: *est}
+  - {code: body_bend_arise, name: Bend and arise, category: body, time_s: 1.8, provenance: *est}
+  - {code: turn_body, name: Turn body 90 degrees, category: body, time_s: 0.6, provenance: *est}
+  - {code: sit_stand, name: Sit down or stand up, category: body, time_s: 1.2, provenance: *est}

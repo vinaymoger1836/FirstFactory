@@ -1,0 +1,37 @@
+# G2 routing in catalog process codes only (docs/05 §1.4):
+# stator winding → winding inspection (resistance, Hi-pot) → varnish dip + oven cure (batch) →
+# motor assembly (stator + shaft + bearings + rotor shell) → controller PCBA fit + harness →
+# motor test → final assembly → Hi-pot (100%) → run-in (100%) → functional test →
+# labelling (incl. BEE label) → packing (blades packed separately).
+operations:
+  - {op_no: OP-010, process: stator_winding, item: SA-STATOR, consumes: [STATOR-LAM, CU-WIRE, SLOT-LINER], produces: SA-STATOR}
+  - {op_no: OP-020, process: winding_resistance_test, item: SA-STATOR, produces: SA-STATOR}
+  - {op_no: OP-030, process: hipot_test, item: SA-STATOR, produces: SA-STATOR}
+  - {op_no: OP-040, process: varnish_dip_cure, item: SA-STATOR, consumes: [VARNISH], produces: SA-STATOR}
+  - {op_no: OP-050, process: bearing_press, item: SA-MOTOR, consumes: [SHAFT, BEARING], produces: SA-MOTOR}
+  - {op_no: OP-060, process: motor_assembly, item: SA-MOTOR, consumes: [SA-STATOR, ROTOR-1200, ROTOR-900], produces: SA-MOTOR}
+  - {op_no: OP-070, process: controller_fit_harness, item: SA-MOTOR, consumes: [CTRL-PCBA, HARNESS], produces: SA-MOTOR}
+  - {op_no: OP-080, process: motor_test, item: SA-MOTOR, produces: SA-MOTOR}
+  - {op_no: OP-090, process: final_assembly_fan, item: FAN, consumes: [SA-MOTOR, CANOPY, DOWNROD-KIT, SCREW-KIT, SPLIT-PIN, REMOTE], produces: FAN}
+  - {op_no: OP-100, process: hipot_test, item: FAN, produces: FAN}
+  - {op_no: OP-110, process: fan_run_in, item: FAN, produces: FAN}
+  - {op_no: OP-120, process: functional_test_fan, item: FAN, produces: FAN}
+  - {op_no: OP-130, process: label_apply, item: FAN, consumes: [LBL-RATING, LBL-BEE], produces: FAN}
+  - {op_no: OP-140, process: blade_pack, item: FAN, consumes: [BLADE-1200, BLADE-900, BLADE-SLEEVE], produces: FAN}
+  - {op_no: OP-150, process: pack_unit_box, item: FAN, consumes: [MANUAL, CARTON-FAN], produces: FAN}
+# Bearing pressing (OP-050) runs in parallel with the stator branch.
+precedence:
+  - [OP-010, OP-020]
+  - [OP-020, OP-030]
+  - [OP-030, OP-040]
+  - [OP-040, OP-060]
+  - [OP-050, OP-060]
+  - [OP-060, OP-070]
+  - [OP-070, OP-080]
+  - [OP-080, OP-090]
+  - [OP-090, OP-100]
+  - [OP-100, OP-110]
+  - [OP-110, OP-120]
+  - [OP-120, OP-130]
+  - [OP-130, OP-140]
+  - [OP-140, OP-150]

@@ -1,0 +1,16 @@
+# Land prices are suggested per district at runtime by the agent (web, low confidence,
+# docs/10 §2.1). The pack holds no figure.
+
+values:
+  - key: land.indicative_inr_per_m2
+    group: land
+    title: Indicative industrial land price per m², by district
+    value: null
+    unit: INR/m**2
+    effective_from: 2026-11-12
+    source_kind: none
+    source_title: Agent suggestion per district at runtime (web, low confidence)
+    retrieved_at: 2026-11-12
+    confidence: 0
+    verify: true
+    note: User input preferred (finance_inputs.land_cost_inr_per_sqm).

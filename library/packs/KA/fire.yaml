@@ -1,0 +1,24 @@
+# Fire protection thresholds. NBC 2016 Part 4 tables and the Karnataka Fire and Emergency
+# Services requirements were not retrieved in P1; values stay unknown (null, verify) so the
+# utilities stage raises them as questions instead of guessing.
+
+x-unknown: &unknown
+  group: fire
+  value: null
+  effective_from: 2026-11-12
+  source_kind: none
+  source_url: https://www.bis.gov.in/standards/technical-department/national-building-code/
+  source_title: "NBC 2016 Part 4 / Karnataka Fire and Emergency Services, not retrieved in P1"
+  retrieved_at: 2026-11-12
+  confidence: 0
+  verify: true
+
+values:
+  - {key: fire.hydrant_required_min_area_m2, title: Built-up area above which a hydrant system is required, unit: m**2, <<: *unknown,
+     note: "Research before P5 utilities sizing."}
+  - {key: fire.sprinkler_required_min_area_m2, title: Built-up area above which sprinklers are required, unit: m**2, <<: *unknown,
+     note: "Li-ion storage may need sprinklers or other suppression regardless of area."}
+  - {key: fire.water_tank_min_l, title: Minimum fire-water storage, unit: l, <<: *unknown,
+     note: "Depends on occupancy and hazard class."}
+  - {key: fire.noc_conditions, title: When a fire NOC is required for an industrial building, <<: *unknown,
+     note: "Report lists Fire NOC as a compliance item to confirm."}

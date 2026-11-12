@@ -26,7 +26,7 @@ Source = Literal[
 LOW_CONFIDENCE = 0.6
 
 
-class Prov(DomainModel, Generic[T]):
+class Prov(DomainModel, Generic[T]):  # noqa: UP046 (keeps Pydantic's generic naming)
     """A value with its unit, source, confidence and a reference to the evidence."""
 
     value: T

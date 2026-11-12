@@ -14,7 +14,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, cast
+from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
@@ -177,9 +177,7 @@ def validate_product_spec(spec: ProductSpec, ctx: ValidationContext) -> list[Iss
     if not p.name.strip():
         out.append(_err("spec.required", "product name is required", "product.name"))
     if not p.description.value.strip() and not spec.attachments:
-        out.append(
-            _err("spec.required", "need a CAD file, photo, BoM file or written description")
-        )
+        out.append(_err("spec.required", "need a CAD file, photo, BoM file or written description"))
     if not spec.site.district.strip():
         out.append(_err("spec.required", "site district is required", "site.district"))
     total = sum(v.mix_pct.value for v in p.variants)
@@ -254,8 +252,8 @@ def validate_bom(bom: Bom, ctx: ValidationContext) -> list[Issue]:
             if n in seen:
                 continue
             seen.add(n)
-            it = items.get(n)
-            if it is not None and it.kind in ("product", "assembly") and not children.get(n):
+            node_item = items.get(n)
+            if node_item is not None and node_item.kind in ("product", "assembly") and not children.get(n):
                 out.append(_err("bom.incomplete", f"assembly {n} has no MBOM lines for {v}"))
             todo.extend(children.get(n, []))
     out += _check_units(bom)
@@ -271,9 +269,7 @@ def validate_bom(bom: Bom, ctx: ValidationContext) -> list[Issue]:
                     _err("bom.commodity", f"{it.part_no}: unknown class '{it.commodity_class}'")
                 )
             if it.make_or_buy.value == "make" and it.kind == "part":
-                has_process = any(
-                    it.commodity_class in p.applies_to.commodity for p in processes
-                )
+                has_process = any(it.commodity_class in p.applies_to.commodity for p in processes)
                 if not has_process and not it.uncatalogued:
                     out.append(
                         _err(
@@ -284,9 +280,9 @@ def validate_bom(bom: Bom, ctx: ValidationContext) -> list[Issue]:
                     )
                 elif it.uncatalogued:
                     out.append(_warn("bom.uncatalogued", f"{it.part_no} is uncatalogued"))
-    for d in bom.make_buy_decisions:
-        if d.part_no not in items:
-            out.append(_err("bom.ref", f"make/buy decision for unknown part {d.part_no}"))
+    for dec in bom.make_buy_decisions:
+        if dec.part_no not in items:
+            out.append(_err("bom.ref", f"make/buy decision for unknown part {dec.part_no}"))
     return out
 
 
@@ -314,16 +310,26 @@ def validate_routing(r: Routing, ctx: ValidationContext) -> list[Issue]:
         path = f"operations[{i}]"
         if not o.workcenter_class.strip():
             out.append(_err("routing.workcenter", f"{o.op_no} has no workcenter class", path))
-        for t_path, t in [("time", o.time), *((f"variant_times.{k}", v) for k, v in
-                                              o.variant_times.items())]:
+        for t_path, t in [
+            ("time", o.time),
+            *((f"variant_times.{k}", v) for k, v in o.variant_times.items()),
+        ]:
             if t.method == "llm_estimate":
                 if t.cycle_s.confidence >= 0.5:
                     out.append(
-                        _err("routing.llm_conf", "LLM estimates must have confidence < 0.5",
-                             f"{path}.{t_path}")
+                        _err(
+                            "routing.llm_conf",
+                            "LLM estimates must have confidence < 0.5",
+                            f"{path}.{t_path}",
+                        )
                     )
-                out.append(_warn("routing.llm_estimate", f"{o.op_no} time is an LLM estimate",
-                                 f"{path}.{t_path}"))
+                out.append(
+                    _warn(
+                        "routing.llm_estimate",
+                        f"{o.op_no} time is an LLM estimate",
+                        f"{path}.{t_path}",
+                    )
+                )
             if t.cycle_s.value <= 0:
                 out.append(_err("routing.time", "cycle time must be > 0", f"{path}.{t_path}"))
         for v in [*o.variant_times, *o.variants]:
@@ -332,22 +338,37 @@ def validate_routing(r: Routing, ctx: ValidationContext) -> list[Issue]:
         if catalog is not None:
             proc = catalog.get(o.process.code)
             if not isinstance(proc, ProcessEntry):
-                out.append(_err("routing.process", f"{o.op_no}: '{o.process.code}' is not a "
-                                                   "catalog process", path))
+                out.append(
+                    _err(
+                        "routing.process",
+                        f"{o.op_no}: '{o.process.code}' is not a catalog process",
+                        path,
+                    )
+                )
             if o.workcenter_class != "manual" and o.workcenter_class not in machine_classes:
-                out.append(_err("routing.workcenter", f"{o.op_no}: unknown machine class "
-                                                      f"'{o.workcenter_class}'", path))
+                out.append(
+                    _err(
+                        "routing.workcenter",
+                        f"{o.op_no}: unknown machine class '{o.workcenter_class}'",
+                        path,
+                    )
+                )
             if o.quality_gate and o.quality_gate not in check_codes:
-                out.append(_err("routing.check", f"{o.op_no}: unknown check '{o.quality_gate}'",
-                                path))
+                out.append(
+                    _err("routing.check", f"{o.op_no}: unknown check '{o.quality_gate}'", path)
+                )
     out += _check_units(r)
     if ctx.bom is not None:
         consumed = {c for o in r.operations for c in o.consumes}
         for i, ln in enumerate(ctx.bom.mbom):
             if ln.child not in consumed:
-                out.append(_err("routing.unconsumed",
-                                f"MBOM line {ln.parent}>{ln.child} is not consumed by any op",
-                                f"bom.mbom[{i}]"))
+                out.append(
+                    _err(
+                        "routing.unconsumed",
+                        f"MBOM line {ln.parent}>{ln.child} is not consumed by any op",
+                        f"bom.mbom[{i}]",
+                    )
+                )
         items = {it.part_no: it for it in ctx.bom.items}
         producers: dict[str, list[str]] = defaultdict(list)
         for o in r.operations:
@@ -358,15 +379,23 @@ def validate_routing(r: Routing, ctx: ValidationContext) -> list[Issue]:
                 made_by = [p for p in producers.get(c, []) if p != o.op_no]
                 if made_by:
                     if not any(p in anc.get(o.op_no, set()) for p in made_by):
-                        out.append(_err("routing.order", f"{o.op_no} consumes {c} before an op "
-                                                         "that produces it"))
+                        out.append(
+                            _err(
+                                "routing.order",
+                                f"{o.op_no} consumes {c} before an op that produces it",
+                            )
+                        )
                 else:
                     it = items.get(c)
                     if it is None:
                         out.append(_err("routing.ref", f"{o.op_no} consumes unknown item {c}"))
                     elif it.make_or_buy.value != "buy" and it.kind in ("assembly", "part"):
-                        out.append(_err("routing.order", f"{o.op_no} consumes make item {c} "
-                                                         "that no op produces"))
+                        out.append(
+                            _err(
+                                "routing.order",
+                                f"{o.op_no} consumes make item {c} that no op produces",
+                            )
+                        )
     return out
 
 
@@ -387,31 +416,43 @@ def validate_quality(q: QualityPlan, ctx: ValidationContext) -> list[Issue]:
         mbom_children = {ln.child for ln in ctx.bom.mbom}
         for i, x in enumerate(q.iqc):
             if x.part_no not in mbom_children:
-                out.append(_err("quality.iqc_ref", f"IQC part {x.part_no} not in MBOM",
-                                f"iqc[{i}]"))
+                out.append(
+                    _err("quality.iqc_ref", f"IQC part {x.part_no} not in MBOM", f"iqc[{i}]")
+                )
     if ctx.routing is not None:
         op_nos = {o.op_no for o in ctx.routing.operations}
         for name, checks in (("inline", q.inline), ("eol", q.eol)):
             for i, c in enumerate(checks):
                 if c.op_no not in op_nos:
-                    out.append(_err("quality.op_ref", f"{c.check_type} maps to unknown op "
-                                                      f"{c.op_no}", f"{name}[{i}]"))
+                    out.append(
+                        _err(
+                            "quality.op_ref",
+                            f"{c.check_type} maps to unknown op {c.op_no}",
+                            f"{name}[{i}]",
+                        )
+                    )
         for i, rw in enumerate(q.rework):
             if rw.op_no not in op_nos:
-                out.append(_err("quality.op_ref", f"rework for unknown op {rw.op_no}",
-                                f"rework[{i}]"))
+                out.append(
+                    _err("quality.op_ref", f"rework for unknown op {rw.op_no}", f"rework[{i}]")
+                )
     if ctx.catalog is not None:
         checks_known = ctx.catalog.codes("check_type")
         used = [c for x in q.iqc for c in x.check_types]
-        used += [c.check_type for c in [*q.inline, *q.eol]]
-        used += [c.check_type for c in [*q.patrol, *q.oqc]]
-        for c in sorted(set(used) - checks_known):
-            out.append(_err("quality.check", f"unknown check type '{c}'"))
+        used += [x.check_type for x in [*q.inline, *q.eol]]
+        used += [x.check_type for x in q.patrol] + [x.check_type for x in q.oqc]
+        for code in sorted(set(used) - checks_known):
+            out.append(_err("quality.check", f"unknown check type '{code}'"))
     if ctx.pack is not None:
         for i, link in enumerate(q.compliance):
             if not ctx.pack.history(link.pack_key):
-                out.append(_err("quality.compliance", f"pack key {link.pack_key} not in pack",
-                                f"compliance[{i}]"))
+                out.append(
+                    _err(
+                        "quality.compliance",
+                        f"pack key {link.pack_key} not in pack",
+                        f"compliance[{i}]",
+                    )
+                )
     out += _check_units(q)
     return out
 
@@ -439,29 +480,38 @@ def validate_capacity(cd: CapacityDesign, ctx: ValidationContext) -> list[Issue]
             limit = s.pct_s_by_line.get(st.line or "", pct) * (1 + s.allowed_overload)
             for v, load in st.load_s_by_variant.items():
                 if load / st.parallel_positions > limit * (1 + REL_TOL):
-                    out.append(_err("capacity.overload",
-                                    f"station {st.id} load {load:g} s for {v} exceeds "
-                                    f"{limit:g} s", sp))
+                    out.append(
+                        _err(
+                            "capacity.overload",
+                            f"station {st.id} load {load:g} s for {v} exceeds {limit:g} s",
+                            sp,
+                        )
+                    )
         if ctx.routing is None:
             continue
         r = ctx.routing
         for line, stations in lines.items():
             line_vars = set(s.line_variants.get(line or "", r.variants))
-            expected = {o.op_no for o in r.operations
-                        if not o.variants or line_vars & set(o.variants)}
+            expected = {
+                o.op_no for o in r.operations if not o.variants or line_vars & set(o.variants)
+            }
             assigned = [op for st in stations for op in st.ops]
             for d in _dupes(assigned):
                 out.append(_err("capacity.assign", f"op {d} assigned twice on line {line}", sp))
             for missing in sorted(expected - set(assigned)):
-                out.append(_err("capacity.assign", f"op {missing} not assigned on line {line}",
-                                sp))
+                out.append(_err("capacity.assign", f"op {missing} not assigned on line {line}", sp))
             for extra in sorted(set(assigned) - {o.op_no for o in r.operations}):
                 out.append(_err("capacity.assign", f"unknown op {extra}", sp))
             seq = {op: st.sequence for st in stations for op in st.ops}
             for p in r.precedence:
                 if p.from_op in seq and p.to_op in seq and seq[p.from_op] > seq[p.to_op]:
-                    out.append(_err("capacity.precedence",
-                                    f"{p.from_op} is after {p.to_op} on line {line}", sp))
+                    out.append(
+                        _err(
+                            "capacity.precedence",
+                            f"{p.from_op} is after {p.to_op} on line {line}",
+                            sp,
+                        )
+                    )
     out += _check_units(cd)
     return out
 
@@ -477,29 +527,40 @@ def validate_inventory(inv: InventoryDesign, ctx: ValidationContext) -> list[Iss
         out.append(_err("inventory.zone_dupe", f"duplicate zone {d}"))
     for i, pol in enumerate(inv.policies):
         if pol.zone not in zones:
-            out.append(_err("inventory.zone_ref", f"{pol.part_no} stored in unknown zone "
-                                                  f"{pol.zone}", f"policies[{i}]"))
+            out.append(
+                _err(
+                    "inventory.zone_ref",
+                    f"{pol.part_no} stored in unknown zone {pol.zone}",
+                    f"policies[{i}]",
+                )
+            )
     for i, f in enumerate(inv.flow_matrix):
         for z in (f.from_zone, f.to_zone):
             if z not in zones:
-                out.append(_err("inventory.zone_ref", f"flow references unknown zone {z}",
-                                f"flow_matrix[{i}]"))
+                out.append(
+                    _err(
+                        "inventory.zone_ref",
+                        f"flow references unknown zone {z}",
+                        f"flow_matrix[{i}]",
+                    )
+                )
     if ctx.bom is not None:
         policy_parts = {p.part_no for p in inv.policies}
         children = {ln.child for ln in ctx.bom.mbom}
         for it in ctx.bom.items:
-            if it.part_no in children and it.make_or_buy.value == "buy" and \
-                    it.part_no not in policy_parts:
+            if (
+                it.part_no in children
+                and it.make_or_buy.value == "buy"
+                and it.part_no not in policy_parts
+            ):
                 out.append(_err("inventory.policy", f"no stock policy for {it.part_no}"))
         if ctx.catalog is not None:
-            classes = {
-                e.code: e for e in ctx.catalog.entries if isinstance(e, CommodityClassEntry)
-            }
+            classes = {e.code: e for e in ctx.catalog.entries if isinstance(e, CommodityClassEntry)}
             kinds = ctx.catalog.by_code()
             items = {it.part_no: it for it in ctx.bom.items}
             for pol in inv.policies:
-                it = items.get(pol.part_no)
-                cls = classes.get(it.commodity_class or "") if it else None
+                item = items.get(pol.part_no)
+                cls = classes.get(item.commodity_class or "") if item else None
                 zone = zones.get(pol.zone)
                 if cls is None or zone is None or not cls.hazards:
                     continue
@@ -507,13 +568,17 @@ def validate_inventory(inv: InventoryDesign, ctx: ValidationContext) -> list[Iss
                 zone_hazards = set(zone.hazards) | set(getattr(zk, "hazards", []))
                 for h in cls.hazards:
                     if h not in zone_hazards:
-                        out.append(_err("inventory.hazard", f"{pol.part_no} ({h}) stored in "
-                                                            f"non-{h} zone {zone.id}"))
+                        out.append(
+                            _err(
+                                "inventory.hazard",
+                                f"{pol.part_no} ({h}) stored in non-{h} zone {zone.id}",
+                            )
+                        )
     if ctx.catalog is not None:
         zone_kinds = ctx.catalog.codes("zone_kind")
-        for z in inv.zones:
-            if z.kind not in zone_kinds:
-                out.append(_err("inventory.zone_kind", f"zone {z.id}: unknown kind {z.kind}"))
+        for zn in inv.zones:
+            if zn.kind not in zone_kinds:
+                out.append(_err("inventory.zone_kind", f"zone {zn.id}: unknown kind {zn.kind}"))
     out += _check_units(inv)
     return out
 
@@ -534,33 +599,56 @@ def validate_roster(roster: Roster, ctx: ValidationContext) -> list[Issue]:
     for i, sh in enumerate(roster.shifts):
         path = f"shifts[{i}]"
         if daily is not None and sh.paid_hours > daily:
-            out.append(_err("roster.daily_hours",
-                            f"{sh.id}: {sh.paid_hours:g} h/day exceeds {daily:g}", path))
+            out.append(
+                _err(
+                    "roster.daily_hours",
+                    f"{sh.id}: {sh.paid_hours:g} h/day exceeds {daily:g}",
+                    path,
+                )
+            )
         if weekly is not None and sh.paid_hours * sh.days_per_week > weekly:
-            out.append(_err("roster.weekly_hours",
-                            f"{sh.id}: {sh.paid_hours * sh.days_per_week:g} h/week exceeds "
-                            f"{weekly:g}", path))
+            out.append(
+                _err(
+                    "roster.weekly_hours",
+                    f"{sh.id}: {sh.paid_hours * sh.days_per_week:g} h/week exceeds {weekly:g}",
+                    path,
+                )
+            )
         if spread is not None and sh.spread_over_h > spread:
-            out.append(_err("roster.spread_over",
-                            f"{sh.id}: spread-over {sh.spread_over_h:g} h exceeds {spread:g}",
-                            path))
+            out.append(
+                _err(
+                    "roster.spread_over",
+                    f"{sh.id}: spread-over {sh.spread_over_h:g} h exceeds {spread:g}",
+                    path,
+                )
+            )
         if rest is not None and sh.days_per_week > 7 - rest:
             out.append(_err("roster.weekly_rest", f"{sh.id}: no weekly rest day", path))
     if ot_cap is not None and roster.overtime_h_per_quarter > ot_cap:
-        out.append(_err("roster.overtime", f"overtime {roster.overtime_h_per_quarter:g} h/quarter "
-                                           f"exceeds {ot_cap:g}"))
+        out.append(
+            _err(
+                "roster.overtime",
+                f"overtime {roster.overtime_h_per_quarter:g} h/quarter exceeds {ot_cap:g}",
+            )
+        )
     for i, c in enumerate(roster.compliance_report):
         if not c.ok:
-            out.append(_err("roster.compliance", c.message or f"{c.rule_key} violated",
-                            f"compliance_report[{i}]"))
+            out.append(
+                _err(
+                    "roster.compliance",
+                    c.message or f"{c.rule_key} violated",
+                    f"compliance_report[{i}]",
+                )
+            )
     strat = ctx.capacity.chosen_strategy() if ctx.capacity else None
     if strat is not None:
         staffed = {(s.station, s.shift): s.operators for s in roster.station_staffing}
         for sh in roster.shifts:
             for st in strat.stations:
                 if st.operators > 0 and staffed.get((st.id, sh.id), 0) < st.operators:
-                    out.append(_err("roster.unstaffed",
-                                    f"station {st.id} understaffed in shift {sh.id}"))
+                    out.append(
+                        _err("roster.unstaffed", f"station {st.id} understaffed in shift {sh.id}")
+                    )
     out += _check_units(roster)
     return out
 
@@ -569,8 +657,12 @@ def validate_workorders_shifts(w: WorkOrdersShifts, ctx: ValidationContext) -> l
     out = validate_roster(w.roster, ctx)
     rel = w.workorders.release
     if ctx.capacity is not None and ctx.capacity.chosen and rel.strategy != ctx.capacity.chosen:
-        out.append(_err("workorders.strategy",
-                        f"release logic for {rel.strategy}, chosen is {ctx.capacity.chosen}"))
+        out.append(
+            _err(
+                "workorders.strategy",
+                f"release logic for {rel.strategy}, chosen is {ctx.capacity.chosen}",
+            )
+        )
     if ctx.routing is not None:
         variants = set(ctx.routing.variants)
         for v in [*rel.sequence, *rel.daily_qty_by_variant, *rel.batch_size_by_variant]:
@@ -591,26 +683,38 @@ def validate_utilities(u: UtilityDesign, ctx: ValidationContext) -> list[Issue]:
         if e.transformer_kva is None:
             out.append(_err("utilities.transformer", "HT supply needs a transformer"))
         elif e.transformer_kva.value + REL_TOL < need:
-            out.append(_err("utilities.transformer",
-                            f"transformer {e.transformer_kva.value:g} kVA < MD × headroom "
-                            f"{need:g} kVA"))
+            out.append(
+                _err(
+                    "utilities.transformer",
+                    f"transformer {e.transformer_kva.value:g} kVA < MD × headroom {need:g} kVA",
+                )
+            )
     for d in _dupes(ld.ref for ld in e.loads):
         out.append(_err("utilities.double_count", f"load {d} counted more than once"))
     connected = sum(ld.qty * ld.kw_each for ld in e.loads)
     if abs(connected - e.connected_kw.value) > max(0.01, REL_TOL * connected):
-        out.append(_err("utilities.reconcile",
-                        f"connected kW {e.connected_kw.value:g} ≠ Σ loads {connected:g}"))
+        out.append(
+            _err(
+                "utilities.reconcile",
+                f"connected kW {e.connected_kw.value:g} ≠ Σ loads {connected:g}",
+            )
+        )
     if ctx.capacity is not None:
         refs = {ld.ref: ld for ld in e.loads}
         for eq in ctx.capacity.equipment_list:
             ref = f"capacity:equipment:{eq.machine_class}"
             ld = refs.get(ref)
             if ld is None:
-                out.append(_err("utilities.missing_load", f"equipment {eq.machine_class} "
-                                                          "not counted"))
+                out.append(
+                    _err("utilities.missing_load", f"equipment {eq.machine_class} not counted")
+                )
             elif ld.qty != eq.qty:
-                out.append(_err("utilities.missing_load",
-                                f"{eq.machine_class}: {ld.qty} counted, {eq.qty} installed"))
+                out.append(
+                    _err(
+                        "utilities.missing_load",
+                        f"{eq.machine_class}: {ld.qty} counted, {eq.qty} installed",
+                    )
+                )
     out += _check_units(u)
     return out
 
@@ -620,15 +724,22 @@ def validate_utilities(u: UtilityDesign, ctx: ValidationContext) -> list[Issue]:
 
 def _inside(inner: Rect, outer: Rect) -> bool:
     eps = 1e-6
-    return (inner.x >= outer.x - eps and inner.y >= outer.y - eps
-            and inner.x + inner.w <= outer.x + outer.w + eps
-            and inner.y + inner.h <= outer.y + outer.h + eps)
+    return (
+        inner.x >= outer.x - eps
+        and inner.y >= outer.y - eps
+        and inner.x + inner.w <= outer.x + outer.w + eps
+        and inner.y + inner.h <= outer.y + outer.h + eps
+    )
 
 
 def _overlap(a: Rect, b: Rect) -> bool:
     eps = 1e-6
-    return (a.x < b.x + b.w - eps and b.x < a.x + a.w - eps
-            and a.y < b.y + b.h - eps and b.y < a.y + a.h - eps)
+    return (
+        a.x < b.x + b.w - eps
+        and b.x < a.x + a.w - eps
+        and a.y < b.y + b.h - eps
+        and b.y < a.y + a.h - eps
+    )
 
 
 def _gap(a: Rect, b: Rect) -> float:
@@ -656,29 +767,40 @@ def validate_layout(lay: Layout, ctx: ValidationContext) -> list[Issue]:
                 out.append(_err("layout.overlap", f"zones {a.zone} and {b.zone} overlap"))
     for ai in lay.aisles:
         if ai.width_m + REL_TOL < lay.rules.min_aisle_m:
-            out.append(_err("layout.aisle", f"aisle {ai.id} {ai.width_m:g} m < minimum "
-                                            f"{lay.rules.min_aisle_m:g} m"))
+            out.append(
+                _err(
+                    "layout.aisle",
+                    f"aisle {ai.id} {ai.width_m:g} m < minimum {lay.rules.min_aisle_m:g} m",
+                )
+            )
         for z in lay.zones:
             if _overlap(ai.rect, z.rect):
                 out.append(_err("layout.overlap", f"aisle {ai.id} runs through zone {z.zone}"))
     for ka in lay.rules.keep_apart:
-        a, b = zones.get(ka.zone_a), zones.get(ka.zone_b)
-        if a is None or b is None:
+        za, zb = zones.get(ka.zone_a), zones.get(ka.zone_b)
+        if za is None or zb is None:
             continue
-        if (g := _gap(a.rect, b.rect)) + REL_TOL < ka.min_distance_m:
-            out.append(_err("layout.keep_apart", f"{ka.zone_a}–{ka.zone_b} {g:.1f} m < "
-                                                 f"{ka.min_distance_m:g} m"))
+        if (g := _gap(za.rect, zb.rect)) + REL_TOL < ka.min_distance_m:
+            out.append(
+                _err(
+                    "layout.keep_apart",
+                    f"{ka.zone_a}–{ka.zone_b} {g:.1f} m < {ka.min_distance_m:g} m",
+                )
+            )
     indoor = [z for z in lay.zones if z.kind not in OUTDOOR_ZONE_KINDS]
     if indoor and not lay.exits:
         out.append(_err("layout.exits", "building has no exits"))
     for z in indoor if lay.exits else []:
         r = z.rect
         corners = [(r.x, r.y), (r.x + r.w, r.y), (r.x, r.y + r.h), (r.x + r.w, r.y + r.h)]
-        worst = max(min(abs(cx - ex.x) + abs(cy - ex.y) for ex in lay.exits)
-                    for cx, cy in corners)
+        worst = max(min(abs(cx - ex.x) + abs(cy - ex.y) for ex in lay.exits) for cx, cy in corners)
         if worst > lay.rules.max_travel_m + REL_TOL:
-            out.append(_err("layout.travel", f"zone {z.zone}: travel {worst:.1f} m > "
-                                             f"{lay.rules.max_travel_m:g} m"))
+            out.append(
+                _err(
+                    "layout.travel",
+                    f"zone {z.zone}: travel {worst:.1f} m > {lay.rules.max_travel_m:g} m",
+                )
+            )
     for v in lay.metrics.violations:
         out.append(_err("layout.violation", v))
     return out
@@ -696,12 +818,22 @@ def validate_finance(fm: FinanceModel, ctx: ValidationContext) -> list[Issue]:
         sp = f"scenarios[{s.scenario}]"
         cap = sum(ln.amount_inr for ln in s.capex)
         if abs(cap - s.capex_total_inr) > ABS_TOL_INR:
-            out.append(_err("finance.reconcile", f"capex total {s.capex_total_inr:,.0f} ≠ Σ lines "
-                                                 f"{cap:,.0f}", sp))
+            out.append(
+                _err(
+                    "finance.reconcile",
+                    f"capex total {s.capex_total_inr:,.0f} ≠ Σ lines {cap:,.0f}",
+                    sp,
+                )
+            )
         opx = sum(ln.annual_inr for ln in s.opex)
         if abs(opx - s.opex_total_inr) > ABS_TOL_INR:
-            out.append(_err("finance.reconcile", f"opex total {s.opex_total_inr:,.0f} ≠ Σ lines "
-                                                 f"{opx:,.0f}", sp))
+            out.append(
+                _err(
+                    "finance.reconcile",
+                    f"opex total {s.opex_total_inr:,.0f} ≠ Σ lines {opx:,.0f}",
+                    sp,
+                )
+            )
         if ctx.capacity is not None:
             installed = {eq.machine_class: eq.qty for eq in ctx.capacity.equipment_list}
             costed: dict[str, float] = defaultdict(float)
@@ -710,13 +842,22 @@ def validate_finance(fm: FinanceModel, ctx: ValidationContext) -> list[Issue]:
                     costed[ln.source_ref.rsplit(":", 1)[1]] += ln.qty
             for cls, qty in installed.items():
                 if costed.get(cls, 0) != qty:
-                    out.append(_err("finance.reconcile", f"{cls}: {costed.get(cls, 0):g} costed, "
-                                                         f"{qty} installed", sp))
+                    out.append(
+                        _err(
+                            "finance.reconcile",
+                            f"{cls}: {costed.get(cls, 0):g} costed, {qty} installed",
+                            sp,
+                        )
+                    )
             for cls in sorted(set(costed) - set(installed)):
                 out.append(_err("finance.reconcile", f"{cls} costed but not installed", sp))
     lo, base, hi = fm.scenario("low"), fm.scenario("base"), fm.scenario("high")
-    if lo and base and hi and not (lo.capex_total_inr <= base.capex_total_inr
-                                   <= hi.capex_total_inr):
+    if (
+        lo
+        and base
+        and hi
+        and not (lo.capex_total_inr <= base.capex_total_inr <= hi.capex_total_inr)
+    ):
         out.append(_warn("finance.range", "capex is not ordered low ≤ base ≤ high"))
     return out
 
@@ -759,7 +900,7 @@ def validate_json(
         artifact = model.model_validate(data)
     except ValidationError as exc:
         return None, [
-            _err("schema", cast(str, e["msg"]), ".".join(str(p) for p in e["loc"]))
+            _err("schema", e["msg"], ".".join(str(p) for p in e["loc"]))
             for e in exc.errors()
         ]
     return artifact, validate_artifact(stage, artifact, ctx)

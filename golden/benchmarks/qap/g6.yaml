@@ -1,0 +1,32 @@
+# G6: 5-zone quadratic assignment problem. The layout engine (P6) must reach the brute-force
+# optimum. Cost = Σ_i Σ_j flow[i][j] × distance[loc(i)][loc(j)] over ordered pairs (flows are
+# symmetric, so each pair counts twice). Locations are block centres on a 3 × 2 grid with
+# 10 m spacing; distance is rectilinear (Manhattan).
+zones: [Z-STORE, Z-ASSY, Z-TEST, Z-PACK, Z-FG]
+locations:
+  - {id: L1, x: 0, y: 0}
+  - {id: L2, x: 10, y: 0}
+  - {id: L3, x: 20, y: 0}
+  - {id: L4, x: 0, y: 10}
+  - {id: L5, x: 10, y: 10}
+flow:              # loads/day between zones (row → column)
+  - [0, 8, 2, 0, 1]
+  - [8, 0, 6, 1, 0]
+  - [2, 6, 0, 5, 2]
+  - [0, 1, 5, 0, 7]
+  - [1, 0, 2, 7, 0]
+distance:          # metres between locations, rectilinear
+  - [0, 10, 20, 10, 20]
+  - [10, 0, 10, 20, 10]
+  - [20, 10, 0, 30, 20]
+  - [10, 20, 30, 0, 10]
+  - [20, 10, 20, 10, 0]
+expected:
+  optimal_cost: 760
+  optimal_assignments:       # zone index → location index; 4 symmetric optima
+    - [0, 3, 4, 1, 2]
+    - [2, 1, 0, 3, 4]
+    - [2, 1, 4, 3, 0]
+    - [4, 3, 0, 1, 2]
+  worst_cost: 1320
+  method: brute force over all 5! = 120 assignments (computed 2026-11-12; re-checked by `fl-library golden`)

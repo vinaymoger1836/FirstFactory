@@ -1,0 +1,302 @@
+# Power supply and tariff (BESCOM area). Primary: KERC Combined Tariff Order 2025 dated
+# 27 March 2025 (MYT control period FY2025-26 to FY2027-28), Annexure-9 tariff schedules,
+# read from the full order PDF (copy hosted by OpenCity; original issued by KERC).
+# The KERC review order of 3 March 2026 revised HT-2(a) and LT-5 rates; only news reports
+# of it were available, so those values are active but marked verify.
+
+x-kerc2025: &kerc2025
+  source_kind: primary
+  source_url: https://data.opencity.in/dataset/kerc-combined-tariff-order-2025
+  retrieved_at: 2026-11-12
+  applies_to: All ESCOMs incl. BESCOM
+
+x-review2026: &review2026
+  source_kind: secondary
+  source_url: https://theprint.in/india/kerc-increases-electricity-tariffs-for-commercial-industrial-consumers/2869823
+  source_title: "ThePrint (PTI), 4 Mar 2026: KERC increases electricity tariffs for commercial, industrial consumers (review order of 3 Mar 2026); also ETV Bharat, 4 Mar 2026"
+  retrieved_at: 2026-11-12
+  applies_to: All ESCOMs incl. BESCOM
+  verify: true
+
+values:
+  # ── Supply category thresholds ───────────────────────────────────
+  - key: power.supply.lt_max_load_kw
+    group: power
+    title: LT supply allowed below this requisitioned load
+    value: 150
+    unit: kW
+    effective_from: 2025-04-01
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Annexure-9 general conditions, item 9 (order p.523): LT supply where requisitioned load is less than 150 kW / 201 HP"
+    confidence: 0.85
+    verify: false
+    note: Applicant may opt for HT at lower loads. Draft KERC (Electricity Supply) Regulations 2026 may replace the Conditions of Supply; re-check at next review.
+
+  - key: power.supply.ht_min_contract_demand_kva
+    group: power
+    title: Minimum contract demand for HT supply
+    value: 25
+    unit: kVA
+    effective_from: 2025-04-01
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Annexure-9 general conditions (order p.524)"
+    confidence: 0.85
+    verify: false
+
+  - key: power.tod.mandatory_min_contract_demand_kva
+    group: power
+    title: Time-of-Day tariff compulsory for HT-2 consumers at or above this contract demand
+    value: 500
+    unit: kVA
+    effective_from: 2025-04-01
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Annexure-9 item 26 (order p.527)"
+    confidence: 0.9
+    verify: false
+    note: Optional ToD for HT-2(a)/(b)/(c) below 500 kVA.
+
+  - key: power.tod.ht2
+    group: power
+    title: ToD adjustment on energy charge for HT-2(a), HT-2(b), HT-2(c)
+    value:
+      jul_to_nov: {"06-09": 0, "09-18": 0, "18-22": 0, "22-06": 0}
+      dec_to_jun: {"06-09": 1.00, "09-18": 0, "18-22": 1.00, "22-06": -1.00}
+    unit: INR/kWh
+    effective_from: 2025-04-01
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Annexure-9 ToD Tariff HT-2(a)/(b)/(c) (order p.552): +100 paise 06-09 h and 18-22 h, -100 paise 22-06 h, December to June; nil July to November"
+    confidence: 0.9
+    verify: false
+
+  # ── HT-2(a) industrial: demand charge ────────────────────────────
+  - key: power.ht2a.demand_charge
+    group: power
+    title: HT-2(a) industrial demand charge
+    value: 345
+    unit: INR/kVA/month
+    effective_from: 2025-04-01
+    effective_to: 2026-03-31
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Tariff Schedule HT-2(a), FY2025-26 (order p.550)"
+    confidence: 0.9
+    verify: false
+
+  - key: power.ht2a.demand_charge
+    group: power
+    title: HT-2(a) industrial demand charge (MYT value for FY2026-27)
+    value: 350
+    unit: INR/kVA/month
+    effective_from: 2026-04-01
+    effective_to: 2027-03-31
+    superseded: true
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Tariff Schedule HT-2(a), FY2026-27 (order p.550)"
+    confidence: 0.9
+    verify: false
+    note: Kept for history; revised by the KERC review order of 3 Mar 2026 (next value).
+
+  - key: power.ht2a.demand_charge
+    group: power
+    title: HT-2(a) industrial demand charge (after the March 2026 review order)
+    value: 365
+    unit: INR/kVA/month
+    effective_from: 2026-04-01
+    effective_to: 2027-03-31
+    <<: *review2026
+    confidence: 0.7
+    note: News reports say the revised tariffs apply from April (2026); ThePrint notes the order did not state the date. End date assumed to be the FY end. Confirm against the KERC order text.
+
+  - key: power.ht2a.demand_charge
+    group: power
+    title: HT-2(a) industrial demand charge (MYT value for FY2027-28)
+    value: 355
+    unit: INR/kVA/month
+    effective_from: 2027-04-01
+    effective_to: 2028-03-31
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Tariff Schedule HT-2(a), FY2027-28 (order p.550)"
+    confidence: 0.6
+    verify: true
+    note: Future value; likely to change in the next annual review.
+
+  # ── HT-2(a) industrial: energy charge ────────────────────────────
+  - key: power.ht2a.energy_charge
+    group: power
+    title: HT-2(a) industrial energy charge
+    value: 6.60
+    unit: INR/kWh
+    effective_from: 2025-04-01
+    effective_to: 2026-03-31
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Tariff Schedule HT-2(a), FY2025-26: 660 paise/kWh (order p.550)"
+    confidence: 0.9
+    verify: false
+
+  - key: power.ht2a.energy_charge
+    group: power
+    title: HT-2(a) industrial energy charge (MYT value for FY2026-27)
+    value: 6.60
+    unit: INR/kWh
+    effective_from: 2026-04-01
+    effective_to: 2027-03-31
+    superseded: true
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Tariff Schedule HT-2(a), FY2026-27: 660 paise/kWh (order p.550)"
+    confidence: 0.9
+    verify: false
+    note: Kept for history; revised by the KERC review order of 3 Mar 2026 (next value).
+
+  - key: power.ht2a.energy_charge
+    group: power
+    title: HT-2(a) industrial energy charge (after the March 2026 review order)
+    value: 6.70
+    unit: INR/kWh
+    effective_from: 2026-04-01
+    effective_to: 2027-03-31
+    <<: *review2026
+    confidence: 0.7
+    note: Up from 6.60 per the news reports; confirm against the KERC order text.
+
+  - key: power.ht2a.energy_charge
+    group: power
+    title: HT-2(a) industrial energy charge (MYT value for FY2027-28)
+    value: 6.50
+    unit: INR/kWh
+    effective_from: 2027-04-01
+    effective_to: 2028-03-31
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Tariff Schedule HT-2(a), FY2027-28: 650 paise/kWh (order p.550)"
+    confidence: 0.6
+    verify: true
+    note: Future value; likely to change in the next annual review.
+
+  # ── LT-5 industrial ──────────────────────────────────────────────
+  - key: power.lt5.fixed_charge
+    group: power
+    title: LT-5 industrial fixed charge
+    value: 150
+    unit: INR/hp/month
+    effective_from: 2025-04-01
+    effective_to: 2026-03-31
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Tariff Schedule LT-5, FY2025-26 (order p.540)"
+    confidence: 0.9
+    verify: false
+
+  - key: power.lt5.fixed_charge
+    group: power
+    title: LT-5 industrial fixed charge (MYT value for FY2026-27)
+    value: 150
+    unit: INR/hp/month
+    effective_from: 2026-04-01
+    effective_to: 2027-03-31
+    superseded: true
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Tariff Schedule LT-5, FY2026-27 (order p.540)"
+    confidence: 0.9
+    verify: false
+    note: Kept for history; revised by the KERC review order of 3 Mar 2026 (next value).
+
+  - key: power.lt5.fixed_charge
+    group: power
+    title: LT-5 industrial fixed charge (after the March 2026 review order)
+    value: 165
+    unit: INR/hp/month
+    effective_from: 2026-04-01
+    effective_to: 2027-03-31
+    <<: *review2026
+    confidence: 0.7
+
+  - key: power.lt5.energy_charge
+    group: power
+    title: LT-5 industrial energy charge
+    value: 4.50
+    unit: INR/kWh
+    effective_from: 2025-04-01
+    effective_to: 2026-03-31
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Tariff Schedule LT-5, FY2025-26: 450 paise/kWh (order p.540)"
+    confidence: 0.9
+    verify: false
+
+  - key: power.lt5.energy_charge
+    group: power
+    title: LT-5 industrial energy charge (MYT value for FY2026-27)
+    value: 4.40
+    unit: INR/kWh
+    effective_from: 2026-04-01
+    effective_to: 2027-03-31
+    superseded: true
+    <<: *kerc2025
+    source_title: "KERC Combined Tariff Order 2025, Tariff Schedule LT-5, FY2026-27: 440 paise/kWh (order p.540)"
+    confidence: 0.9
+    verify: false
+    note: Kept for history; revised by the KERC review order of 3 Mar 2026 (next value).
+
+  - key: power.lt5.energy_charge
+    group: power
+    title: LT-5 industrial energy charge (after the March 2026 review order)
+    value: 5.20
+    unit: INR/kWh
+    effective_from: 2026-04-01
+    effective_to: 2027-03-31
+    <<: *review2026
+    confidence: 0.7
+    note: Reported as up from 4.50; confirm against the KERC order text.
+
+  # ── Surcharges and taxes ─────────────────────────────────────────
+  - key: power.bescom.true_up_surcharge
+    group: power
+    title: BESCOM FY2024-25 true-up charge on energy consumed
+    value: 0.56
+    unit: INR/kWh
+    effective_from: 2026-05-01
+    effective_to: 2027-04-30
+    applies_to: BESCOM consumers (category split not stated)
+    source_kind: secondary
+    source_url: https://newsable.asianetnews.com/karnataka-news/kerc-issues-true-up-tariff-order-bescom-consumers-to-pay-56-paise-more-per-unit-articleshow-03ssvtv
+    source_title: "Asianet Newsable, 18 Apr 2026: KERC true-up order, BESCOM +56 paise/unit for consumption 1 May 2026 to 30 Apr 2027"
+    retrieved_at: 2026-11-12
+    confidence: 0.6
+    verify: true
+    note: Whether it applies to HT-2(a) was not stated in the report.
+
+  - key: power.electricity_tax_pct
+    group: power
+    title: Electricity tax (state levy) on energy charges
+    value: null
+    unit: "%"
+    effective_from: 2026-11-12
+    source_kind: none
+    source_title: Not found in P1 research
+    retrieved_at: 2026-11-12
+    confidence: 0
+    verify: true
+    note: Unknown. The KERC order refers to Electricity Tax but the rate is set by state law; research before finance (P8).
+
+  # ── Rooftop solar (option, not base case) ────────────────────────
+  - key: power.solar.roof_kw_per_m2
+    group: power
+    title: Rooftop solar capacity per m² of usable roof
+    value: 0.1
+    unit: kW/m**2
+    effective_from: 2026-11-12
+    source_kind: estimate
+    source_title: Engineering rule of thumb (about 10 m² per kWp)
+    retrieved_at: 2026-11-12
+    confidence: 0.4
+    verify: true
+    note: Estimate for the solar option only; not used in the base case.
+
+  - key: power.solar.yield_kwh_per_kw_year
+    group: power
+    title: Annual rooftop solar yield in Karnataka
+    value: 1400
+    unit: kWh/kW/year
+    effective_from: 2026-11-12
+    source_kind: estimate
+    source_title: Engineering estimate for southern India
+    retrieved_at: 2026-11-12
+    confidence: 0.3
+    verify: true
+    note: Replace with a PVGIS / NREL run for the site.

@@ -91,9 +91,7 @@ class Pack(DomainModel):
         return sorted({v.key for v in self.values})
 
     def history(self, key: str) -> list[PackValue]:
-        return sorted(
-            (v for v in self.values if v.key == key), key=lambda v: v.effective_from
-        )
+        return sorted((v for v in self.values if v.key == key), key=lambda v: v.effective_from)
 
     def active(self, key: str, day: date | None = None) -> PackValue | None:
         on = day or self.manifest.as_of

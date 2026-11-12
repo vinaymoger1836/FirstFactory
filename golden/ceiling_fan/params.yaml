@@ -1,0 +1,7 @@
+# G2 per-variant product parameters (names and units: catalog archetype ceiling_fan).
+archetype: ceiling_fan
+variants:
+  F1200: {sweep_mm: 1200, slots: 18, turns_per_coil: 80, copper_kg: 0.35, n_blades: 3, n_bearings: 2,
+          n_screws: 8, n_connectors: 4, n_solder_joints: 3, n_speeds: 5, n_labels: 2, units_per_carton: 1}
+  F900: {sweep_mm: 900, slots: 18, turns_per_coil: 70, copper_kg: 0.28, n_blades: 3, n_bearings: 2,
+         n_screws: 8, n_connectors: 4, n_solder_joints: 3, n_speeds: 5, n_labels: 2, units_per_carton: 1}

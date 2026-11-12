@@ -1,0 +1,22 @@
+# G5: Scholl (1993) SALBP-1 benchmark instances with optimal station counts.
+# Source: https://assembly-line-balancing.de/salbp/benchmark-data-sets-1993/ (SALBP-data-sets.zip,
+# "precedence graphs/*.IN2" and "SALBP data sets.xlsx", sheet "SALBP-1 data set").
+# Retrieved 2026-11-12. n and t_sum match the data set's "Precedence graphs" sheet.
+source: https://assembly-line-balancing.de/salbp/benchmark-data-sets-1993/
+retrieved_at: 2026-11-12
+instances:
+  jackson:
+    file: JACKSON.IN2
+    n: 11
+    t_sum: 46
+    optima: {7: 8, 9: 6, 10: 5, 13: 4, 14: 4, 21: 3}
+  mertens:
+    file: MERTENS.IN2
+    n: 7
+    t_sum: 29
+    optima: {6: 6, 7: 5, 8: 5, 10: 3, 15: 2, 18: 2}
+  bowman:
+    file: BOWMAN8.IN2
+    n: 8
+    t_sum: 75
+    optima: {20: 5}

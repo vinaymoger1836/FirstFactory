@@ -72,8 +72,8 @@ def upgrade() -> None:
             effective_to    date,
             superseded      boolean NOT NULL DEFAULT false,
             applies_to      text,
-            source_kind     text NOT NULL
-                            CHECK (source_kind IN ('primary','secondary','derived','estimate','none')),
+            source_kind     text NOT NULL CHECK (source_kind IN
+                                ('primary', 'secondary', 'derived', 'estimate', 'none')),
             source_url      text,
             source_title    text NOT NULL,
             retrieved_at    date NOT NULL,
