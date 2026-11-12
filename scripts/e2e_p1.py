@@ -82,55 +82,86 @@ def main() -> int:
         if v.key == "labour.weekly_hours_max":
             v.effective_to = date(2026, 6, 30)
     errs = errors(check_pack(expired))
-    record("negative: expired pack value rejected", any("expired" in e for e in errs), errs[0] if
-           errs else "no error")
+    record(
+        "negative: expired pack value rejected",
+        any("expired" in e for e in errs),
+        errs[0] if errs else "no error",
+    )
 
     overlap = pack.model_copy(deep=True)
     for v in overlap.values:
         if v.key == "power.ht2a.demand_charge" and v.value == 350:
             v.superseded = False
     errs = errors(check_pack(overlap))
-    record("negative: two active pack values rejected", any("overlap" in e for e in errs),
-           errs[0] if errs else "no error")
+    record(
+        "negative: two active pack values rejected",
+        any("overlap" in e for e in errs),
+        errs[0] if errs else "no error",
+    )
 
-    ref, built = product_case("G1", ROOT / "golden" / "power_bank", catalog)
+    _, built = product_case("G1", ROOT / "golden" / "power_bank", catalog)
     bom, routing = built["bom"], built["routing"]
     ctx = ValidationContext(catalog=catalog, bom=bom)  # type: ignore[arg-type]
     unknown = routing.model_copy(deep=True)  # type: ignore[union-attr]
     unknown.operations[2].process.code = "laser_weld_magic"
     errs = errors(validate_routing(unknown, ctx))
-    record("negative: routing with a non-catalog process rejected",
-           any("laser_weld_magic" in e for e in errs), errs[0] if errs else "no error")
+    record(
+        "negative: routing with a non-catalog process rejected",
+        any("laser_weld_magic" in e for e in errs),
+        errs[0] if errs else "no error",
+    )
 
     unconsumed = routing.model_copy(deep=True)  # type: ignore[union-attr]
     unconsumed.operations[7].consumes = []  # OP-080 screw_drive no longer consumes SCREW-M2
     errs = errors(validate_routing(unconsumed, ctx))
-    record("negative: MBOM line not consumed by any op rejected",
-           any("SCREW-M2" in e for e in errs), errs[0] if errs else "no error")
+    record(
+        "negative: MBOM line not consumed by any op rejected",
+        any("SCREW-M2" in e for e in errs),
+        errs[0] if errs else "no error",
+    )
 
     cyclic = bom.model_copy(deep=True)  # type: ignore[union-attr]
-    cyclic.mbom.append(BomLine(parent="SA-CELLPACK", child="SA-CORE", uom="unit", level="mbom",
-                               qty=Prov(value=1.0, source="user", confidence=1.0)))
+    cyclic.mbom.append(
+        BomLine(
+            parent="SA-CELLPACK",
+            child="SA-CORE",
+            uom="unit",
+            level="mbom",
+            qty=Prov(value=1.0, source="user", confidence=1.0),
+        )
+    )
     errs = errors(validate_bom(cyclic, ctx))
-    record("negative: BoM cycle rejected", any("cycle" in e for e in errs),
-           errs[0] if errs else "no error")
+    record(
+        "negative: BoM cycle rejected",
+        any("cycle" in e for e in errs),
+        errs[0] if errs else "no error",
+    )
 
     # 3. Round-trip: Python objects → JSON → typed against generated TS.
     consts: list[str] = []
     for gid, folder in PRODUCT_CASES.items():
         _, objs = product_case(gid, ROOT / "golden" / folder, catalog)
-        for name, type_name in (("template", "ProductTemplate"), ("bom", "Bom"),
-                                ("routing", "Routing")):
+        for name, type_name in (
+            ("template", "ProductTemplate"),
+            ("bom", "Bom"),
+            ("routing", "Routing"),
+        ):
             data = objs[name].model_dump(mode="json")
-            consts.append(f"export const {gid.lower()}_{name}: T.{type_name} = "
-                          f"{json.dumps(data, ensure_ascii=False)};")
+            consts.append(
+                f"export const {gid.lower()}_{name}: T.{type_name} = "
+                f"{json.dumps(data, ensure_ascii=False)};"
+            )
     entry = next(e for e in catalog.entries if e.code == "capacity_cycle_test")
-    consts.append(f"export const catalog_entry: T.ProcessEntry = "
-                  f"{json.dumps(entry.model_dump(mode='json'), ensure_ascii=False)};")
+    consts.append(
+        f"export const catalog_entry: T.ProcessEntry = "
+        f"{json.dumps(entry.model_dump(mode='json'), ensure_ascii=False)};"
+    )
     pv = pack.active("power.ht2a.demand_charge")
     assert pv is not None
-    consts.append(f"export const pack_value: T.PackValue = "
-                  f"{json.dumps(pv.model_dump(mode='json'), ensure_ascii=False)};")
+    consts.append(
+        f"export const pack_value: T.PackValue = "
+        f"{json.dumps(pv.model_dump(mode='json'), ensure_ascii=False)};"
+    )
     gen = ROOT / "packages" / "ts-types" / "src" / "generated"
     gen.mkdir(parents=True, exist_ok=True)
     (gen / "roundtrip.check.ts").write_text(

@@ -1,6 +1,16 @@
 """End-to-end check (`make e2e` / `uv run scripts/e2e.py`). Standard library only.
 
-P0 scope: build + start the stack, then verify through Caddy:
+P1 adds (docs/14 §5 P1 acceptance):
+  - the compose `migrate` step validates the catalog and KA pack and loads them into Postgres
+    (a validation error stops the stack); versions, row counts and the pgvector HNSW index
+    are checked in the database; hybrid catalog search returns the expected entries;
+  - reloading is idempotent, the same version with different content is refused, and a
+    broken library makes the loader fail with nothing written;
+  - host side (scripts/e2e_p1.py): G1-G7 fixtures, G1/G2 routings in catalog codes only
+    through the docs/04 §5 validators, negative controls;
+  - schema round-trip: Pydantic → JSON Schema → TypeScript, compiled with real objects.
+
+P0 scope (kept): build + start the stack, then verify through Caddy:
   - liveness and readiness (Postgres+pgvector, Redis, worker and cad-worker heartbeats)
   - project create → only the token hash is stored → token resolves; a bad token is rejected
   - SSE demo streams every progress event and a final `done` event
@@ -27,6 +37,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = ["docker", "compose", "--env-file", ".env", "-f", "infra/docker-compose.yml"]
+PHASE = "P1"
 GOLDEN = {
     "G1": "Power bank: demand, takt, PCT, test positions/channels",
     "G2": "BLDC fan: demand, takt, PCT, run-in positions, varnish ovens",
@@ -35,6 +46,18 @@ GOLDEN = {
     "G5": "Balancing: Scholl SALBP-1 optima",
     "G6": "Layout: QAP equals brute force",
     "G7": "Simulation: serial line throughput; M/M/1 L=4",
+}
+
+# What each golden case asserts at this phase (fixtures and catalog routing are checked in
+# host_checks; the exact numbers need the engines of later phases).
+GOLDEN_STATUS = {
+    "G1": "FIXTURE: routing in catalog codes + validators pass; exact numbers from P4",
+    "G2": "FIXTURE: routing in catalog codes + validators pass; exact numbers from P4",
+    "G3": "FIXTURE: stored; asserted from P5",
+    "G4": "FIXTURE: stored; asserted from P8",
+    "G5": "FIXTURE: instances verified against Scholl's table; asserted from P4",
+    "G6": "FIXTURE: optimum re-verified by brute force; layout engine from P6",
+    "G7": "FIXTURE: stored; asserted from P7",
 }
 
 results: list[dict] = []
@@ -84,6 +107,167 @@ def sh(args: list[str], check: bool = True, capture: bool = False) -> subprocess
 
 def compose_exec(service: str, code: str) -> subprocess.CompletedProcess:
     return sh([*COMPOSE, "exec", "-T", service, "python", "-c", code], check=False, capture=True)
+
+
+def compose_run(service: str, *args: str) -> subprocess.CompletedProcess:
+    return sh([*COMPOSE, "exec", "-T", service, *args], check=False, capture=True)
+
+
+def psql(sql: str) -> str:
+    user, db = env_value("POSTGRES_USER", "factory"), env_value("POSTGRES_DB", "factory")
+    q = sh(
+        [*COMPOSE, "exec", "-T", "postgres", "psql", "-U", user, "-d", db, "-tA", "-F|", "-c", sql],
+        check=False,
+        capture=True,
+    )
+    return q.stdout.strip()
+
+
+SAME_VERSION_CHANGED = """
+import os, sys
+from pathlib import Path
+from fl_library.io import load_catalog
+from fl_library.db import load_library
+cat, _ = load_catalog(Path(os.environ["FL_LIBRARY_DIR"]) / "catalog")
+cat.entries[0].name = cat.entries[0].name + " (edited)"
+try:
+    load_library(os.environ["DATABASE_URL"], cat, [], [])
+except ValueError as exc:
+    print("refused:", exc); sys.exit(0)
+print("accepted"); sys.exit(1)
+"""
+
+BROKEN_LIBRARY = """
+import shutil, subprocess, sys
+from pathlib import Path
+src, dst = Path("/app/library"), Path("/tmp/badlib")
+shutil.rmtree(dst, ignore_errors=True)
+shutil.copytree(src, dst)
+f = dst / "packs" / "KA" / "labour.yaml"
+old = "effective_from: 2026-05-08"
+f.write_text(f.read_text().replace(old, old + chr(10) + "    effective_to: 2026-06-30", 1))
+p = subprocess.run(["fl-library", "--library", str(dst), "load"], capture_output=True, text=True)
+text = p.stdout + p.stderr
+print(p.returncode, [ln for ln in text.splitlines() if "expired" in ln][:1], text[-120:])
+sys.exit(0 if p.returncode != 0 and "nothing loaded" in text else 1)
+"""
+
+SEARCHES = [
+    ("battery spot welding", "process", "spot_weld_nickel"),
+    ("hi-pot dielectric withstand test", "check_type", "hipot"),
+    ("varnish curing oven", "machine_class", "cure_oven_batch"),
+    ("lithium battery hazardous store", "zone_kind", "li_ion_store"),
+    ("magnet wire", "commodity_class", "copper_winding_wire"),
+]
+
+
+def _last(text: str) -> str:
+    lines = [ln for ln in text.strip().splitlines() if ln.strip()]
+    return lines[-1][:200] if lines else ""
+
+
+def library_checks() -> None:
+    print("==> Library in Postgres (P1)", flush=True)
+    logs = sh([*COMPOSE, "logs", "--no-log-prefix", "migrate"], check=False, capture=True)
+    out = logs.stdout + logs.stderr
+    summary = [ln.strip() for ln in out.splitlines() if "catalog 2026" in ln or "pack KA" in ln]
+    record(
+        "migrate: catalog + pack validation passed, then loaded",
+        "validation: 0 error(s)" in out and "Library validation failed" not in out,
+        " | ".join(dict.fromkeys(summary))[:300],
+    )
+    rows = psql(
+        "SELECT kind, scope, version, entry_count, verify_count FROM library_version "
+        "ORDER BY kind, scope, version"
+    )
+    record(
+        "library_version rows (catalog + KA pack)",
+        "catalog|catalog|" in rows and "pack|KA|" in rows,
+        rows.replace("\n", "; "),
+    )
+    counts = psql(
+        "SELECT (SELECT count(*) FROM catalog_entry) || '|' || (SELECT count(*) FROM pack_value)"
+        " || '|' || (SELECT count(*) FROM catalog_entry WHERE embedding IS NOT NULL)"
+    )
+    parts = counts.split("|")
+    ok = len(parts) == 3 and parts[0] == parts[2] and int(parts[0]) >= 150 and int(parts[1]) >= 40
+    record(
+        "catalog entries and pack values stored, every entry embedded",
+        ok,
+        f"catalog_entry {parts[0]}, pack_value {parts[1]}" if len(parts) == 3 else counts,
+    )
+    plan = psql(
+        "SET enable_seqscan = off; EXPLAIN SELECT code FROM catalog_entry ORDER BY embedding "
+        "<=> (SELECT embedding FROM catalog_entry WHERE code = 'spot_weld_nickel' LIMIT 1) "
+        "LIMIT 5"
+    )
+    used = "ix_catalog_entry_embedding" in plan
+    record(
+        "pgvector HNSW index serves nearest-neighbour search",
+        used,
+        "Index Scan using ix_catalog_entry_embedding" if used else plan[:200],
+    )
+    for query, kind, want in SEARCHES:
+        p = compose_run(
+            "api", "fl-library", "search", query, "--kind", kind, "--limit", "3", "--json"
+        )
+        try:
+            hits = json.loads(_last(p.stdout) or "[]")
+        except json.JSONDecodeError:
+            hits = []
+        top = hits[0]["code"] if hits else "none"
+        record(
+            f"search '{query}' ({kind}) → {want}",
+            top == want,
+            ", ".join(f"{h['code']} {h['score']:.2f}" for h in hits) or _last(p.stderr),
+        )
+    p = compose_run("api", "fl-library", "load")
+    record(
+        "reload of the same versions is a no-op",
+        p.returncode == 0 and "unchanged" in p.stdout and ": loaded (" not in p.stdout,
+        " | ".join(ln.strip() for ln in p.stdout.splitlines() if "unchanged" in ln)[:200]
+        or _last(p.stderr),
+    )
+    p = compose_exec("api", SAME_VERSION_CHANGED)
+    record(
+        "same version with different content is refused",
+        p.returncode == 0,
+        _last(p.stdout + p.stderr),
+    )
+    p = compose_exec("api", BROKEN_LIBRARY)
+    record(
+        "broken pack (expired value) fails the loader, nothing loaded",
+        p.returncode == 0,
+        _last(p.stdout + p.stderr),
+    )
+
+
+def host_checks() -> None:
+    print("==> Golden fixtures, negative controls, schema round-trip (host)", flush=True)
+    out = ROOT / "e2e-results" / "p1-host.json"
+    out.parent.mkdir(exist_ok=True)
+    uv = shutil.which("uv") or "uv"
+    p = sh(
+        [uv, "run", "--frozen", "python", "scripts/e2e_p1.py", "--out", str(out)],
+        check=False,
+        capture=True,
+    )
+    try:
+        host = json.loads(out.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        host = []
+        record("host checks ran", False, (p.stdout + p.stderr)[-300:])
+    for r in host:
+        record(r["check"], r["ok"], r["detail"])
+    pnpm = shutil.which("pnpm") or "pnpm"
+    p = sh([pnpm, "-C", "packages/ts-types", "typecheck"], check=False, capture=True)
+    text = (p.stdout + p.stderr).strip()
+    exported = next((ln for ln in text.splitlines() if "exported types" in ln), "")
+    record(
+        "schema round-trip: Pydantic → JSON Schema → TS compiles with real objects",
+        p.returncode == 0,
+        exported.split("(")[-1].rstrip(")") if p.returncode == 0 else text[-300:],
+    )
 
 
 def wait_ready(base: str, timeout: float) -> tuple[int, dict | str]:
@@ -227,9 +411,12 @@ def main() -> int:
             (p.stdout + p.stderr).strip()[-200:],
         )
 
+    library_checks()
+    host_checks()
+
     print("==> Golden cases (docs/14 §4)", flush=True)
     for gid, desc in GOLDEN.items():
-        print(f"  [TODO] {gid} {desc} — not implemented in P0")
+        print(f"  [{GOLDEN_STATUS[gid].split(':')[0]}] {gid} {desc} — {GOLDEN_STATUS[gid]}")
 
     return finish(args)
 
@@ -239,16 +426,17 @@ def finish(args: argparse.Namespace) -> int:
     out.mkdir(exist_ok=True)
     ok = all(r["ok"] for r in results) and bool(results)
     summary = {
-        "phase": "P0",
+        "phase": PHASE,
         "ok": ok,
         "checks": results,
-        "golden": dict.fromkeys(GOLDEN, "not implemented (P0)"),
+        "golden": GOLDEN_STATUS,
         "host": {"platform": sys.platform, "machine": os.environ.get("PROCESSOR_ARCHITECTURE", "")},
         "finished_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
     }
-    (out / "p0.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    name = f"{PHASE.lower()}.json"
+    (out / name).write_text(json.dumps(summary, indent=2), encoding="utf-8")
     passed = sum(r["ok"] for r in results)
-    print(f"\n{'PASSED' if ok else 'FAILED'}: {passed}/{len(results)} checks · e2e-results/p0.json")
+    print(f"\n{'PASSED' if ok else 'FAILED'}: {passed}/{len(results)} checks · e2e-results/{name}")
     if args.down:
         sh([*COMPOSE, "down"], check=False)
     else:

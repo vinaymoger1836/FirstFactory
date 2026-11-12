@@ -101,7 +101,9 @@ def _explicit_any(schema: Any) -> None:
     if not isinstance(schema, dict):
         return
     subs: list[Any] = list(schema.get("properties", {}).values())
-    subs += [schema[k] for k in ("items", "additionalProperties") if isinstance(schema.get(k), dict)]
+    for k in ("items", "additionalProperties"):
+        if isinstance(schema.get(k), dict):
+            subs.append(schema[k])
     for k in ("anyOf", "oneOf", "allOf", "prefixItems"):
         subs += schema.get(k, [])
     for sub in subs:
