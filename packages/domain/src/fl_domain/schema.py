@@ -82,6 +82,29 @@ def _strip_titles(node: Any) -> Any:
     return node
 
 
+_ANY_JSON = ["number", "string", "boolean", "object", "array", "null"]
+_TYPED = {"type", "$ref", "anyOf", "oneOf", "allOf", "enum", "const", "items", "properties"}
+
+
+def _explicit_any(schema: Any) -> None:
+    """Make ``Any`` fields explicit ("any JSON value") instead of an empty schema.
+
+    An empty sub-schema is valid JSON Schema for "anything", but code generators read it
+    differently (json-schema-to-typescript emits an object type), so a numeric pack value
+    would not type-check in TypeScript.
+    """
+    if not isinstance(schema, dict):
+        return
+    subs: list[Any] = list(schema.get("properties", {}).values())
+    subs += [schema[k] for k in ("items", "additionalProperties") if isinstance(schema.get(k), dict)]
+    for k in ("anyOf", "oneOf", "allOf", "prefixItems"):
+        subs += schema.get(k, [])
+    for sub in subs:
+        if isinstance(sub, dict) and not (_TYPED & sub.keys()):
+            sub["type"] = list(_ANY_JSON)
+        _explicit_any(sub)
+
+
 def build_schema(mode: Mode = "serialization") -> dict[str, Any]:
     models = top_level_models()
     refs, defs = models_json_schema(
@@ -92,6 +115,8 @@ def build_schema(mode: Mode = "serialization") -> dict[str, Any]:
         name: {**_strip_titles(d), **({"title": d["title"]} if "title" in d else {})}
         for name, d in raw_defs.items()
     }
+    for d in clean_defs.values():
+        _explicit_any(d)
     properties = {name: refs[(model, mode)] for name, model in models.items()}
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
