@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import Field
 
@@ -24,6 +24,13 @@ __all__ = [
     "WorkOrderTemplate",
     "WorkOrdersShifts",
 ]
+
+
+WoType = Literal["production", "rework", "lab_sample", "changeover"]
+
+
+def _all_wo_types() -> list[WoType]:
+    return list(get_args(WoType))
 
 
 class WorkOrderTemplate(DomainModel):
@@ -61,7 +68,7 @@ class ReleaseLogic(DomainModel):
 
 class WorkOrder(DomainModel):
     wo_no: LocalId
-    type: Literal["production", "rework", "lab_sample", "changeover"]
+    type: WoType
     variant: LocalId | None = None
     quantity: int = Field(ge=0)
     due_date: str
@@ -80,9 +87,7 @@ class WorkOrderDesign(DomainModel):
     """S7 artifact (part 1)."""
 
     template: WorkOrderTemplate = Field(default_factory=WorkOrderTemplate)
-    wo_types: list[Literal["production", "rework", "lab_sample", "changeover"]] = Field(
-        default_factory=lambda: ["production", "rework", "lab_sample", "changeover"]
-    )
+    wo_types: list[WoType] = Field(default_factory=_all_wo_types)
     traceability: Traceability
     release: ReleaseLogic
     sample_week: list[WorkOrder] = Field(default_factory=list)

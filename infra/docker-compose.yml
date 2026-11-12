@@ -33,7 +33,9 @@ services:
   migrate:
     image: ${IMAGE_PREFIX:-factory}-api:${IMAGE_TAG:-local}
     build: { <<: *build, target: api }
-    command: ["alembic", "upgrade", "head"]
+    # Schema migrations, then catalog + data-pack validation and versioned load (docs/10 §1.4,
+    # §2.3). Any validation error fails this step, so the stack does not start on a bad library.
+    command: ["sh", "-c", "alembic upgrade head && fl-library load"]
     environment: &api-env
       APP_ENV: ${APP_ENV:-local}
       LOG_LEVEL: ${LOG_LEVEL:-info}

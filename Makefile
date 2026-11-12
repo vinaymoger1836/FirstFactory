@@ -41,7 +41,7 @@ fmt:
 	uv run ruff check --fix .
 
 typecheck:
-	uv run mypy packages/domain/src packages/engines/src packages/agents/src apps/api/src apps/worker/src
+	uv run mypy packages/domain/src packages/engines/src packages/library/src packages/agents/src apps/api/src apps/worker/src
 	pnpm typecheck
 
 web-dev:

@@ -29,6 +29,7 @@ COPY apps/worker/pyproject.toml apps/worker/pyproject.toml
 COPY packages/domain/pyproject.toml packages/domain/pyproject.toml
 COPY packages/engines/pyproject.toml packages/engines/pyproject.toml
 COPY packages/agents/pyproject.toml packages/agents/pyproject.toml
+COPY packages/library/pyproject.toml packages/library/pyproject.toml
 
 FROM deps AS api-build
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -59,6 +60,10 @@ FROM base AS api
 COPY --from=api-build /app/.venv /app/.venv
 COPY apps/api/alembic.ini /app/alembic.ini
 COPY apps/api/migrations /app/migrations
+# Library seed (docs/10): validated and loaded into Postgres by `fl-library load` in the
+# compose `migrate` step. Read-only data; versioned YAML.
+COPY library /app/library
+ENV FL_LIBRARY_DIR=/app/library
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=5 \

@@ -36,7 +36,7 @@ from fl_domain.validators import ValidationContext, validate_bom, validate_routi
 from fl_library.checks import formula_value
 from fl_library.io import read_yaml
 
-__all__ = ["GoldenReport", "check_golden"]
+__all__ = ["PRODUCT_CASES", "GoldenReport", "check_golden", "product_case"]
 
 PRODUCT_CASES = {"G1": "power_bank", "G2": "ceiling_fan"}
 
@@ -150,7 +150,10 @@ def _time(
     return first, overrides, batch
 
 
-def _product_case(gid: str, case_dir: Path, catalog: Catalog) -> GoldenReport:
+def product_case(
+    gid: str, case_dir: Path, catalog: Catalog
+) -> tuple[GoldenReport, dict[str, DomainModel]]:
+    """Build and check one product case; also return the built template, Bom and Routing."""
     issues: list[Issue] = []
     facts: dict[str, Any] = {}
     try:
@@ -160,9 +163,10 @@ def _product_case(gid: str, case_dir: Path, catalog: Catalog) -> GoldenReport:
         fx_route = FxRouting.model_validate(read_yaml(case_dir / "routing.yaml"))
         expected = FxExpected.model_validate(read_yaml(case_dir / "expected.yaml"))
     except (ValidationError, OSError) as exc:
-        return GoldenReport(
+        report = GoldenReport(
             case=gid, ok=False, issues=[Issue(code="golden.schema", message=str(exc)[:2000])]
         )
+        return report, {}
     variants = [v.code for v in template.product.variants]
     if set(params.variants) != set(variants):
         issues.append(Issue(code="golden.params", message="params.yaml variants ≠ template"))
@@ -280,7 +284,8 @@ def _product_case(gid: str, case_dir: Path, catalog: Catalog) -> GoldenReport:
     facts["process_codes"] = sorted({o.process.code for o in ops})
     facts["mbom_lines"] = len(bom.mbom)
     facts["assertions"] = expected.assertions
-    return GoldenReport(case=gid, ok=not issues, issues=issues, facts=facts)
+    report = GoldenReport(case=gid, ok=not issues, issues=issues, facts=facts)
+    return report, {"template": template, "bom": bom, "routing": routing}
 
 
 # ── G3-G7: fixture integrity ──────────────────────────────────────────
@@ -366,5 +371,5 @@ def _aux_cases(golden: Path) -> list[GoldenReport]:
 
 
 def check_golden(golden: Path, catalog: Catalog) -> list[GoldenReport]:
-    reports = [_product_case(gid, golden / d, catalog) for gid, d in PRODUCT_CASES.items()]
+    reports = [product_case(gid, golden / d, catalog)[0] for gid, d in PRODUCT_CASES.items()]
     return reports + _aux_cases(golden)

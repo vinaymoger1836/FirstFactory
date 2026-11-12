@@ -253,7 +253,11 @@ def validate_bom(bom: Bom, ctx: ValidationContext) -> list[Issue]:
                 continue
             seen.add(n)
             node_item = items.get(n)
-            if node_item is not None and node_item.kind in ("product", "assembly") and not children.get(n):
+            if (
+                node_item is not None
+                and node_item.kind in ("product", "assembly")
+                and not children.get(n)
+            ):
                 out.append(_err("bom.incomplete", f"assembly {n} has no MBOM lines for {v}"))
             todo.extend(children.get(n, []))
     out += _check_units(bom)
@@ -900,7 +904,6 @@ def validate_json(
         artifact = model.model_validate(data)
     except ValidationError as exc:
         return None, [
-            _err("schema", e["msg"], ".".join(str(p) for p in e["loc"]))
-            for e in exc.errors()
+            _err("schema", e["msg"], ".".join(str(p) for p in e["loc"])) for e in exc.errors()
         ]
     return artifact, validate_artifact(stage, artifact, ctx)
