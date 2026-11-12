@@ -11,7 +11,7 @@ WeasyPrint's system libraries) unless noted.
   install scripts (`allowBuilds`).
 - Lockfiles: `uv.lock` and `pnpm-lock.yaml` are committed. Docker builds use `uv sync --frozen`.
 
-Last updated: 2026-11-11 (P0).
+Last updated: 2026-11-12 (P1). The `exclude-newer` date was not moved in P1.
 
 ## Toolchain
 
@@ -47,7 +47,9 @@ Last updated: 2026-11-11 (P0).
 | alembic | 1.20.1 | api migrations |
 | redis (redis-py) | 8.1.0 | api, worker |
 | procrastinate | 3.10.0 | worker queue (spike e, ADR-019) |
-| psycopg / psycopg-binary / psycopg-pool | 3.3.6 / 3.3.6 / 3.3.3 | worker queue |
+| psycopg / psycopg-binary / psycopg-pool | 3.3.6 / 3.3.6 / 3.3.3 | worker queue; `fl-library` loader (api image, P1). LGPL-3.0 (dynamic use) |
+| pint | 0.26.2 | domain: unit validation (P1). BSD-3. Pulls flexcache 0.3, flexparser 0.4, platformdirs 4.13.6 (MIT/BSD) |
+| pyyaml | 6.0.3 | `fl-library`: catalog/pack YAML (`safe_load` only) (P1). MIT |
 | ortools | 9.15.6755 | worker (CP-SAT) |
 | weasyprint | 70.0 | worker (PDF) |
 | cadquery | 2.8.0 | cad-worker |
@@ -82,6 +84,7 @@ Last updated: 2026-11-11 (P0).
 | typescript-eslint | 8.72.1 |
 | eslint-plugin-jsx-a11y | 6.10.2 |
 | eslint-plugin-react-hooks | 5.2.0 |
+| json-schema-to-typescript | 15.0.4 (P1; dev dependency of `packages/ts-types`). MIT. Pulls prettier 3.9.10 and @apidevtools/json-schema-ref-parser 11.9.3 (MIT) |
 
 ## GitHub Actions (major tags; pin to commit SHAs before enabling pushes, P9)
 
