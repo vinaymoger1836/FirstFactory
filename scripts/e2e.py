@@ -212,7 +212,8 @@ def library_checks() -> None:
             "api", "fl-library", "search", query, "--kind", kind, "--limit", "3", "--json"
         )
         try:
-            hits = json.loads(_last(p.stdout) or "[]")
+            lines = [ln for ln in p.stdout.splitlines() if ln.strip()]
+            hits = json.loads(lines[-1] if lines else "[]")
         except json.JSONDecodeError:
             hits = []
         top = hits[0]["code"] if hits else "none"
