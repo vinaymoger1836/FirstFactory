@@ -1,0 +1,18 @@
+# Process catalog manifest (docs/10 §1). Version string YYYY.MM.patch; projects pin it (ADR-009).
+# Bump the version for ANY content change: the loader refuses to reload a version with
+# different content.
+version: "2026.11.1"
+effective_date: 2026-11-12
+description: >
+  POC seed covering both golden products (power bank, BLDC ceiling fan) plus common generic
+  steps (SMT, reflow, AOI, moulding, ultrasonic welding) for future products. Numbers are
+  engineering estimates unless an entry's provenance says otherwise; they are shown with
+  lower confidence in projects.
+files:
+  - archetypes.yaml
+  - commodity_classes.yaml
+  - zone_kinds.yaml
+  - check_types.yaml
+  - machine_classes.yaml
+  - processes.yaml
+  - mtm_elements.yaml

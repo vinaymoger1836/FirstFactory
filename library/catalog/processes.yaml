@@ -1,0 +1,690 @@
+# Processes (docs/10 §1.2). Times are seconds per unit from formulas evaluated by the safe
+# evaluator (fl_engines.expr) with product parameters (archetype parameter names), process
+# `constants` and the machine class `params`.
+kind: process
+
+x-est: &est
+  source: catalog-estimate
+  as_of: "2026-11"
+  confidence: 0.4
+  note: Engineering estimate for the POC seed; replace with measured times or quotes.
+x-doc: &doc
+  source: catalog-estimate
+  as_of: "2026-11"
+  confidence: 0.5
+  note: Default time stated in docs/05 §1.2 (golden case input); editable per project.
+x-price-fixture-s: &fixture_s {low: 10000, base: 25000, high: 60000, as_of: "2026-11", source: catalog-estimate}
+x-price-fixture-m: &fixture_m {low: 30000, base: 75000, high: 150000, as_of: "2026-11", source: catalog-estimate}
+
+entries:
+  # ── Power bank ───────────────────────────────────────────────────
+  - code: iqc_cell_grading
+    name: Cell grading (OCV and internal resistance)
+    description: Measure open-circuit voltage and AC internal resistance of every incoming cell and bin it by grade.
+    aliases: [cell sorting by IR, OCV IR test, cell grading, incoming cell test]
+    applies_to: {archetype: [power_bank], commodity: [li_ion_cell]}
+    task_type: machine_paced
+    machine_class: cell_grader_ocv_ir
+    skill: semi_skilled
+    time_model: {formula: "cells_per_pack * cell_test_s + 2", variables: {}, distribution: triangular, spread_pct: 10}
+    constants: {cell_test_s: 4}
+    fpy: 0.995
+    quality_checks: [cell_ocv_ir]
+    utilities: {kw: 0.3, demand_factor: 0.6}
+    footprint_m2: 3.0
+    zone_kind: esd_assembly
+    hazards: [li_ion]
+    price_inr: *fixture_s
+    provenance: *est
+
+  - code: cell_sort_match
+    name: Cell sorting and matching into pack sets
+    description: Group graded cells of matching voltage and IR into sets for one pack.
+    aliases: [cell matching, cell binning]
+    applies_to: {archetype: [power_bank], commodity: [li_ion_cell]}
+    task_type: manual
+    skill: semi_skilled
+    time_model: {formula: "cells_per_pack * 3 + 5", distribution: triangular, spread_pct: 15}
+    fpy: 0.999
+    footprint_m2: 2.5
+    zone_kind: esd_assembly
+    hazards: [li_ion]
+    provenance: *est
+
+  - code: spot_weld_nickel
+    name: Spot welding of nickel strip to cylindrical cells
+    description: Resistance spot welding of nickel strip interconnects onto 18650/21700 cells.
+    aliases: [battery spot welding, tab welding, nickel strip welding]
+    applies_to: {archetype: [power_bank, generic_electronics], commodity: [li_ion_cell]}
+    task_type: machine_paced
+    machine_class: spot_welder_cd
+    operators_per_machine: 1
+    skill: semi_skilled
+    time_model:
+      formula: "n_welds * 1.5 + 8"
+      variables: {n_welds: "cells_per_pack * 4"}
+      distribution: triangular
+      spread_pct: 15
+    setup_s: 300
+    fpy: 0.985
+    rework: {op: rework_weld, time_s: 90}
+    consumables:
+      - {commodity: nickel_strip, qty_expr: "cells_per_pack * 0.06", uom: m}
+    quality_checks: [weld_pull_test]
+    utilities: {kw: 3.0, demand_factor: 0.4}
+    footprint_m2: 1.8
+    height_m: 1.6
+    zone_kind: esd_assembly
+    hazards: [li_ion]
+    price_inr: *fixture_s
+    mtbf_h: 400
+    mttr_h: 1.5
+    notes: Capacitor-discharge welders preferred for thin nickel; check strip thickness.
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.5
+      note: Formula from docs/05 §1.2 (n_welds × 1.5 s + 8 s load/unload).
+
+  - code: pack_insulation_wrap
+    name: Pack insulation (fish paper, Kapton tape, foam pads)
+    description: Apply fish-paper rings, Kapton tape and foam pads to the welded cell pack.
+    aliases: [pack wrapping, insulation, kapton taping]
+    applies_to: {archetype: [power_bank, generic_electronics], commodity: [li_ion_cell]}
+    task_type: manual
+    skill: semi_skilled
+    time_model: {formula: "cells_per_pack * 5 + 10", distribution: triangular, spread_pct: 15}
+    fpy: 0.998
+    consumables:
+      - {commodity: insulation_tape, qty_expr: "cells_per_pack * 0.05", uom: m}
+    footprint_m2: 2.5
+    zone_kind: esd_assembly
+    hazards: [li_ion]
+    provenance: *est
+
+  - code: manual_solder
+    name: Manual soldering (pack leads to PCBA)
+    description: Hand soldering of pack leads and thermistor to the BMS/charge PCBA under fume extraction.
+    aliases: [hand soldering, pack to pcba solder, wire soldering]
+    applies_to: {archetype: [power_bank, ceiling_fan, generic_electronics], commodity: [pcba]}
+    task_type: manual
+    machine_class: soldering_station
+    skill: skilled
+    time_model: {formula: "n_solder_joints * 5 + 10", distribution: triangular, spread_pct: 20}
+    fpy: 0.98
+    rework: {op: rework_solder, time_s: 60}
+    consumables:
+      - {commodity: consumable_solder, qty_expr: "n_solder_joints * 0.15", uom: g}
+      - {commodity: flux, qty_expr: "n_solder_joints * 0.02", uom: ml}
+    quality_checks: [solder_joint_inspection]
+    utilities: {kw: 0.15, demand_factor: 0.7, exhaust: true}
+    footprint_m2: 2.5
+    zone_kind: esd_assembly
+    hazards: [fumes, hot_surface]
+    price_inr: *fixture_s
+    provenance: *est
+
+  - code: pack_voltage_ir_test
+    name: Pack voltage and IR inline test
+    description: 100% inline test of the soldered pack-PCBA core (voltage, internal resistance, BMS wake-up).
+    aliases: [pack test, IR test, pack voltage check]
+    applies_to: {archetype: [power_bank, generic_electronics], commodity: [li_ion_cell]}
+    task_type: machine_paced
+    machine_class: pack_ir_tester
+    skill: semi_skilled
+    time_model: {formula: "12", distribution: fixed, spread_pct: 5}
+    fpy: 0.99
+    rework: {op: rework_generic, time_s: 120}
+    quality_checks: [pack_voltage_ir]
+    utilities: {kw: 0.2, demand_factor: 0.7}
+    footprint_m2: 2.0
+    zone_kind: esd_assembly
+    hazards: [li_ion]
+    price_inr: *fixture_s
+    provenance: *est
+
+  - code: enclosure_assembly
+    name: Enclosure assembly (core into housing, light pipe, button)
+    description: Place the core assembly into the bottom housing, fit light pipe and button, close the top housing.
+    aliases: [housing assembly, final assembly power bank, snap fit]
+    applies_to: {archetype: [power_bank, generic_electronics], commodity: [molded_enclosure]}
+    task_type: manual
+    skill: semi_skilled
+    time_model: {formula: "18 + n_leds * 1.5", distribution: triangular, spread_pct: 15}
+    fpy: 0.995
+    consumables:
+      - {commodity: adhesive, qty_expr: "0.2", uom: g}
+    footprint_m2: 2.5
+    zone_kind: esd_assembly
+    price_inr: *fixture_s
+    provenance: *est
+
+  - code: screw_drive
+    name: Screw driving (electric screwdriver)
+    description: Drive screws with a torque-controlled electric screwdriver.
+    aliases: [screwing, fastening, screw tightening]
+    applies_to: {archetype: [power_bank, ceiling_fan, generic_electronics, generic_mechanical], commodity: [fasteners]}
+    task_type: manual
+    machine_class: screwdriver_electric
+    skill: semi_skilled
+    time_model: {formula: "n_screws * 4.0 + 3", distribution: triangular, spread_pct: 15}
+    fpy: 0.998
+    utilities: {kw: 0.05, demand_factor: 0.5}
+    footprint_m2: 2.0
+    zone_kind: assembly_line
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.5
+      note: Formula from docs/05 §1.2 (n_screws × 4.0 s + 3 s handling).
+
+  - code: functional_test_pb
+    name: Power bank functional test (EOL, 100%)
+    description: Output voltage and current per port, OCP/SCP/OVP trip, LED indication, charge input.
+    aliases: [EOL test power bank, end of line test, functional test]
+    applies_to: {archetype: [power_bank]}
+    task_type: long_test
+    machine_class: pb_functional_tester
+    skill: semi_skilled
+    time_model: {formula: "functional_test_s", distribution: triangular, spread_pct: 5}
+    constants: {functional_test_s: 60}
+    fpy: 0.985
+    rework: {op: rework_generic, time_s: 180}
+    quality_checks: [functional_pb]
+    utilities: {kw: 0.3, demand_factor: 0.7}
+    footprint_m2: 2.5
+    zone_kind: test_area
+    hazards: [li_ion]
+    price_inr: *fixture_m
+    provenance: *doc
+
+  - code: capacity_test
+    name: Capacity test (charge-discharge cycle)
+    description: Full charge and discharge on a battery test channel to verify rated capacity; runs unattended in racks.
+    aliases: [capacity verification, charge discharge test, mAh test]
+    applies_to: {archetype: [power_bank, generic_electronics], commodity: [li_ion_cell]}
+    task_type: offline_rack
+    machine_class: battery_tester_channel
+    skill: semi_skilled
+    time_model:
+      formula: "(capacity_mah / charge_current_ma + capacity_mah / discharge_current_ma) * 3600 + rest_s"
+      distribution: triangular
+      spread_pct: 5
+    constants: {rest_s: 7200}
+    fpy: 0.995
+    quality_checks: [capacity_test]
+    utilities: {kw: 0.06, demand_factor: 0.8}
+    footprint_m2: 0.25
+    zone_kind: test_area
+    hazards: [li_ion]
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.5
+      note: Formula from docs/05 §1.2; rest_s 7200 gives the golden 6 h (PB10K) and 10 h (PB20K).
+
+  - code: label_apply
+    name: Label printing and application (rating, QR, BEE)
+    description: Print and apply rating/QR labels; scan to link the serial.
+    aliases: [labelling, QR label, rating label, serialisation]
+    applies_to: {archetype: [power_bank, ceiling_fan, generic_electronics, generic_mechanical]}
+    task_type: manual
+    machine_class: label_printer
+    skill: semi_skilled
+    time_model: {formula: "n_labels * 5 + 3", distribution: triangular, spread_pct: 15}
+    fpy: 0.999
+    quality_checks: [label_verification]
+    utilities: {kw: 0.2, demand_factor: 0.5}
+    footprint_m2: 2.0
+    zone_kind: packing_area
+    provenance: *est
+
+  - code: pack_unit_box
+    name: Unit box packing (product, manual, accessories)
+    description: Insert product, user manual and accessories into the unit box and close it.
+    aliases: [boxing, unit packing, retail box packing]
+    applies_to: {archetype: [power_bank, ceiling_fan, generic_electronics, generic_mechanical], commodity: [packaging_carton]}
+    task_type: manual
+    skill: unskilled
+    time_model: {formula: "unit_box_s", distribution: triangular, spread_pct: 20}
+    constants: {unit_box_s: 20}
+    fpy: 0.999
+    footprint_m2: 3.0
+    zone_kind: packing_area
+    provenance: *est
+
+  - code: carton_pack
+    name: Shipper carton packing and sealing
+    description: Load unit boxes into the shipper carton, seal and label (time per unit).
+    aliases: [master carton, shipper packing, case packing]
+    applies_to: {archetype: [power_bank, ceiling_fan, generic_electronics, generic_mechanical], commodity: [packaging_carton]}
+    task_type: manual
+    machine_class: carton_sealer
+    skill: unskilled
+    time_model: {formula: "carton_close_s / units_per_carton + 2", distribution: triangular, spread_pct: 20}
+    constants: {carton_close_s: 45}
+    fpy: 0.999
+    utilities: {kw: 0.4, demand_factor: 0.3}
+    footprint_m2: 4.0
+    zone_kind: packing_area
+    provenance: *est
+
+  # ── BLDC ceiling fan ─────────────────────────────────────────────
+  - code: stator_winding
+    name: Stator winding (needle/flyer winding machine)
+    description: Wind enamelled copper wire on the laminated stator core.
+    aliases: [coil winding, motor winding, bldc stator winding]
+    applies_to: {archetype: [ceiling_fan, generic_mechanical], commodity: [copper_winding_wire, stator_lamination]}
+    task_type: machine_paced
+    machine_class: winding_machine_2spindle
+    skill: semi_skilled
+    time_model:
+      formula: "turns_per_coil * slots / spindle_rpm * 60 + load_unload_s"
+      distribution: triangular
+      spread_pct: 10
+    constants: {load_unload_s: 25}
+    setup_s: 900
+    fpy: 0.98
+    rework: {op: rework_generic, time_s: 300}
+    consumables:
+      - {commodity: copper_winding_wire, qty_expr: "copper_kg", uom: kg}
+      - {commodity: insulation_paper, qty_expr: "slots", uom: unit}
+    quality_checks: [winding_resistance]
+    utilities: {kw: 1.5, demand_factor: 0.6, air_l_min: 50}
+    footprint_m2: 4.0
+    zone_kind: assembly_line
+    price_inr: *fixture_m
+    mtbf_h: 300
+    mttr_h: 2
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.5
+      note: Formula from docs/05 §1.2 (turns × slots / rpm × 60 + 25 s); rpm is a machine parameter.
+
+  - code: winding_resistance_test
+    name: Winding resistance test (inline)
+    description: Phase resistance and balance check of the wound stator.
+    aliases: [resistance test, winding check, phase balance]
+    applies_to: {archetype: [ceiling_fan, generic_mechanical], commodity: [copper_winding_wire]}
+    task_type: machine_paced
+    machine_class: winding_resistance_tester
+    skill: semi_skilled
+    time_model: {formula: "10", distribution: fixed, spread_pct: 5}
+    fpy: 0.99
+    rework: {op: rework_generic, time_s: 300}
+    quality_checks: [winding_resistance]
+    utilities: {kw: 0.1, demand_factor: 0.6}
+    footprint_m2: 1.5
+    zone_kind: assembly_line
+    provenance: *est
+
+  - code: hipot_test
+    name: Hi-pot (dielectric withstand) test
+    description: Apply high AC/DC voltage between live parts and body; check leakage below limit.
+    aliases: [high pot, dielectric test, flash test, withstand voltage]
+    applies_to: {archetype: [ceiling_fan, generic_mechanical, generic_electronics]}
+    task_type: machine_paced
+    machine_class: hipot_tester
+    skill: semi_skilled
+    time_model: {formula: "hipot_s", distribution: fixed, spread_pct: 5}
+    constants: {hipot_s: 15}
+    fpy: 0.995
+    rework: {op: rework_generic, time_s: 300}
+    quality_checks: [hipot]
+    utilities: {kw: 0.5, demand_factor: 0.5}
+    footprint_m2: 2.0
+    zone_kind: test_area
+    hazards: [high_voltage]
+    provenance: *doc
+
+  - code: varnish_dip_cure
+    name: Varnish dip and oven cure (batch)
+    description: Dip wound stators in insulating varnish, drain, and cure in a batch oven.
+    aliases: [varnishing, impregnation, curing, trickle varnish]
+    applies_to: {archetype: [ceiling_fan, generic_mechanical], commodity: [varnish_resin]}
+    task_type: batch
+    machine_class: cure_oven_batch
+    skill: semi_skilled
+    time_model: {formula: "cure_cycle_s / batch_capacity", distribution: triangular, spread_pct: 5}
+    constants: {cure_cycle_s: 7200}
+    batch: {batch_size_param: batch_capacity, cycle_formula: "cure_cycle_s"}
+    fpy: 0.995
+    consumables:
+      - {commodity: varnish_resin, qty_expr: "0.04", uom: l}
+    utilities: {kw: 18, demand_factor: 0.8, exhaust: true}
+    footprint_m2: 8.0
+    height_m: 2.2
+    zone_kind: varnish_area
+    hazards: [flammable, fumes, hot_surface]
+    price_inr: *fixture_s
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.5
+      note: 2 h cure cycle and 60 stators per batch are the docs/05 §3.2 golden inputs.
+
+  - code: bearing_press
+    name: Bearing pressing
+    description: Press bearings onto the shaft / into the housing with an arbor or pneumatic press.
+    aliases: [bearing fitting, press fit]
+    applies_to: {archetype: [ceiling_fan, generic_mechanical], commodity: [bearings]}
+    task_type: manual
+    machine_class: bearing_press
+    skill: semi_skilled
+    time_model: {formula: "n_bearings * 8 + 5", distribution: triangular, spread_pct: 15}
+    fpy: 0.997
+    utilities: {kw: 0.2, demand_factor: 0.4, air_l_min: 80}
+    footprint_m2: 2.0
+    zone_kind: assembly_line
+    provenance: *est
+
+  - code: motor_assembly
+    name: Motor assembly (stator, shaft, rotor shell)
+    description: Fit varnished stator and shaft-bearing set into the die-cast rotor shell and close.
+    aliases: [motor build, rotor fitting, outer rotor assembly]
+    applies_to: {archetype: [ceiling_fan, generic_mechanical], commodity: [die_cast_rotor]}
+    task_type: manual
+    skill: semi_skilled
+    time_model: {formula: "45", distribution: triangular, spread_pct: 15}
+    fpy: 0.995
+    footprint_m2: 3.0
+    zone_kind: assembly_line
+    price_inr: *fixture_s
+    provenance: *est
+
+  - code: controller_fit_harness
+    name: Controller PCBA fitting and harness connection
+    description: Mount the BLDC controller PCBA, route and connect the wiring harness.
+    aliases: [controller assembly, harness routing, PCBA fitting]
+    applies_to: {archetype: [ceiling_fan, generic_electronics, generic_mechanical], commodity: [pcba, wiring_harness]}
+    task_type: manual
+    skill: semi_skilled
+    time_model: {formula: "20 + n_connectors * 5", distribution: triangular, spread_pct: 15}
+    fpy: 0.99
+    footprint_m2: 2.5
+    zone_kind: esd_assembly
+    provenance: *est
+
+  - code: motor_test
+    name: Motor no-load test
+    description: No-load speed, current and direction check of the assembled motor with controller.
+    aliases: [motor run test, no load test]
+    applies_to: {archetype: [ceiling_fan, generic_mechanical]}
+    task_type: machine_paced
+    machine_class: motor_test_bench
+    skill: semi_skilled
+    time_model: {formula: "40", distribution: triangular, spread_pct: 10}
+    fpy: 0.99
+    rework: {op: rework_generic, time_s: 300}
+    quality_checks: [motor_no_load_test]
+    utilities: {kw: 0.5, demand_factor: 0.5}
+    footprint_m2: 2.5
+    zone_kind: test_area
+    provenance: *est
+
+  - code: final_assembly_fan
+    name: Fan final assembly (canopy, down-rod kit)
+    description: Attach canopy, down-rod, shackle and mounting kit to the motor; fit split pins.
+    aliases: [fan assembly, canopy fitting, downrod assembly]
+    applies_to: {archetype: [ceiling_fan]}
+    task_type: manual
+    skill: semi_skilled
+    time_model: {formula: "30 + n_screws * 4", distribution: triangular, spread_pct: 15}
+    fpy: 0.995
+    footprint_m2: 3.5
+    zone_kind: assembly_line
+    provenance: *est
+
+  - code: run_in_test
+    name: Fan run-in test (100%)
+    description: Run each fan at rated speed for a fixed period; watch for noise, vibration, current drift.
+    aliases: [burn in, run in, endurance short test]
+    applies_to: {archetype: [ceiling_fan]}
+    task_type: long_test
+    machine_class: run_in_rack
+    skill: unskilled
+    time_model: {formula: "run_in_s", distribution: fixed, spread_pct: 2}
+    constants: {run_in_s: 300}
+    fpy: 0.995
+    rework: {op: rework_generic, time_s: 600}
+    quality_checks: [run_in_test]
+    utilities: {kw: 0.06, demand_factor: 0.9}
+    footprint_m2: 1.5
+    height_m: 2.5
+    zone_kind: test_area
+    provenance: *doc
+
+  - code: functional_test_fan
+    name: Fan functional test (EOL)
+    description: Speed at each step, power draw, remote pairing, direction and noise check.
+    aliases: [fan EOL test, rpm test, power test]
+    applies_to: {archetype: [ceiling_fan]}
+    task_type: machine_paced
+    machine_class: fan_test_bench
+    skill: semi_skilled
+    time_model: {formula: "n_speeds * 6 + 20", distribution: triangular, spread_pct: 10}
+    fpy: 0.99
+    rework: {op: rework_generic, time_s: 300}
+    quality_checks: [functional_fan]
+    utilities: {kw: 0.3, demand_factor: 0.6}
+    footprint_m2: 3.0
+    zone_kind: test_area
+    provenance: *est
+
+  - code: dynamic_balance
+    name: Rotor dynamic balancing
+    description: Measure and correct rotor unbalance (only when rotors are not bought balanced).
+    aliases: [balancing, rotor balance]
+    applies_to: {archetype: [ceiling_fan, generic_mechanical], commodity: [die_cast_rotor]}
+    task_type: machine_paced
+    machine_class: dynamic_balancer
+    skill: skilled
+    time_model: {formula: "45", distribution: triangular, spread_pct: 15}
+    fpy: 0.99
+    utilities: {kw: 1.0, demand_factor: 0.5}
+    footprint_m2: 4.0
+    zone_kind: assembly_line
+    provenance: *est
+
+  - code: blade_pack
+    name: Blade set packing (packed separately)
+    description: Wrap the blade set in a sleeve and place it in the fan carton.
+    aliases: [blade packing, blade wrap]
+    applies_to: {archetype: [ceiling_fan], commodity: [fan_blade]}
+    task_type: manual
+    skill: unskilled
+    time_model: {formula: "n_blades * 6 + 10", distribution: triangular, spread_pct: 20}
+    fpy: 0.999
+    footprint_m2: 3.5
+    zone_kind: packing_area
+    provenance: *est
+
+  # ── Generic electronics and mechanical ───────────────────────────
+  - code: smt_place
+    name: SMT pick-and-place
+    description: Place surface-mount components on a pasted PCB.
+    aliases: [pick and place, SMT, component placement]
+    applies_to: {archetype: [generic_electronics], commodity: [electronic_components, bare_pcb]}
+    task_type: machine_paced
+    machine_class: smt_pick_place
+    skill: skilled
+    time_model: {formula: "n_components * 0.12 + 15", distribution: triangular, spread_pct: 10}
+    setup_s: 2700
+    fpy: 0.995
+    utilities: {kw: 4.0, demand_factor: 0.7, air_l_min: 100}
+    footprint_m2: 8.0
+    zone_kind: esd_assembly
+    example_params: {n_components: 120, board_length_mm: 120}
+    provenance: *est
+
+  - code: reflow
+    name: Reflow soldering
+    description: Convection reflow of a populated SMT board.
+    aliases: [reflow oven, SMT soldering]
+    applies_to: {archetype: [generic_electronics], commodity: [solder_paste]}
+    task_type: machine_paced
+    machine_class: reflow_oven
+    skill: skilled
+    time_model: {formula: "(board_length_mm + board_gap_mm) / conveyor_mm_s", distribution: fixed, spread_pct: 2}
+    constants: {board_gap_mm: 50, conveyor_mm_s: 15}
+    fpy: 0.995
+    utilities: {kw: 20, demand_factor: 0.6, exhaust: true}
+    footprint_m2: 12.0
+    zone_kind: esd_assembly
+    hazards: [hot_surface, fumes]
+    example_params: {n_components: 120, board_length_mm: 120}
+    provenance: *est
+
+  - code: aoi_inspect
+    name: Automated optical inspection (AOI)
+    description: Camera inspection of solder joints and component placement after reflow.
+    aliases: [AOI, optical inspection]
+    applies_to: {archetype: [generic_electronics], commodity: [pcba]}
+    task_type: machine_paced
+    machine_class: aoi_machine
+    skill: skilled
+    time_model: {formula: "10 + n_components * 0.05", distribution: triangular, spread_pct: 10}
+    fpy: 0.995
+    quality_checks: [solder_joint_inspection]
+    utilities: {kw: 1.5, demand_factor: 0.6}
+    footprint_m2: 4.0
+    zone_kind: esd_assembly
+    example_params: {n_components: 120, board_length_mm: 120}
+    provenance: *est
+
+  - code: tht_insert_manual
+    name: Manual through-hole insertion
+    description: Insert through-hole components by hand before wave or selective soldering.
+    aliases: [THT, through hole, manual insertion]
+    applies_to: {archetype: [generic_electronics], commodity: [electronic_components]}
+    task_type: manual
+    skill: semi_skilled
+    time_model: {formula: "n_tht * 6", distribution: triangular, spread_pct: 20}
+    fpy: 0.995
+    footprint_m2: 2.5
+    zone_kind: esd_assembly
+    example_params: {n_tht: 12}
+    provenance: *est
+
+  - code: injection_mold
+    name: Injection moulding
+    description: Mould thermoplastic parts; time per part from cycle time and cavities.
+    aliases: [moulding, molding, plastic injection]
+    applies_to: {archetype: [generic_mechanical, generic_electronics], commodity: [plastic_resin, molded_enclosure]}
+    task_type: machine_paced
+    machine_class: injection_molding_machine
+    skill: semi_skilled
+    time_model: {formula: "mould_cycle_s / cavities", distribution: triangular, spread_pct: 5}
+    setup_s: 5400
+    fpy: 0.98
+    consumables:
+      - {commodity: plastic_resin, qty_expr: "part_mass_g / 1000 * 1.03", uom: kg}
+    utilities: {kw: 30, demand_factor: 0.6, water_l_h: 200}
+    footprint_m2: 18.0
+    height_m: 2.5
+    zone_kind: assembly_line
+    hazards: [hot_surface]
+    example_params: {mould_cycle_s: 30, cavities: 2, part_mass_g: 45}
+    provenance: *est
+
+  - code: ultrasonic_weld
+    name: Ultrasonic plastic welding
+    description: Weld two thermoplastic housing halves with an ultrasonic horn.
+    aliases: [US welding, sonic welding, housing welding]
+    applies_to: {archetype: [power_bank, generic_electronics, generic_mechanical], commodity: [molded_enclosure]}
+    task_type: machine_paced
+    machine_class: ultrasonic_welder
+    skill: semi_skilled
+    time_model: {formula: "weld_s + 8", distribution: triangular, spread_pct: 10}
+    constants: {weld_s: 4}
+    fpy: 0.99
+    utilities: {kw: 2.0, demand_factor: 0.4, air_l_min: 60}
+    footprint_m2: 2.5
+    zone_kind: assembly_line
+    hazards: [noise]
+    provenance: *est
+
+  - code: adhesive_dispense
+    name: Adhesive dispensing
+    description: Dispense a bead of adhesive or potting with a timed dispenser.
+    aliases: [gluing, glue dispensing, potting]
+    applies_to: {archetype: [power_bank, ceiling_fan, generic_electronics, generic_mechanical], commodity: [adhesive]}
+    task_type: manual
+    machine_class: glue_dispenser
+    skill: semi_skilled
+    time_model: {formula: "6 + bead_mm / 40", distribution: triangular, spread_pct: 15}
+    constants: {bead_mm: 120}
+    fpy: 0.995
+    consumables:
+      - {commodity: adhesive, qty_expr: "bead_mm * 0.002", uom: g}
+    utilities: {kw: 0.1, demand_factor: 0.5, air_l_min: 20}
+    footprint_m2: 2.0
+    zone_kind: assembly_line
+    hazards: [fumes]
+    provenance: *est
+
+  - code: visual_inspect
+    name: Visual inspection
+    description: Operator visual check against a defect catalogue (scratches, gaps, missing parts).
+    aliases: [visual check, cosmetic inspection]
+    applies_to: {archetype: [power_bank, ceiling_fan, generic_electronics, generic_mechanical]}
+    task_type: inspection
+    skill: semi_skilled
+    time_model: {formula: "inspect_s", distribution: triangular, spread_pct: 20}
+    constants: {inspect_s: 15}
+    fpy: 0.998
+    quality_checks: [visual_inspection]
+    footprint_m2: 2.0
+    zone_kind: assembly_line
+    provenance: *est
+
+  - code: kitting
+    name: Line-side kitting
+    description: Pick and kit parts per work order into totes for the line (time per unit).
+    aliases: [kit preparation, picking]
+    applies_to: {archetype: [power_bank, ceiling_fan, generic_electronics, generic_mechanical]}
+    task_type: manual
+    skill: unskilled
+    time_model: {formula: "kit_s", distribution: triangular, spread_pct: 25}
+    constants: {kit_s: 10}
+    footprint_m2: 4.0
+    zone_kind: rack_storage
+    provenance: *est
+
+  - code: rework_weld
+    name: Weld rework
+    description: Remove and re-weld failed nickel strip joints.
+    applies_to: {archetype: [power_bank, generic_electronics]}
+    task_type: manual
+    machine_class: spot_welder_cd
+    skill: skilled
+    time_model: {formula: "90", distribution: triangular, spread_pct: 30}
+    footprint_m2: 2.0
+    zone_kind: rework_area
+    hazards: [li_ion]
+    provenance: *est
+
+  - code: rework_solder
+    name: Solder rework
+    description: Desolder and resolder failed joints.
+    applies_to: {archetype: [power_bank, ceiling_fan, generic_electronics]}
+    task_type: manual
+    machine_class: soldering_station
+    skill: skilled
+    time_model: {formula: "60", distribution: triangular, spread_pct: 30}
+    utilities: {kw: 0.15, demand_factor: 0.5, exhaust: true}
+    footprint_m2: 2.0
+    zone_kind: rework_area
+    provenance: *est
+
+  - code: rework_generic
+    name: Diagnosis and rework (generic)
+    description: Diagnose a failed unit, replace or repair, and retest.
+    applies_to: {archetype: [power_bank, ceiling_fan, generic_electronics, generic_mechanical]}
+    task_type: manual
+    skill: skilled
+    time_model: {formula: "300", distribution: lognormal, spread_pct: 50}
+    footprint_m2: 3.0
+    zone_kind: rework_area
+    provenance: *est

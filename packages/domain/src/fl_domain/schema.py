@@ -1,0 +1,105 @@
+"""JSON Schema export for the whole domain model (docs/04 §1).
+
+``python -m fl_domain.schema --out path.json`` writes one schema whose root object has a
+property per top-level model, so every model (and everything it references) is reachable
+for code generators. ``packages/ts-types`` turns it into TypeScript at build time.
+
+``--mode validation`` gives the input-side schema (fields with defaults are optional), used
+by the wizard for ProductTemplate. The default ``serialization`` mode describes what the
+API returns (every field present).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any, Literal
+
+from pydantic import BaseModel
+from pydantic.json_schema import models_json_schema
+
+from fl_domain.artifacts import ARTIFACT_MODELS, ProductTemplate
+from fl_domain.base import Issue
+from fl_domain.common import Assumption
+from fl_domain.library.catalog import (
+    ArchetypeEntry,
+    Catalog,
+    CheckTypeEntry,
+    CommodityClassEntry,
+    MachineClassEntry,
+    MtmElementEntry,
+    ProcessEntry,
+    ZoneKindEntry,
+)
+from fl_domain.library.pack import Pack, PackValue
+from fl_domain.project import ChangeSet, Project, Question, StageRun
+
+__all__ = ["SCHEMA_ID", "build_schema", "top_level_models"]
+
+SCHEMA_ID = "https://factory-layout.local/schema/domain.json"
+Mode = Literal["validation", "serialization"]
+
+
+def top_level_models() -> dict[str, type[BaseModel]]:
+    models: dict[str, type[BaseModel]] = {
+        "ProductTemplate": ProductTemplate,
+        "Project": Project,
+        "StageRun": StageRun,
+        "Question": Question,
+        "ChangeSet": ChangeSet,
+        "Assumption": Assumption,
+        "Issue": Issue,
+        "Catalog": Catalog,
+        "ProcessEntry": ProcessEntry,
+        "MachineClassEntry": MachineClassEntry,
+        "CheckTypeEntry": CheckTypeEntry,
+        "ZoneKindEntry": ZoneKindEntry,
+        "CommodityClassEntry": CommodityClassEntry,
+        "ArchetypeEntry": ArchetypeEntry,
+        "MtmElementEntry": MtmElementEntry,
+        "Pack": Pack,
+        "PackValue": PackValue,
+    }
+    for model in ARTIFACT_MODELS.values():
+        models[model.__name__] = model
+    return models
+
+
+def build_schema(mode: Mode = "serialization") -> dict[str, Any]:
+    models = top_level_models()
+    refs, defs = models_json_schema(
+        [(m, mode) for m in models.values()], ref_template="#/$defs/{model}"
+    )
+    properties = {name: refs[(model, mode)] for name, model in models.items()}
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": SCHEMA_ID,
+        "title": "FactoryDomain",
+        "description": "All top-level models of the Factory Layout Platform domain.",
+        "type": "object",
+        "properties": properties,
+        "required": sorted(properties),
+        "additionalProperties": False,
+        "$defs": defs.get("$defs", {}),
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--out", type=Path, help="Write to this file instead of stdout.")
+    ap.add_argument("--mode", choices=["validation", "serialization"], default="serialization")
+    args = ap.parse_args(argv)
+    text = json.dumps(build_schema(args.mode), indent=2, sort_keys=True, ensure_ascii=False)
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(text + "\n", encoding="utf-8")
+        sys.stderr.write(f"fl_domain.schema: wrote {args.out}\n")
+    else:
+        sys.stdout.write(text + "\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

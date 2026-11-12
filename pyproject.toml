@@ -25,12 +25,14 @@ members = [
   "packages/domain",
   "packages/engines",
   "packages/agents",
+  "packages/library",
 ]
 
 [tool.uv.sources]
 fl-domain = { workspace = true }
 fl-engines = { workspace = true }
 fl-agents = { workspace = true }
+fl-library = { workspace = true }
 
 # ── ruff ───────────────────────────────────────────────────────────
 [tool.ruff]
@@ -45,13 +47,14 @@ select = [
 ignore = ["S101"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["fl_api", "fl_worker", "fl_domain", "fl_engines", "fl_agents"]
+known-first-party = ["fl_api", "fl_worker", "fl_domain", "fl_engines", "fl_agents", "fl_library"]
 
 [tool.ruff.lint.per-file-ignores]
 # Spikes are throwaway measurement scripts: keep correctness rules, relax style.
 "spikes/**" = ["T20", "S", "E501", "ASYNC", "RUF012", "DTZ"]
 "scripts/**" = ["T20", "S603", "S607"]
 "**/migrations/**" = ["N999"]
+"packages/library/src/fl_library/cli.py" = ["T20"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -70,5 +73,5 @@ exclude = ["spikes/", "build/", "apps/web/"]
 
 # Strict where the numbers live (CLAUDE.md conventions)
 [[tool.mypy.overrides]]
-module = ["fl_domain.*", "fl_engines.*"]
+module = ["fl_domain.*", "fl_engines.*", "fl_library.*"]
 strict = true

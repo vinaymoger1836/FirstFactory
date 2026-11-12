@@ -5,6 +5,7 @@ description = "FastAPI app: routes, SSE, capability-token access"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "fl-domain",
+  "fl-library",
   "fastapi>=0.120",
   "uvicorn[standard]>=0.38",
   "sse-starlette>=3.0",
