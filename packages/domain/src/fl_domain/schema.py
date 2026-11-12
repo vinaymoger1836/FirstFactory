@@ -76,7 +76,12 @@ def _strip_titles(node: Any) -> Any:
     if isinstance(node, dict):
         if "$ref" in node:  # siblings of $ref (description) would make generators fork types
             return {"$ref": node["$ref"]}
-        return {k: _strip_titles(v) for k, v in node.items() if k != "title"}
+        # The keyword is a string; a *field* named "title" (in "properties") is a dict.
+        return {
+            k: _strip_titles(v)
+            for k, v in node.items()
+            if not (k == "title" and isinstance(v, str))
+        }
     if isinstance(node, list):
         return [_strip_titles(v) for v in node]
     return node
