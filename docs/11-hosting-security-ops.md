@@ -10,7 +10,8 @@
             Oracle Always Free — Ampere A1, 2 OCPU / 12 GB RAM, ARM64, Ubuntu LTS
             ┌──────────────────── Docker Compose ─────────────────────┐
             │ caddy (reverse proxy, TLS origin cert)                  │
-            │ api (FastAPI + LangGraph)          ~1.5 GB               │
+            │ api (FastAPI)                      ~1 GB                 │
+            │ agents (LangGraph, queue pipeline) ~1 GB  (ADR-024, P2)  │
             │ worker (engines: CP-SAT, SimPy)    ~3 GB, 1 job at a time│
             │ cad-worker (OCP, sandboxed)        ≤2 GB per job         │
             │ postgres 16 + pgvector             ~1.5 GB               │

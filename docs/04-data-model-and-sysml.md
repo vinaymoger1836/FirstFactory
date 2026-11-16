@@ -49,10 +49,12 @@ class Project(BaseModel):
 
 class StageRun(BaseModel):
     id: UUID; project_id: UUID; stage: StageKey; version: int
-    status: Literal["pending","running","awaiting_approval","approved","rejected","stale","failed"]
+    status: Literal["pending","running","awaiting_approval","approved","rejected","stale","failed","paused"]  # paused: P2, ADR-025
     inputs_hash: str; upstream: dict[StageKey, int]; params: dict
     artifact: dict            # validated against the stage's artifact model
     summary: str; assumptions: list[Assumption]; created_at: datetime
+    questions: list[Question]; issues: list[Issue]; notices: list[str]    # P2
+    placeholder: bool; tokens_used: int; token_budget: int                # P2 (stubs, budgets)
 
 class Item(BaseModel):
     part_no: str; name: str; kind: Literal["product","assembly","part","consumable","packaging"]

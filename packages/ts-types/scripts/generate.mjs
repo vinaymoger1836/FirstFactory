@@ -40,6 +40,8 @@ const ts = await compile(schema, "FactoryDomain", {
   strictIndexSignatures: true,
   format: true,
   declareExternallyReferenced: true,
+  // Array length limits stay in the schema and Pydantic; as TS tuple unions they are unusable.
+  ignoreMinAndMaxItems: true,
 });
 writeFileSync(join(out, "index.ts"), ts);
 

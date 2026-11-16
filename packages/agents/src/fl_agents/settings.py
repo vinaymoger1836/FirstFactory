@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     llm_mode: LlmMode = "live"
     cassette_dir: Path = Path("/app/cassettes")
     llm_role_reasoner: str = "groq/openai/gpt-oss-120b"
-    llm_role_extractor: str = "groq/llama-3.1-8b-instant"
+    llm_role_extractor: str = "groq/openai/gpt-oss-20b"
     llm_role_writer: str = "groq/openai/gpt-oss-120b"
     llm_role_vision: str = "gemini/gemini-2.5-flash"
     groq_api_key: SecretStr = SecretStr("")

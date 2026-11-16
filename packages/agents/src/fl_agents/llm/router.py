@@ -395,7 +395,7 @@ class Router:
                 )
                 await asyncio.sleep(1.0 * 2**attempt)
                 continue
-            except lx.APIError as e:
+            except Exception as e:  # bad request, auth, unknown model, … (not retryable)
                 await self._log(
                     ctx,
                     role=role,

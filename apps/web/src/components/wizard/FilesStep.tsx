@@ -146,6 +146,8 @@ export function FilesStep({
         <h3 id={`${uid}-files`} className="field__label">
           Files
         </h3>
+        {/* Drag and drop is a mouse shortcut; the "choose files" button is the keyboard path. */}
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
         <div
           className="dropzone"
           data-drag={drag}
@@ -346,9 +348,8 @@ function BomMapper({
           <label key={v} className="bom-map__row">
             <span>Quantity for {v}</span>
             {select(mapping.variant_qty[v] ?? null, `Quantity column for ${v}`, (col) => {
-              const vq = { ...mapping.variant_qty };
+              const vq = Object.fromEntries(Object.entries(mapping.variant_qty).filter(([k]) => k !== v));
               if (col) vq[v] = col;
-              else delete vq[v];
               onChange({ ...mapping, variant_qty: vq, confirmed: false });
             })}
           </label>

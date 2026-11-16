@@ -5,7 +5,7 @@ import { IconClose, IconFlow, IconHome, IconMenu, IconPlus, IconPulse } from "./
 const ITEMS = [
   { to: "/", label: "Home", Icon: IconHome, end: true },
   { to: "/new", label: "New project", Icon: IconPlus, end: false },
-  { to: "/pipeline", label: "Pipeline", Icon: IconFlow, end: false },
+  { to: "/pipeline", label: "How it works", Icon: IconFlow, end: false },
   { to: "/status", label: "System status", Icon: IconPulse, end: false },
 ] as const;
 

@@ -13,13 +13,13 @@ import type { StageStatus } from "../lib/api";
 import { STAGES, STATUS_LABEL, STATUS_TONE, stageDepth } from "../lib/stages";
 import { useTheme } from "../lib/theme";
 
-export interface GraphStage {
+export type GraphStage = {
   key: string;
   status: StageStatus;
   version: number | null;
   placeholder: boolean;
   step?: string | undefined;
-}
+};
 
 type StageNodeData = GraphStage & {
   code: string;

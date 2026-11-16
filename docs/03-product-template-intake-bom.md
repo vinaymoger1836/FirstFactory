@@ -52,7 +52,7 @@ finance_inputs:
   loan_tenure_years: int?
   discount_rate_pct: 12
   horizon_years: 5
-attachments: [ { id, kind: step|stl|photo|pdf|bom_csv|text, file_ref, note } ]
+attachments: [ { id, kind: step|stl|photo|pdf|bom_csv|text, file_ref, note, bom_columns? } ]   # bom_columns: confirmed column mapping (P2)
 bom_hint: have_full | have_partial | none        # wizard question "Do you have a BoM?"; a hint only, S2 still checks the file
 parts_paste: [ { name, qty?, note? } ]?          # optional parts typed or pasted in the wizard (no file)
 structure:                        # filled by S1/S2

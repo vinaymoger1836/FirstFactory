@@ -40,6 +40,7 @@ The operating pattern (shifts per day, days per week, target OEE) is captured at
 - A stale stage keeps its last artifact visible (greyed) until re-run.
 - Approval is explicit. The user can approve, edit then approve, or reject with a note (the agent re-runs with the note as guidance).
 - Each artifact version is immutable. Exports always reference artifact versions.
+- `paused` (P2, ADR-025): a stage that would exceed its token budget, or whose provider quota stays exhausted, pauses and resumes on "Continue" (`paused → running`). Answering questions, re-running and rejecting each create a new version; edits and change sets create a new version and mark the whole downstream closure stale.
 
 ## 3. Harness (LangGraph)
 
@@ -48,6 +49,7 @@ The operating pattern (shifts per day, days per week, target OEE) is captured at
 - **Graph state holds IDs, not data.** Artifacts live in domain tables (`stage_run.artifact` JSONB with Pydantic validation). The graph can change without migrating stored projects (ADR-003).
 - Long jobs (CAD extraction, CP-SAT, simulation) run in a worker process (procrastinate on Postgres, chosen in P0, ADR-019 *Proposed*; Redis is used only for heartbeats) so the API stays responsive. Progress events stream to the browser over SSE.
 - Concurrency: at most 2 pipelines executing at once on the POC server; further runs queue (doc 11).
+- As built in P2 (ADR-024, ADR-025): the graph runs in the `agents` service on procrastinate queue `pipeline` (concurrency 2, one job per project at a time). Each pipeline run is a LangGraph thread; every stage node first compares its `inputs_hash` with the latest approved run and passes through if nothing changed, so "re-run stale" starts a new thread and only changed stages do work. Stages not yet built are stubs that write approved placeholder runs. LLM calls can be recorded and replayed (`LLM_MODE=record|replay`, cassettes in `golden/cassettes/`).
 
 ### Stage subgraph (same shape for every stage)
 

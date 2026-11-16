@@ -11,7 +11,7 @@ interface Flat {
 export function AssemblyTree({ root, label }: { root: AssemblyNodeOut; label: string }) {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set([root.id]));
   const [active, setActive] = useState(root.id);
-  const refs = useRef<Record<string, HTMLLIElement | null>>({});
+  const refs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const visible = useMemo(() => {
     const out: Flat[] = [];
@@ -40,12 +40,16 @@ export function AssemblyTree({ root, label }: { root: AssemblyNodeOut; label: st
         return n;
       });
     switch (e.key) {
-      case "ArrowDown":
-        if (visible[i + 1]) focus(visible[i + 1]!.node.id);
+      case "ArrowDown": {
+        const nxt = visible[i + 1];
+        if (nxt) focus(nxt.node.id);
         break;
-      case "ArrowUp":
-        if (visible[i - 1]) focus(visible[i - 1]!.node.id);
+      }
+      case "ArrowUp": {
+        const prev = visible[i - 1];
+        if (prev) focus(prev.node.id);
         break;
+      }
       case "ArrowRight":
         if (hasKids && !open) toggle(true);
         else if (hasKids && f.node.children[0]) focus(f.node.children[0].id);
@@ -57,9 +61,11 @@ export function AssemblyTree({ root, label }: { root: AssemblyNodeOut; label: st
       case "Home":
         focus(root.id);
         break;
-      case "End":
-        if (visible.length) focus(visible[visible.length - 1]!.node.id);
+      case "End": {
+        const last = visible[visible.length - 1];
+        if (last) focus(last.node.id);
         break;
+      }
       case "Enter":
       case " ":
         if (hasKids) toggle(!open);
@@ -71,11 +77,11 @@ export function AssemblyTree({ root, label }: { root: AssemblyNodeOut; label: st
   }
 
   return (
-    <ul role="tree" aria-label={label} className="tree">
+    <div role="tree" aria-label={label} className="tree">
       {visible.map((f) => {
         const hasKids = f.node.children.length > 0;
         return (
-          <li
+          <div
             key={f.node.id}
             ref={(el) => {
               refs.current[f.node.id] = el;
@@ -104,9 +110,9 @@ export function AssemblyTree({ root, label }: { root: AssemblyNodeOut; label: st
             </span>
             {f.node.name}
             {f.node.part_no && <span className="muted small"> · {f.node.part_no}</span>}
-          </li>
+          </div>
         );
       })}
-    </ul>
+    </div>
   );
 }

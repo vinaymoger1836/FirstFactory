@@ -11,7 +11,7 @@ WeasyPrint's system libraries) unless noted.
   install scripts (`allowBuilds`).
 - Lockfiles: `uv.lock` and `pnpm-lock.yaml` are committed. Docker builds use `uv sync --frozen`.
 
-Last updated: 2026-11-12 (P1). The `exclude-newer` date was not moved in P1.
+Last updated: 2026-11-16 (P2). The `exclude-newer` date was not moved in P1 or P2; every P2 dependency resolved within it.
 
 ## Toolchain
 
@@ -59,6 +59,15 @@ Last updated: 2026-11-12 (P1). The `exclude-newer` date was not moved in P1.
 | ruff | 0.17.3 | dev |
 | mypy | 2.4.0 | dev |
 | httpx | 0.28.1 | dev |
+| langgraph | 1.2.18 | agents: parent graph and stage subgraphs (P2). MIT |
+| langgraph-checkpoint / -checkpoint-postgres | 4.3.1 / 3.2.0 | agents: Postgres checkpointer (P2). MIT |
+| langchain-core | 1.7.0 | langgraph dependency (P2). MIT |
+| litellm | 1.106.5 | agents/api: LLM router (P2; pinned exactly, as in spike c). MIT (the `enterprise/` folder is not used) |
+| openai | 2.54.0 | litellm dependency (P2). Apache-2.0 |
+| pdfplumber / pdfminer.six / pypdfium2 | 0.11.10 / 20260107 / 5.14.0 | worker: PDF text in a child process (P2). MIT / MIT / Apache-2.0 + BSD-3 (PDFium) |
+| openpyxl | 3.1.5 | api/agents: BoM XLSX reading (P2). MIT |
+| python-multipart | 0.0.32 | api: uploads (P2). Apache-2.0 |
+| pillow | 13.0.0 | api: photo re-encoding (P2; already in the lock via WeasyPrint/trimesh). MIT-CMU |
 
 ## Spike-only Python (not in the workspace lock; run with `uv run --no-project --with …`)
 
@@ -68,7 +77,7 @@ Last updated: 2026-11-12 (P1). The `exclude-newer` date was not moved in P1.
 | sysml2kit | 0.4.0 (pre-alpha) | d | Not adopted (see P0 report) |
 | antlr4-python3-runtime | 4.13.2 | d | sysmlpy dependency |
 | arq | 0.28.0 | e | Not adopted (maintenance-only; pins redis<6) |
-| litellm | 1.106.5 (latest before the cutoff) | c | Spike written; not yet run (no API keys) |
+| litellm | 1.106.5 (latest before the cutoff) | c | Spike written; not yet run (no API keys). In the workspace from P2 |
 | psutil | 7.1.3 | e | bench only |
 
 ## Web (resolved in `pnpm-lock.yaml`)
@@ -85,6 +94,9 @@ Last updated: 2026-11-12 (P1). The `exclude-newer` date was not moved in P1.
 | eslint-plugin-jsx-a11y | 6.10.2 |
 | eslint-plugin-react-hooks | 5.2.0 |
 | json-schema-to-typescript | 15.0.4 (P1; dev dependency of `packages/ts-types`). MIT. Pulls prettier 3.9.10 and @apidevtools/json-schema-ref-parser 11.9.3 (MIT) |
+| @xyflow/react | 12.12.0 (P2: pipeline graph). MIT |
+| three / @types/three | 0.187.0 / 0.187.0 (P2: GLB preview). MIT |
+| @react-three/fiber | 9.8.2 (P2: GLB preview). MIT |
 
 ## GitHub Actions (major tags; pin to commit SHAs before enabling pushes, P9)
 

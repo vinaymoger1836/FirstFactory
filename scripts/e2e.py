@@ -1,5 +1,15 @@
 """End-to-end check (`make e2e` / `uv run scripts/e2e.py`). Standard library only.
 
+P2 adds (docs/14 §5 P2 acceptance; details in scripts/e2e_p2.py): the stack runs with the
+e2e override (infra/docker-compose.e2e.yml: LLM_MODE=replay, cassettes mounted), then
+  - G1 and G2 wizard samples run S1 to awaiting_approval with cassettes; the STEP sample
+    yields an assembly tree and a GLB in metres;
+  - editing an approved S1 marks the downstream stubs stale; change sets apply;
+  - budget exhaustion pauses a stage with a resumable state;
+  - web typecheck, lint and build.
+  `--record` runs the same sequence with LLM_MODE=record (real keys in .env) and writes
+  golden/cassettes/*.json.
+
 P1 adds (docs/14 §5 P1 acceptance):
   - the compose `migrate` step validates the catalog and KA pack and loads them into Postgres
     (a validation error stops the stack); versions, row counts and the pgvector HNSW index
@@ -35,9 +45,20 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from e2e_p2 import p2_checks, web_checks
+
 ROOT = Path(__file__).resolve().parents[1]
-COMPOSE = ["docker", "compose", "--env-file", ".env", "-f", "infra/docker-compose.yml"]
-PHASE = "P1"
+COMPOSE = [
+    "docker",
+    "compose",
+    "--env-file",
+    ".env",
+    "-f",
+    "infra/docker-compose.yml",
+    "-f",
+    "infra/docker-compose.e2e.yml",
+]
+PHASE = "P2"
 GOLDEN = {
     "G1": "Power bank: demand, takt, PCT, test positions/channels",
     "G2": "BLDC fan: demand, takt, PCT, run-in positions, varnish ovens",
@@ -51,8 +72,8 @@ GOLDEN = {
 # What each golden case asserts at this phase (fixtures and catalog routing are checked in
 # host_checks; the exact numbers need the engines of later phases).
 GOLDEN_STATUS = {
-    "G1": "FIXTURE: routing in catalog codes + validators pass; exact numbers from P4",
-    "G2": "FIXTURE: routing in catalog codes + validators pass; exact numbers from P4",
+    "G1": "PARTIAL: S1 intake through the pipeline (params = params.yaml); numbers from P4",
+    "G2": "PARTIAL: S1 intake through the pipeline (params = params.yaml); numbers from P4",
     "G3": "FIXTURE: stored; asserted from P5",
     "G4": "FIXTURE: stored; asserted from P8",
     "G5": "FIXTURE: instances verified against Scholl's table; asserted from P4",
@@ -85,12 +106,12 @@ def http(
     timeout: float = 10,
 ) -> tuple[int, dict | str]:
     data = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(url, data=data, method=method)  # noqa: S310 (local URL)
+    req = urllib.request.Request(url, data=data, method=method)
     req.add_header("Content-Type", "application/json")
     for k, v in (headers or {}).items():
         req.add_header(k, v)
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310
+        with urllib.request.urlopen(req, timeout=timeout) as r:
             raw = r.read().decode()
             status = r.status
     except urllib.error.HTTPError as e:
@@ -313,7 +334,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-build", action="store_true")
     ap.add_argument("--down", action="store_true")
+    ap.add_argument("--record", action="store_true", help="record cassettes (needs real keys)")
     args = ap.parse_args()
+    mode = "record" if args.record else "replay"
+    os.environ["LLM_MODE"] = mode
+    os.environ.setdefault("CASSETTE_HOST_DIR", str(ROOT / "golden" / "cassettes"))
 
     if not (ROOT / ".env").exists():
         shutil.copy(ROOT / ".env.example", ROOT / ".env")
@@ -336,7 +361,7 @@ def main() -> int:
     record("GET /health", s_live == 200 and isinstance(live, dict) and live.get("status") == "ok")
     checks = body.get("checks", {}) if isinstance(body, dict) else {}
     record("GET /health/ready", status == 200, f"HTTP {status}")
-    for name in ("postgres", "redis", "worker", "cad-worker"):
+    for name in ("postgres", "redis", "worker", "cad-worker", "agents"):
         c = checks.get(name, {})
         extra = (
             c.get("pgvector")
@@ -370,7 +395,7 @@ def main() -> int:
                 "-d",
                 db,
                 "-tAc",
-                f"SELECT token_hash FROM project WHERE id = '{created['id']}'",  # noqa: S608
+                f"SELECT token_hash FROM project WHERE id = '{created['id']}'",
             ],
             check=False,
             capture=True,
@@ -384,8 +409,8 @@ def main() -> int:
     print("==> SSE", flush=True)
     events: list[str] = []
     try:
-        req = urllib.request.Request(f"{base}/events/demo?interval_ms=30")  # noqa: S310
-        with urllib.request.urlopen(req, timeout=15) as r:  # noqa: S310
+        req = urllib.request.Request(f"{base}/events/demo?interval_ms=30")
+        with urllib.request.urlopen(req, timeout=15) as r:
             ctype = r.headers.get("content-type", "")
             for line in r:
                 line = line.decode().strip()
@@ -414,6 +439,8 @@ def main() -> int:
 
     library_checks()
     host_checks()
+    p2_checks(base, COMPOSE, psql, record, mode)
+    web_checks(record)
 
     print("==> Golden cases (docs/14 §4)", flush=True)
     for gid, desc in GOLDEN.items():

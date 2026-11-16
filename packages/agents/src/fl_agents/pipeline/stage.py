@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from typing import Annotated, Any, TypedDict, TypeVar
 from uuid import UUID
 
+from langgraph.errors import GraphBubbleUp
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command, interrupt
@@ -242,6 +243,11 @@ async def _pausable[R](
         return None, Command(goto=node)
     except LlmError as e:
         return None, await _fail(ctx, [Issue(code="llm", message=str(e))])
+    except GraphBubbleUp:
+        raise  # LangGraph control flow (interrupts), never a failure
+    except Exception as e:  # a bug or bad input must fail the stage, not leave it "running"
+        log.exception("stage %s step %s failed", ctx.stage, node)
+        return None, await _fail(ctx, [Issue(code="error", message=f"{type(e).__name__}: {e}")])
 
 
 async def _thread_active(state: StageState) -> bool:
