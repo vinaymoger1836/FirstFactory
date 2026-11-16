@@ -56,7 +56,7 @@ An interactive architecture page (clickable pipeline, data model, deployment, ph
 | Template input | Web wizard only for the POC (ADR-015) |
 | BoM | Centre of the pipeline; three intake cases (CAD only, complete, incomplete); AI additions are suggestions the user accepts; EBOM and MBOM both delivered (ADR-022) |
 | Documents | Factory Package of work instructions, inspection sheets, control plan, SOPs; generated in S12 from engine skeletons, wording only by the LLM, labelled Draft (ADR-023) |
-| Queue | procrastinate on Postgres (ADR-019, Proposed) |
+| Queue | procrastinate on Postgres (ADR-019) |
 | Hosting | Oracle Always Free Ampere A1 (2 OCPU / 12 GB) + Cloudflare Pages (ADR-011) |
 | Access | No login: capability links, Turnstile, rate limits, 30-day retention with export (ADR-012) |
 | Fan | BLDC; controller PCBA bought in |

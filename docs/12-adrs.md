@@ -105,20 +105,20 @@ Status values: **Accepted**, Proposed, Superseded. New or changed decisions duri
 
 ---
 
-ADR-019 to ADR-021 were raised during P0 and P1 and exist in the repo's `docs/12-adrs.md`; they are summarised here so this package stays in step. They stay *Proposed* until the owner approves them.
+ADR-019 to ADR-021 were raised during P0 and P1 and exist in the repo's `docs/12-adrs.md`; they are summarised here so this package stays in step. The owner accepted them on 2026-11-16.
 
 ### ADR-019 — Worker queue: procrastinate (Postgres), not arq + Redis
-**Status:** Proposed (P0)
+**Status:** Accepted (owner, 2026-11-16)
 **Decision:** Background jobs run on procrastinate over Postgres, one queue per worker (`engines`, `cad`), with a one-minute stalled-job sweep. Redis stays for worker heartbeats only.
 **Why:** In the P0 bench, enqueue-to-start p50 was 6 ms against 48 s for arq at its default poll; recovery after a killed worker is heartbeat-based (30 s) instead of growing with `job_timeout`; arq is in maintenance mode; Postgres is already the system of record.
 
 ### ADR-020 — Library search embeddings: deterministic hashed n-gram vectors
-**Status:** Proposed (P1)
+**Status:** Accepted (owner, 2026-11-16)
 **Decision:** `catalog.search` uses 256-dimension hashed n-gram vectors plus full-text rank, stored in pgvector.
 **Why:** No embedding model was specified, and the loader must work with no network or quota. A learned embedding can replace it later behind the same search function.
 
 ### ADR-021 — Library loader in its own package (`packages/library`)
-**Status:** Proposed (P1)
+**Status:** Accepted (owner, 2026-11-16)
 **Decision:** YAML loading, catalog and pack tests, versioned Postgres load and the `fl-library` CLI live in `packages/library`, not in `packages/domain` or `packages/engines`.
 **Why:** Keeps the domain model and engines free of database and file-system code.
 
@@ -137,14 +137,14 @@ ADR-019 to ADR-021 were raised during P0 and P1 and exist in the repo's `docs/12
 **Consequences:** About 60k extra tokens per product (estimate, measured in P8b) with per-document caching; more review work for the user; Tier 2 documents (PFMEA, maintenance plan, calibration register, EHS plan, commissioning checklist) are not in the POC.
 
 ### ADR-024 — Pipeline runs in an `agents` service; files in named volumes
-**Status:** Proposed (P2)
+**Status:** Accepted (owner, 2026-11-16)
 **Context:** docs/11 §1 put LangGraph inside the api container. Graph steps wait on LLM calls (seconds to minutes) and on sandboxed CAD/PDF jobs; running them in the web process makes the API less responsive and loses in-flight work on an API restart. The worker has no internet egress by design, so it cannot call the LLM providers. Uploaded files must reach the cad-worker (no network, read-only root) and the derived GLB must come back.
 **Decision:** A separate `agents` service (same image as the api, `fl-agents worker`) consumes a new procrastinate queue `pipeline` with concurrency 2 (docs/02 §3: at most two pipelines at once) and a per-project job lock. It sits on `edge` (egress) and `backend`. The API only defers jobs and streams progress (SSE from a `stage_event` table woken by `pg_notify`). CAD and PDF parsing stay in the cad-worker and worker (deferred by task name). Files live in two named volumes: `uploads` (api writes; agents, worker and cad-worker read only) and `derived` (cad-worker writes GLBs; api reads).
 **Alternatives:** Graph inside the API (docs/11 as written; simpler, but shares memory and latency with requests); graph in the existing worker (no egress, and long LLM waits would block engine jobs); files in Postgres `bytea` (no shared volume, but 50 MB rows and more DB load).
 **Consequences:** About 1 GB more memory on the VM (api reduced from 1.5 GB to 1 GB, agents 1 GB); one more service to monitor (heartbeat `agents` in readiness); the retention job in P9 must delete files from both volumes.
 
 ### ADR-025 — Pipeline execution semantics: a thread per run, hash skip, placeholders, `paused`
-**Status:** Proposed (P2)
+**Status:** Accepted (owner, 2026-11-16)
 **Context:** docs/02 §2-§3 describe stage runs, staleness and interrupts but not how re-runs and edits map onto LangGraph threads, nor how a budget stop is represented.
 **Decision:**
 1. Each pipeline run is a LangGraph thread (`<project>:<n>`, table `pipeline_thread`). Every stage node first computes its `inputs_hash` (approved upstream versions and artifact hashes, catalog and pack versions, stage parameters; for S1 the template and attachment hashes). If an approved run with that hash exists, the node passes through. "Re-run stale" therefore starts a new thread and only changed stages do work.

@@ -6,8 +6,8 @@ Status at 2026-11-13: **P0 and P1 are complete** (reports in the repo: `docs/pha
 
 | Phase | Name | Outcome | Depends on |
 |---|---|---|---|
-| P0 ✅ | Foundations and spikes | Monorepo, Docker Compose (multi-arch), FastAPI + React shells, Postgres, CI; spikes: OCP/OR-Tools/WeasyPrint on ARM64, LiteLLM → Groq + Gemini, `sysml2kit` vs own serializer. Done: `make e2e` 14/14 on amd64 and arm64 (QEMU); queue = procrastinate (ADR-019, Proposed); own SysML serializer kept; spike c (live Groq/Gemini calls) still needs the owner's API keys | — |
-| P1 ✅ | Domain model, library, data pack | `packages/domain` with all artifact models + JSON Schema → TS; catalog seed (both archetypes); Karnataka pack with sources; golden fixtures; catalog/pack tests. Done: e2e 41/41; catalog 2026.11.1 (186 entries); pack KA 2026.11.1 (84 values, **70 marked `verify`**); `packages/library` added (ADR-021, Proposed) | P0 |
+| P0 ✅ | Foundations and spikes | Monorepo, Docker Compose (multi-arch), FastAPI + React shells, Postgres, CI; spikes: OCP/OR-Tools/WeasyPrint on ARM64, LiteLLM → Groq + Gemini, `sysml2kit` vs own serializer. Done: `make e2e` 14/14 on amd64 and arm64 (QEMU); queue = procrastinate (ADR-019, accepted); own SysML serializer kept; spike c (live Groq/Gemini calls) still needs the owner's API keys | — |
+| P1 ✅ | Domain model, library, data pack | `packages/domain` with all artifact models + JSON Schema → TS; catalog seed (both archetypes); Karnataka pack with sources; golden fixtures; catalog/pack tests. Done: e2e 41/41; catalog 2026.11.1 (186 entries); pack KA 2026.11.1 (84 values, **70 marked `verify`**); `packages/library` added (ADR-021, accepted) | P0 |
 | P2 | Harness, wizard, intake | LangGraph pipeline skeleton with stage runs, approvals, staleness, SSE, LLM router with budgets; web wizard (adds the "Do you have a BoM?" question, BoM column-mapping confirmation and optional parts table); S1 intake (text, PDF, STEP, photo); pipeline UI | P1 |
 | P3 | BoM, routing, quality | S2 with the three intake cases, gap and CAD cross-check, suggestions, editable review table, make/buy preview; S3 with time standards and precedence; S4 quality plan that records the check fields needed by the Factory Package (catalog bump to 2026.11.2); vendor research agent (parallel) | P2 |
 | P4 | Capacity and inventory | S5 engine (takt, sizing rules, CP-SAT, strategies A/B/C, custom workcenters); S6 inventory and flow matrix | P3 |
@@ -49,7 +49,7 @@ Decided: worker queue is procrastinate (P0; ADR-019 awaiting approval). SysML wr
 
 Waiting on the owner:
 
-- Approve or reject ADR-019, ADR-020, ADR-021 and the SysML recommendation (P0/P1 reports).
+- ADR-019, ADR-020, ADR-021, ADR-024 and ADR-025 accepted (owner, 2026-11-16). Still open: the SysML recommendation (P0 report).
 - Add real `GROQ_API_KEY` and `GEMINI_API_KEY` to `.env` and run spike c to record real rate-limit headers and confirm default model names per role (P0 §5c).
 - Spot-check three pack values: `power.ht2a.demand_charge` (365 from news vs 350 in the order PDF), `labour.overtime_cap_quarter_h` (144 central vs 145 Karnataka 2023), `welfare.canteen_min_workers` (100 vs 50).
 
