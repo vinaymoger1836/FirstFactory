@@ -260,7 +260,14 @@ def _cad_result(aid: str, meta: dict[str, Any], kind: str) -> SourceResult:
         res.terms.append(str(p.get("name") or ""))
     tree = meta.get("tree")
     if tree:
-        res.assemblies.append(tree)
+        # The cad-worker numbers parts P001…; use the spec's part numbers in the tree too.
+        def relink(node: dict[str, Any]) -> dict[str, Any]:
+            pn = node.get("part_no")
+            if isinstance(pn, str) and pn.startswith("P") and pn[1:].isdigit():
+                node = {**node, "part_no": f"CAD-{aid[4:]}-{int(pn[1:]):03d}"}
+            return {**node, "children": [relink(c) for c in node.get("children", [])]}
+
+        res.assemblies.append(relink(tree))
     if kind == "stl":
         res.notices.append(
             f"{aid}: an STL is a single mesh; no assembly or part names (low confidence)."
