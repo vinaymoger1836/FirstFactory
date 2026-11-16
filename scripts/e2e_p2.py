@@ -52,7 +52,11 @@ class Api:
         return _send(req, timeout)
 
     def upload(
-        self, path: Path, name: str | None = None, raw: bytes | None = None
+        self,
+        path: Path,
+        name: str | None = None,
+        raw: bytes | None = None,
+        variants: str = "",
     ) -> tuple[int, Any]:
         boundary = uuid.uuid4().hex
         content = raw if raw is not None else path.read_bytes()
@@ -64,7 +68,10 @@ class Api:
                 "Content-Type: application/octet-stream\r\n\r\n"
             ).encode()
             + content
-            + f"\r\n--{boundary}--\r\n".encode()
+            + (
+                f'\r\n--{boundary}\r\nContent-Disposition: form-data; name="variants"\r\n\r\n'
+                f"{variants}\r\n--{boundary}--\r\n"
+            ).encode()
         )
         req = urllib.request.Request(
             f"{self.base}/projects/current/attachments", data=body, method="POST"
@@ -206,7 +213,11 @@ def make_samples(compose: list[str], record: Record) -> bool:
         text=True,
         check=False,
     )
-    ok &= record("samples: BoM CSV and photo (host)", p.returncode == 0, (p.stderr or "")[-200:])
+    ok &= record(
+        "samples: BoM CSV and photo (host)",
+        p.returncode == 0,
+        "" if p.returncode == 0 else (p.stderr or "")[-200:],
+    )
     for what, service in (("step", "cad-worker"), ("pdf", "worker")):
         p = subprocess.run(
             [
@@ -232,7 +243,9 @@ def make_samples(compose: list[str], record: Record) -> bool:
             check=False,
         )
         ok &= record(
-            f"samples: {what} (in the {service} image)", p.returncode == 0, (p.stderr or "")[-200:]
+            f"samples: {what} (in the {service} image)",
+            p.returncode == 0,
+            "" if p.returncode == 0 else (p.stderr or "")[-200:],
         )
     names = sorted(f.name for f in OUT.iterdir())
     record(
@@ -341,7 +354,7 @@ def p2_checks(
     atts: list[dict] = []
     uploaded: dict[str, dict] = {}
     for fname in ("pb10k.step", "pb10k-datasheet.pdf", "pb-bom.csv", "pb-photo.png"):
-        s, a = api.upload(OUT / fname)
+        s, a = api.upload(OUT / fname, variants="PB10K,PB20K")
         ok = s == 201 and isinstance(a, dict)
         record(f"upload {fname}", ok, f"HTTP {s} {a if not ok else a['kind']}")
         if ok:

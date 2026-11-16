@@ -293,6 +293,7 @@ class Router:
         tried: list[str] = []
         current: str | None = role
         last_retry_after: float | None = None
+        last_busy = False
         while current is not None and current not in tried:
             tried.append(current)
             if not self.available(current):
@@ -311,13 +312,14 @@ class Router:
                 )
             except QuotaExhausted as e:
                 last_retry_after = e.retry_after_s
+                last_busy = e.busy
                 current = ROLES.get(current)
         if not any(self.available(r) for r in tried):
             raise LlmUnavailable(
                 f"no API key configured for role '{role}' or its fallback "
                 f"({self.settings.role_model(role)})"
             )
-        raise QuotaExhausted(role, last_retry_after)
+        raise QuotaExhausted(role, last_retry_after, busy=last_busy)
 
     async def _call_role(
         self,
@@ -349,6 +351,7 @@ class Router:
             response_format = {"type": "json_object"}
         bucket = self._bucket(role)
         retry_after: float | None = None
+        busy = False  # last failure was a timeout/5xx rather than a 429
         for attempt in range(self.settings.llm_max_retries):
             await bucket.acquire(est)
             t0 = time.monotonic()
@@ -363,6 +366,7 @@ class Router:
                     drop_params=True,
                 )
             except lx.RateLimitError as e:
+                busy = False
                 retry_after = _retry_after(e)
                 await self._log(
                     ctx,
@@ -393,6 +397,7 @@ class Router:
                     fallback_from=fallback_from,
                     error=str(e),
                 )
+                busy = True
                 await asyncio.sleep(1.0 * 2**attempt)
                 continue
             except Exception as e:  # bad request, auth, unknown model, … (not retryable)
@@ -435,4 +440,4 @@ class Router:
                     completion_tokens=ct,
                 )
             return content, model
-        raise QuotaExhausted(role, retry_after)
+        raise QuotaExhausted(role, retry_after, busy=busy)

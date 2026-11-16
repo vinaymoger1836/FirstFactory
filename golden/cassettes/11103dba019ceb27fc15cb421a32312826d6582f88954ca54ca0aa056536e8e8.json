@@ -1,0 +1,26 @@
+{
+  "key": "11103dba019ceb27fc15cb421a32312826d6582f88954ca54ca0aa056536e8e8",
+  "role": "writer",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "SummaryOut",
+  "recorded_at": "2026-11-16T06:51:13+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"summary\":{\"description\":\"Two to four plain sentences for the user.\",\"title\":\"Summary\",\"type\":\"string\"},\"highlights\":{\"items\":{\"type\":\"string\"},\"maxItems\":5,\"title\":\"Highlights\",\"type\":\"array\"}},\"required\":[\"summary\"],\"title\":\"SummaryOut\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Write a short summary for a first-time factory founder of what intake found about their product. Plain words, no numbers that are not in the facts, no advice beyond the open questions. Highlights: up to 5 short items.\n\nFACTS:\nProduct: Power bank (golden G1) (electronics)\nProduct type: power_bank (from user)\nVariant PB10K: 10 parameters (6 from datasheet, 4 from library)\nVariant PB20K: 10 parameters (7 from library, 3 from llm)\nParts found in files: 25; assembly trees: 1\nOpen questions: 1\nQuestion: Sources disagree on capacity mah for PB10K. Which value is right?"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"summary\":\"The intake shows the golden G1 power bank is cataloged as a power_bank with two variants, PB10K and PB20K, each defined by ten parameters drawn from datasheets, libraries and an LLM. The files contain twenty‑five parts and a single assembly tree. An open question remains about the correct capacity in mAh for the PB10K variant, as sources disagree.\",\"highlights\":[\"Product: golden G1 power bank\",\"Variants PB10K and PB20K each have ten parameters\",\"Parameters sourced from datasheet, library, LLM\",\"25 parts and one assembly tree identified\",\"Capacity mAh for PB10K is disputed\"]}"
+  },
+  "usage": {
+    "prompt_tokens": 430,
+    "completion_tokens": 538
+  }
+}

@@ -189,7 +189,7 @@ export function SchemaField({ ctx, path }: { ctx: FieldCtx; path: Path }) {
     </>
   );
 
-  const en = schema.enum as string[] | undefined;
+  const en = (schema.enum as string[] | undefined) ?? (typeof schema.const === "string" ? [schema.const] : undefined);
   if (en) {
     const opts = nullable ? [null, ...en] : en;
     if (opts.length <= 4) {

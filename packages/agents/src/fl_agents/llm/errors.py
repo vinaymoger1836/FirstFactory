@@ -49,14 +49,16 @@ class BudgetExhausted(PauseRequired):
 
 
 class QuotaExhausted(PauseRequired):
-    """The provider kept refusing (429) after retries and fallbacks (docs/02 §7)."""
+    """The provider kept refusing (429) or stayed unavailable (timeouts, 503) after retries
+    and fallbacks (docs/02 §7). The stage pauses and can be continued later."""
 
     kind = "quota"
 
-    def __init__(self, role: str, retry_after_s: float | None) -> None:
+    def __init__(self, role: str, retry_after_s: float | None, *, busy: bool = False) -> None:
         wait = f" Try again in about {round(retry_after_s)} s." if retry_after_s else ""
-        super().__init__(f"The model provider's free quota for '{role}' is used up.{wait}")
-        self.role, self.retry_after_s = role, retry_after_s
+        what = "is not responding (overloaded or timing out)" if busy else "free quota is used up"
+        super().__init__(f"The model provider for '{role}' {what}.{wait}")
+        self.role, self.retry_after_s, self.busy = role, retry_after_s, busy
 
     def payload(self) -> dict[str, object]:
         return {
@@ -73,7 +75,7 @@ class CassetteMiss(LlmError):
     def __init__(self, key: str, role: str) -> None:
         super().__init__(
             f"cassette miss: no recorded '{role}' response for request {key[:12]}… "
-            "(the prompt changed since recording; re-record with FL_LLM_MODE=record)"
+            "(the prompt changed since recording; re-record with LLM_MODE=record)"
         )
         self.key = key
 

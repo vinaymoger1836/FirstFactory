@@ -61,6 +61,7 @@ export function FilesStep({
       try {
         const fd = new FormData();
         fd.append("file", file);
+        fd.append("variants", template.product.variants.map((v) => v.code).join(","));
         const a = await api<AttachmentOut>("/projects/current/attachments", { method: "POST", body: fd }, token);
         current = [...current, a];
         const entry: Attachment = {

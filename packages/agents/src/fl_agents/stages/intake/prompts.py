@@ -55,6 +55,7 @@ def doc_messages(
                 f"Allowed parameters (name | unit | meaning):\n{param_table(params)}\n\n"
                 f"Variants:\n{vlist}\n\n{_RULES}\n"
                 '- "page" is the page number where the value appears.\n'
+                "- If the datasheet is about one variant, use that variant's code.\n"
                 '- "other_specs": up to 15 further specifications with name, value, unit, page.\n\n'
                 f"DATASHEET:\n{body}"
             ),

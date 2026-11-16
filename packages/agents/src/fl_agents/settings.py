@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     llm_role_reasoner: str = "groq/openai/gpt-oss-120b"
     llm_role_extractor: str = "groq/openai/gpt-oss-20b"
     llm_role_writer: str = "groq/openai/gpt-oss-120b"
-    llm_role_vision: str = "gemini/gemini-2.5-flash"
+    llm_role_vision: str = "gemini/gemini-3.5-flash"
     groq_api_key: SecretStr = SecretStr("")
     gemini_api_key: SecretStr = SecretStr("")
     llm_timeout_s: float = 60.0

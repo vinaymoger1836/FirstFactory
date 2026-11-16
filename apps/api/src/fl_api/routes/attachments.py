@@ -141,15 +141,17 @@ def _reencode_image(raw: bytes, max_px: int) -> bytes:
 
 
 async def _bom_preview(
-    row: dict[str, Any], path: Path, template: dict[str, Any] | None
+    row: dict[str, Any], path: Path, template: dict[str, Any] | None, variants: list[str]
 ) -> dict[str, Any]:
     headers, rows = await asyncio.to_thread(read_table, path, row["filename"])
-    codes = [v["code"] for v in ((template or {}).get("product") or {}).get("variants", [])]
+    codes = variants or [
+        v["code"] for v in ((template or {}).get("product") or {}).get("variants", [])
+    ]
     mapping = propose_mapping(headers, codes)
     source = "rules"
     if (
         headers
-        and (mapping.name is None or mapping.qty is None)
+        and (mapping.name is None or (mapping.qty is None and not mapping.variant_qty))
         and runtime().router.available("extractor")
     ):
         try:
@@ -197,7 +199,10 @@ async def upload(
     row: CurrentRow,
     file: Annotated[UploadFile, File()],
     note: Annotated[str | None, Form(max_length=500)] = None,
+    variants: Annotated[str | None, Form(max_length=500)] = None,
 ) -> AttachmentOut:
+    """Upload one file. ``variants`` (comma-separated codes) lets the BoM column mapping find
+    per-variant quantity columns before the template is saved."""
     s = get_settings()
     pid = row["id"]
     name = Path(file.filename or "upload").name[:200]
@@ -253,7 +258,8 @@ async def upload(
     }
     if kind == "bom_csv":
         try:
-            att["meta"]["bom"] = await _bom_preview(att, dest, row["template"])
+            codes = [c.strip() for c in (variants or "").split(",") if c.strip()][:10]
+            att["meta"]["bom"] = await _bom_preview(att, dest, row["template"], codes)
         except Exception as e:
             dest.unlink(missing_ok=True)
             raise HTTPException(

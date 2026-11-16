@@ -61,7 +61,7 @@ services:
       LLM_ROLE_REASONER: ${LLM_ROLE_REASONER:-groq/openai/gpt-oss-120b}
       LLM_ROLE_EXTRACTOR: ${LLM_ROLE_EXTRACTOR:-groq/openai/gpt-oss-20b}
       LLM_ROLE_WRITER: ${LLM_ROLE_WRITER:-groq/openai/gpt-oss-120b}
-      LLM_ROLE_VISION: ${LLM_ROLE_VISION:-gemini/gemini-2.5-flash}
+      LLM_ROLE_VISION: ${LLM_ROLE_VISION:-gemini/gemini-3.5-flash}
       # live | record | replay (cassettes, docs/14 §4). The e2e override sets replay.
       LLM_MODE: ${LLM_MODE:-live}
     depends_on:

@@ -1,0 +1,26 @@
+{
+  "key": "3190674fa3c36dba14c112f21e5cd544de6556221ec3a1fa494883024914718a",
+  "role": "writer",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "SummaryOut",
+  "recorded_at": "2026-11-16T06:51:16+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"summary\":{\"description\":\"Two to four plain sentences for the user.\",\"title\":\"Summary\",\"type\":\"string\"},\"highlights\":{\"items\":{\"type\":\"string\"},\"maxItems\":5,\"title\":\"Highlights\",\"type\":\"array\"}},\"required\":[\"summary\"],\"title\":\"SummaryOut\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Write a short summary for a first-time factory founder of what intake found about their product. Plain words, no numbers that are not in the facts, no advice beyond the open questions. Highlights: up to 5 short items.\n\nFACTS:\nProduct: Power bank (golden G1) (electronics)\nProduct type: power_bank (from user)\nVariant PB10K: 10 parameters (5 from datasheet, 4 from library, 1 from user)\nVariant PB20K: 10 parameters (7 from library, 3 from llm)\nParts found in files: 25; assembly trees: 1\nOpen questions: 0"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"summary\":\"The intake identified that the golden G1 power bank is documented with two variants, PB10K and PB20K, each described by ten parameters drawn from datasheets, libraries, user input, and LLM. A total of twenty‑five parts were located in the files, organized into a single assembly tree. No open questions remain from the review.\",\"highlights\":[\"Two variants (PB10K, PB20K) each with ten parameters\",\"Parameters sourced from datasheet, library, user input, and LLM\",\"Twenty‑five parts found\",\"One assembly tree\",\"No open questions\"]}"
+  },
+  "usage": {
+    "prompt_tokens": 417,
+    "completion_tokens": 631
+  }
+}

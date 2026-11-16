@@ -48,6 +48,7 @@ function build(tools: SchemaTools, s: Schema): unknown {
     if (Array.isArray(s.prefixItems)) return (s.prefixItems as Schema[]).map(() => null);
     return [];
   }
+  if (s.const !== undefined) return s.const;
   if (Array.isArray(s.enum)) return (s.enum as unknown[])[0] ?? null;
   if (t === "string") return "";
   return null;

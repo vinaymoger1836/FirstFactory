@@ -14,7 +14,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 from uuid import UUID
 
-from fl_agents.llm.errors import LlmUnavailable
+from fl_agents.llm.errors import LlmUnavailable, QuotaExhausted
 from fl_agents.pipeline.stage import StageCtx
 from fl_agents.queue import defer_cad_extract, defer_pdf_extract
 from fl_agents.stages.intake import prompts
@@ -112,13 +112,14 @@ def _param_candidates(
     good_conf: float,
     bad_conf: float,
     ref_base: str,
+    default_variants: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for p in params:
         spec = allowed.get(p.name)
         if spec is None:
             continue
-        targets = [p.variant] if p.variant in variant_codes else variant_codes
+        targets = [p.variant] if p.variant in variant_codes else (default_variants or variant_codes)
         if p.variant and p.variant not in variant_codes:
             continue  # names a variant that does not exist: drop rather than guess
         ok = evidence_ok(source_text, p.evidence, p.value)
@@ -313,6 +314,11 @@ async def process_attachment(
             "extractor", prompts.doc_messages(pages, variants, params), DocExtraction
         )
         full = "\n".join(txt for _, txt in pages)
+        codes = [v.code for v in t.product.variants]
+        # A datasheet that names exactly one variant describes that variant only.
+        named = [
+            c for c in codes if re.search(rf"(?<![A-Za-z0-9]){re.escape(c)}(?![A-Za-z0-9])", full)
+        ]
         res.candidates = _param_candidates(
             out.params,
             {p.name: p for p in params},
@@ -322,6 +328,7 @@ async def process_attachment(
             good_conf=0.8,
             bad_conf=0.5,
             ref_base=f"attachment:{aid}",
+            default_variants=named if len(named) == 1 else None,
         )
         specs = {
             re.sub(r"[^a-z0-9_]+", "_", s.name.lower()).strip("_")[:60] or f"spec_{i}": {
@@ -350,8 +357,9 @@ async def process_attachment(
             vout = await ctx.llm(
                 "vision", prompts.vision_messages(data_url, t.product.name), VisionExtraction
             )
-        except LlmUnavailable as e:
-            res.notices.append(f"{att['filename']}: photo intake skipped ({e}).")
+        except (LlmUnavailable, QuotaExhausted) as e:
+            # docs/02 §7: vision unavailable → photo intake skipped; other inputs continue.
+            res.notices.append(f"{att['filename']}: photo intake skipped ({e})")
             return res
         res.terms = [*vout.components, *vout.features]
         res.llm_guess = vout.archetype_guess
@@ -373,6 +381,7 @@ async def process_attachment(
         }
         if ext:
             res.extensions[f"photo_{aid}"] = ext
+        await ctx.rt.store.update_attachment(ctx.project_id, aid, status="done")
         return res
     if kind == "bom_csv":
         path = ctx.rt.settings.uploads_dir / att["path"]
@@ -388,6 +397,7 @@ async def process_attachment(
         parts, notices = rows_to_parts(headers, rows, BomColumnMap.model_validate(mapping), aid)
         res.parts, res.notices = parts, [*res.notices, *notices]
         res.terms = [p["name"] for p in parts[:40]]
+        await ctx.rt.store.update_attachment(ctx.project_id, aid, status="done")
         return res
     res.notices.append(f"{att['filename']}: file kind {kind} is not processed in intake.")
     return res

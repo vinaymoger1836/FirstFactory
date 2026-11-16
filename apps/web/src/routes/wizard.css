@@ -160,6 +160,7 @@
 }
 .object__grid {
   display: grid;
+  align-items: start;
   gap: 0 var(--space-4);
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
 }

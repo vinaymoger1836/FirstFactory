@@ -47,9 +47,14 @@ async def checkpointer() -> AsyncPostgresSaver:
 
 
 async def setup_checkpointer() -> None:
-    """Create LangGraph's checkpoint tables (run by the compose ``migrate`` step)."""
-    saver = await checkpointer()
-    await saver.setup()
+    """Create LangGraph's checkpoint tables (run by the compose ``migrate`` step).
+
+    One short-lived connection, not the pool: a pool left open keeps reconnecting after
+    the event loop ends and the one-shot ``migrate`` container never exits.
+    """
+    url = with_app_name(runtime().settings.queue_database_url, "fl-agents-setup")
+    async with AsyncPostgresSaver.from_conn_string(url) as saver:
+        await saver.setup()
 
 
 async def pipeline_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
