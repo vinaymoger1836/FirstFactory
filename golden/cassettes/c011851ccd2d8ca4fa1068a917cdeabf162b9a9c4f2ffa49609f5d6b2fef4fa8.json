@@ -1,0 +1,30 @@
+{
+  "key": "c011851ccd2d8ca4fa1068a917cdeabf162b9a9c4f2ffa49609f5d6b2fef4fa8",
+  "role": "writer",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "SummaryOut",
+  "recorded_at": "2026-11-16T12:03:26+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"summary\":{\"title\":\"Summary\",\"type\":\"string\"},\"highlights\":{\"items\":{\"type\":\"string\"},\"maxItems\":5,\"title\":\"Highlights\",\"type\":\"array\"}},\"required\":[\"summary\"],\"title\":\"SummaryOut\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Write a short summary of this bill of materials for a first-time factory founder: what it contains, what still needs their decision. Plain words; no numbers that are not in the facts. Highlights: up to 5 short items.\n\nFACTS:\nCase: drafted from CAD and the product type (no BoM file)\nProposer: AI (reasoner)\nLines: 25; suggestions waiting: 25; open questions: 0; make/buy decisions to confirm: 5"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"summary\":\"The bill of materials is generated from a CAD model and the product type, created by an AI reasoner. It lists 25 line items, with 25 suggested components awaiting review, and there are no open questions. The founder still needs to confirm five make-or-buy decisions.\",\"highlights\":[\"Generated from CAD and product type\",\"Created by AI reasoner\",\"25 line items listed\",\"All suggestions pending review\",\"Five make/buy decisions to finalize\"]}",
+    "message": {
+      "role": "assistant",
+      "content": "{\"summary\":\"The bill of materials is generated from a CAD model and the product type, created by an AI reasoner. It lists 25 line items, with 25 suggested components awaiting review, and there are no open questions. The founder still needs to confirm five make-or-buy decisions.\",\"highlights\":[\"Generated from CAD and product type\",\"Created by AI reasoner\",\"25 line items listed\",\"All suggestions pending review\",\"Five make/buy decisions to finalize\"]}"
+    }
+  },
+  "usage": {
+    "prompt_tokens": 361,
+    "completion_tokens": 356
+  }
+}

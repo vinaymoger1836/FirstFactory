@@ -1,0 +1,30 @@
+{
+  "key": "483a686136adfa31af1f681ef5712edd0a4828eace735f30463a37f12ca6052d",
+  "role": "extractor",
+  "model": "groq/openai/gpt-oss-20b",
+  "schema": "TextExtraction",
+  "recorded_at": "2026-11-16T12:03:31+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"$defs\":{\"ParamValue\":{\"properties\":{\"name\":{\"description\":\"One of the allowed parameter names.\",\"title\":\"Name\",\"type\":\"string\"},\"value\":{\"title\":\"Value\",\"type\":\"number\"},\"unit\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"title\":\"Unit\"},\"variant\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"description\":\"Variant code the value applies to, or null for all variants.\",\"title\":\"Variant\"},\"evidence\":{\"description\":\"The exact words from the text that state the value.\",\"title\":\"Evidence\",\"type\":\"string\"},\"page\":{\"anyOf\":[{\"type\":\"integer\"},{\"type\":\"null\"}],\"default\":null,\"description\":\"PDF page number (datasheets only).\",\"title\":\"Page\"}},\"required\":[\"name\",\"value\",\"evidence\"],\"title\":\"ParamValue\",\"type\":\"object\"}},\"properties\":{\"archetype_guess\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"title\":\"Archetype Guess\"},\"keywords\":{\"items\":{\"type\":\"string\"},\"maxItems\":20,\"title\":\"Keywords\",\"type\":\"array\"},\"params\":{\"items\":{\"$ref\":\"#/$defs/ParamValue\"},\"maxItems\":60,\"title\":\"Params\",\"type\":\"array\"}},\"title\":\"TextExtraction\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Extract product parameters from the product description.\n\nAllowed parameters (name | unit | meaning):\n- sweep_mm | mm | Blade sweep\n- slots | unit | Stator slots\n- turns_per_coil | unit | Turns per coil\n- copper_kg | kg | Copper wire per stator\n- n_blades | unit | Blades per fan\n- n_bearings | unit | Bearings per motor\n- n_screws | unit | Screws in final assembly\n- n_connectors | unit | Harness connectors to the controller\n- n_solder_joints | unit | Solder joints (winding leads to harness)\n- n_speeds | unit | Speed steps tested\n- n_labels | unit | Labels applied (rating and BEE star label)\n- units_per_carton | unit | Fans per shipper carton\n\nVariants:\n- F1200: BLDC ceiling fan 1200 mm\n- F900: BLDC ceiling fan 900 mm\n\nRules:\n- Use only values the text states. Do not guess or calculate. Skip parameters it does not state.\n- \"evidence\" must copy the exact words from the text that state the value.\n- \"variant\" is the variant code the value applies to, or null when it applies to every variant.\n- Give \"value\" as a plain number in the unit listed for that parameter.\n- \"archetype_guess\" is one of: power_bank, ceiling_fan, generic_electronics, generic_mechanical, or null.\n- \"keywords\": up to 10 words that name the product type and main parts.\n\nTEXT:\nProduct: BLDC ceiling fan (golden G2)\nCategory: mechanical\nDescription: BLDC ceiling fan in 1200 mm and 900 mm sweeps with remote. Controller PCBA, die-cast rotor shell and blades are bought; stator winding, varnishing, motor and final assembly and test are in-house (ADR-017). Blades are packed separately.\nVariant F1200 (BLDC ceiling fan 1200 mm). Differences: 1200 mm blades, larger rotor shell, 80 turns per coil\nVariant F900 (BLDC ceiling fan 900 mm). Differences: 900 mm blades, smaller rotor shell, 70 turns per coil"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"archetype_guess\":\"ceiling_fan\",\"keywords\":[\"BLDC\",\"ceiling\",\"fan\",\"golden\",\"G2\",\"1200mm\",\"900mm\",\"remote\",\"controller\",\"blades\"],\"params\":[{\"name\":\"sweep_mm\",\"value\":1200,\"unit\":\"mm\",\"variant\":\"F1200\",\"evidence\":\"1200 mm and 900 mm sweeps\",\"page\":null},{\"name\":\"turns_per_coil\",\"value\":80,\"unit\":\"unit\",\"variant\":\"F1200\",\"evidence\":\"80 turns per coil\",\"page\":null},{\"name\":\"sweep_mm\",\"value\":900,\"unit\":\"mm\",\"variant\":\"F900\",\"evidence\":\"1200 mm and 900 mm sweeps\",\"page\":null},{\"name\":\"turns_per_coil\",\"value\":70,\"unit\":\"unit\",\"variant\":\"F900\",\"evidence\":\"70 turns per coil\",\"page\":null}]}",
+    "message": {
+      "role": "assistant",
+      "content": "{\"archetype_guess\":\"ceiling_fan\",\"keywords\":[\"BLDC\",\"ceiling\",\"fan\",\"golden\",\"G2\",\"1200mm\",\"900mm\",\"remote\",\"controller\",\"blades\"],\"params\":[{\"name\":\"sweep_mm\",\"value\":1200,\"unit\":\"mm\",\"variant\":\"F1200\",\"evidence\":\"1200 mm and 900 mm sweeps\",\"page\":null},{\"name\":\"turns_per_coil\",\"value\":80,\"unit\":\"unit\",\"variant\":\"F1200\",\"evidence\":\"80 turns per coil\",\"page\":null},{\"name\":\"sweep_mm\",\"value\":900,\"unit\":\"mm\",\"variant\":\"F900\",\"evidence\":\"1200 mm and 900 mm sweeps\",\"page\":null},{\"name\":\"turns_per_coil\",\"value\":70,\"unit\":\"unit\",\"variant\":\"F900\",\"evidence\":\"70 turns per coil\",\"page\":null}]}"
+    }
+  },
+  "usage": {
+    "prompt_tokens": 866,
+    "completion_tokens": 1873
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "key": "7701479a907781c4d0470162c5f728f151be4765de58a51f020aa966769e574f",
+  "role": "vision",
+  "model": "gemini/gemini-3.5-flash",
+  "schema": "VisionExtraction",
+  "recorded_at": "2026-11-16T11:59:10+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"components\":{\"items\":{\"type\":\"string\"},\"maxItems\":20,\"title\":\"Components\",\"type\":\"array\"},\"features\":{\"items\":{\"type\":\"string\"},\"maxItems\":20,\"title\":\"Features\",\"type\":\"array\"},\"size_cues\":{\"items\":{\"type\":\"string\"},\"maxItems\":10,\"title\":\"Size Cues\",\"type\":\"array\"},\"archetype_guess\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}],\"default\":null,\"title\":\"Archetype Guess\"}},\"title\":\"VisionExtraction\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "This photo shows the product \"Power bank (golden G1)\". List the visible components, visible features (ports, LEDs, buttons, blades, canopy and so on) and any size cues. Do not guess hidden parts. \"archetype_guess\" is one of: power_bank, ceiling_fan, generic_electronics, generic_mechanical, or null."
+          },
+          {
+            "type": "image",
+            "digest": "sha256:5a961e73b9ec652932d5c63a22da1b0e34be08b6f225fc0e5fe600d4be274dba"
+          }
+        ]
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"components\": [\"main body\", \"LED indicator lights\"], \"features\": [\"four blue LED status indicators\", \"top slot\", \"side connectors\", \"rounded corners\", \"rectangular body\"], \"size_cues\": [], \"archetype_guess\": \"power_bank\"}",
+    "message": {
+      "role": "assistant",
+      "content": "{\"components\": [\"main body\", \"LED indicator lights\"], \"features\": [\"four blue LED status indicators\", \"top slot\", \"side connectors\", \"rounded corners\", \"rectangular body\"], \"size_cues\": [], \"archetype_guess\": \"power_bank\"}"
+    }
+  },
+  "usage": {
+    "prompt_tokens": 1306,
+    "completion_tokens": 338
+  }
+}

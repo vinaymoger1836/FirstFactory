@@ -1,0 +1,30 @@
+{
+  "key": "24cbebacf1c289298176bb936388e4f2f4f2bc94f71b75f0b097b6ce78d70394",
+  "role": "writer",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "SummaryOut",
+  "recorded_at": "2026-11-16T11:59:12+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"summary\":{\"description\":\"Two to four plain sentences for the user.\",\"title\":\"Summary\",\"type\":\"string\"},\"highlights\":{\"items\":{\"type\":\"string\"},\"maxItems\":5,\"title\":\"Highlights\",\"type\":\"array\"}},\"required\":[\"summary\"],\"title\":\"SummaryOut\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Write a short summary for a first-time factory founder of what intake found about their product. Plain words, no numbers that are not in the facts, no advice beyond the open questions. Highlights: up to 5 short items.\n\nFACTS:\nProduct: Power bank (golden G1) (electronics)\nProduct type: power_bank (from user)\nVariant PB10K: 10 parameters (6 from datasheet, 4 from library)\nVariant PB20K: 10 parameters (6 from library, 4 from llm)\nParts found in files: 25; assembly trees: 1\nOpen questions: 1\nQuestion: Sources disagree on capacity mah for PB10K. Which value is right?"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"summary\":\"The intake identified the Power bank (golden G1) as an electronics product classified as a power_bank. Two variants, PB10K and PB20K, each have ten parameters sourced from a mix of datasheet, library, and LLM inputs. The file review uncovered twenty-five parts and a single assembly tree. One open question remains about the conflicting capacity values reported for PB10K.\",\"highlights\":[\"Product: Power bank (golden G1)\",\"Variants PB10K and PB20K each have ten parameters\",\"Files contain twenty-five parts and one assembly tree\",\"Open question on PB10K capacity discrepancy\"]}",
+    "message": {
+      "role": "assistant",
+      "content": "{\"summary\":\"The intake identified the Power bank (golden G1) as an electronics product classified as a power_bank. Two variants, PB10K and PB20K, each have ten parameters sourced from a mix of datasheet, library, and LLM inputs. The file review uncovered twenty-five parts and a single assembly tree. One open question remains about the conflicting capacity values reported for PB10K.\",\"highlights\":[\"Product: Power bank (golden G1)\",\"Variants PB10K and PB20K each have ten parameters\",\"Files contain twenty-five parts and one assembly tree\",\"Open question on PB10K capacity discrepancy\"]}"
+    }
+  },
+  "usage": {
+    "prompt_tokens": 430,
+    "completion_tokens": 731
+  }
+}

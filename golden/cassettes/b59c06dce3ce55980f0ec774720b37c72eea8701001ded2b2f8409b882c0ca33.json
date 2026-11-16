@@ -1,0 +1,30 @@
+{
+  "key": "b59c06dce3ce55980f0ec774720b37c72eea8701001ded2b2f8409b882c0ca33",
+  "role": "writer",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "SummaryOut",
+  "recorded_at": "2026-11-16T12:03:34+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"summary\":{\"description\":\"Two to four plain sentences for the user.\",\"title\":\"Summary\",\"type\":\"string\"},\"highlights\":{\"items\":{\"type\":\"string\"},\"maxItems\":5,\"title\":\"Highlights\",\"type\":\"array\"}},\"required\":[\"summary\"],\"title\":\"SummaryOut\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Write a short summary for a first-time factory founder of what intake found about their product. Plain words, no numbers that are not in the facts, no advice beyond the open questions. Highlights: up to 5 short items.\n\nFACTS:\nProduct: BLDC ceiling fan (golden G2) (mechanical)\nProduct type: ceiling_fan (from user)\nVariant F1200: 12 parameters (10 from library, 2 from llm)\nVariant F900: 12 parameters (10 from library, 2 from llm)\nParts found in files: 0; assembly trees: 0\nOpen questions: 0"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"summary\":\"The intake review shows that the BLDC ceiling fan (golden G2) is a mechanical ceiling_fan product. Two variants, F1200 and F900, each have 12 parameters, derived from 10 library entries and 2 LLM inputs. No parts or assembly trees were found in the files. There are no open questions remaining.\",\"highlights\":[\"Product: BLDC ceiling fan (golden G2)\",\"Variants: F1200 and F900\",\"Each variant has 12 parameters\",\"No parts or assembly trees detected\",\"No open questions\"]}",
+    "message": {
+      "role": "assistant",
+      "content": "{\"summary\":\"The intake review shows that the BLDC ceiling fan (golden G2) is a mechanical ceiling_fan product. Two variants, F1200 and F900, each have 12 parameters, derived from 10 library entries and 2 LLM inputs. No parts or assembly trees were found in the files. There are no open questions remaining.\",\"highlights\":[\"Product: BLDC ceiling fan (golden G2)\",\"Variants: F1200 and F900\",\"Each variant has 12 parameters\",\"No parts or assembly trees detected\",\"No open questions\"]}"
+    }
+  },
+  "usage": {
+    "prompt_tokens": 415,
+    "completion_tokens": 560
+  }
+}
