@@ -22,6 +22,7 @@ __all__ = [
     "BomFinding",
     "BomLine",
     "CalcStep",
+    "CoverageChip",
     "FindingKind",
     "Item",
     "ItemKind",
@@ -141,6 +142,17 @@ class UserLineSnapshot(DomainModel):
     ref: str
 
 
+class CoverageChip(DomainModel):
+    """One commodity class the product type's skeleton expects, and how the BoM covers it."""
+
+    commodity_class: Code
+    label: str
+    state: Literal["covered", "suggested", "rejected", "missing", "excluded"]
+    mbom_only: bool = Field(
+        default=False, description="Consumables the user may switch off for the MBOM."
+    )
+
+
 class VariantTotals(DomainModel):
     variant: LocalId
     cost_inr: Range | None = None
@@ -169,6 +181,7 @@ class Bom(DomainModel):
         default_factory=list, description="MBOM-only classes the user switched off."
     )
     totals: list[VariantTotals] = Field(default_factory=list)
+    coverage: list[CoverageChip] = Field(default_factory=list)
     proposer: str = Field(default="", description="'AI (reasoner)' or 'rules engine'.")
 
     def item(self, part_no: str) -> Item | None:

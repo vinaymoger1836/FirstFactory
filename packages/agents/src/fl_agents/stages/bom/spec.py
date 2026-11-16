@@ -376,12 +376,12 @@ class BomSpec(StageSpec):
                 ExtraLine(
                     x["name"],
                     x["commodity_class"],
-                    float(x["qty"]),
+                    float(max(x["qty"].values()) if isinstance(x["qty"], dict) else x["qty"]),
                     x.get("uom", "unit"),
                     x.get("reason", ""),
                 )
                 for x in p.get("extra_lines", [])
-                if x.get("commodity_class") in classes
+                if x.get("commodity_class") in classes and x.get("name") and x.get("qty")
             ],
             classify={
                 c["part_no"]: c["commodity_class"]

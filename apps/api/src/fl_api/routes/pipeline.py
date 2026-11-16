@@ -349,6 +349,19 @@ async def audit(stage: str, row: CurrentRow) -> list[dict[str, Any]]:
     ]
 
 
+@router.get("/catalog/materials")
+async def materials(row: CurrentRow) -> list[dict[str, Any]]:
+    """Materials of the project's pinned catalog (for the BoM review dropdown)."""
+    from fl_domain.library.catalog import MaterialEntry
+
+    cat = await store().catalog(row["catalog_version"])
+    return [
+        {"code": e.code, "name": e.name, "density_g_cm3": e.density_g_cm3}
+        for e in cat.entries
+        if isinstance(e, MaterialEntry)
+    ]
+
+
 @router.get("/llm-usage")
 async def llm_usage(row: CurrentRow) -> list[dict[str, Any]]:
     return [

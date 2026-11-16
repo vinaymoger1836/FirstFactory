@@ -3,7 +3,9 @@ import { Link, useParams } from "react-router";
 import { PageTitle } from "../components/AppShell";
 import { AssemblyTree } from "../components/AssemblyTree";
 import { NoteDialog } from "../components/NoteDialog";
+import { BomPanel } from "../components/bom/BomPanel";
 import { ProvBadge } from "../components/ProvBadge";
+import { blockersOf } from "../lib/bom";
 import { fmtValue, isProv, type ProvLike } from "../lib/prov";
 import {
   api,
@@ -55,7 +57,7 @@ export function StageView() {
 
   useEffect(() => {
     load();
-    if (stage === "intake")
+    if (stage === "intake" || stage === "bom")
       api<AttachmentOut[]>("/projects/current/attachments", {}, token)
         .then(setFiles)
         .catch(() => undefined);
@@ -97,7 +99,9 @@ export function StageView() {
   const isLatest = !!run && !!latest && run.version === latest.version;
   const status = run?.status ?? "pending";
   const openQuestions = (run?.questions ?? []).filter((q) => !q.answer);
-  const canEdit = isLatest && !!run && !run.placeholder && ["awaiting_approval", "approved"].includes(status);
+  const canEdit =
+    stage !== "bom" && isLatest && !!run && !run.placeholder && ["awaiting_approval", "approved"].includes(status);
+  const blockers = isLatest ? blockersOf(run) : 0;
 
   async function act(path: string, body: unknown, ok: string) {
     setBusy(true);
@@ -223,14 +227,22 @@ export function StageView() {
       {run && isLatest && (status === "awaiting_approval" || canEdit) && (
         <div className="action-bar" role="toolbar" aria-label="Stage actions">
           {status === "awaiting_approval" && !editing && (
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={busy}
-              onClick={() => void act("approve", { version: run.version }, "Approved. Later stages will start now.")}
-            >
-              Approve v{run.version}
-            </button>
+            <>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={busy || blockers > 0}
+                aria-describedby={blockers > 0 ? "approve-why" : undefined}
+                onClick={() => void act("approve", { version: run.version }, "Approved. Later stages will start now.")}
+              >
+                Approve v{run.version}
+              </button>
+              {blockers > 0 && (
+                <span id="approve-why" className="small muted" role="status">
+                  {blockers} item{blockers > 1 ? "s" : ""} still need a decision
+                </span>
+              )}
+            </>
           )}
           {canEdit && !editing && (
             <button type="button" className="btn" onClick={() => setEditing(true)} disabled={busy}>
@@ -299,6 +311,17 @@ export function StageView() {
         </section>
       )}
 
+      {run && run.artifact && stage === "bom" && (
+        <BomPanel
+          run={run}
+          token={token}
+          files={files}
+          canReview={isLatest && status === "awaiting_approval"}
+          busy={busy}
+          step={step?.step ?? null}
+          onAnswer={(answers) => void act("answer", { answers }, "Review applied. A new version is being built.")}
+        />
+      )}
       {run && run.artifact && stage === "intake" && (
         <IntakeArtifact
           artifact={run.artifact}

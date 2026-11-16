@@ -216,11 +216,14 @@ class Router:
         return ok
 
     def _bucket(self, role: str) -> TokenBucket:
-        if role not in self._buckets:
-            self._buckets[role] = TokenBucket(
+        """One bucket per *model*: provider limits are per model, so two roles on the same
+        model (reasoner and writer) share it (docs/11 §5)."""
+        model = self.settings.role_model(role)
+        if model not in self._buckets:
+            self._buckets[model] = TokenBucket(
                 rpm=self.settings.role_rpm.get(role, 30), tpm=self.settings.role_tpm.get(role, 6000)
             )
-        return self._buckets[role]
+        return self._buckets[model]
 
     async def _check_budget(self, ctx: CallCtx, est: int) -> None:
         if not ctx.budget or ctx.run_id is None:
@@ -392,16 +395,39 @@ class Router:
                     {k: v for k, v in m.items() if not (m.get("role") == "tool" and k == "name")}
                     for m in msgs
                 ]
-                msg, _model = await self._call_with_fallback(
-                    role,
-                    send,
-                    lambda _r: {"tools": schemas, "tool_choice": "auto", "_skip_mcp_handler": True},
-                    "tools:" + submit.__name__,
-                    ctx,
-                    key,
-                    est,
-                    temperature,
-                )
+                try:
+                    msg, _model = await self._call_with_fallback(
+                        role,
+                        send,
+                        lambda _r: {
+                            "tools": schemas,
+                            "tool_choice": "auto",
+                            "_skip_mcp_handler": True,
+                        },
+                        "tools:" + submit.__name__,
+                        ctx,
+                        key,
+                        est,
+                        temperature,
+                    )
+                except LlmUnavailable as e:
+                    # The provider validated our tool schema and refused the model's call:
+                    # give the model the error and let it try again (a repair).
+                    if "tool_use_failed" not in str(e) and "validation failed" not in str(e):
+                        raise
+                    repairs += 1
+                    if repairs > max_repairs:
+                        raise LlmOutputInvalid(role, str(e)[:500]) from e
+                    msgs.append(
+                        {
+                            "role": "user",
+                            "content": "Your last tool call was rejected: "
+                            + str(e)[:600]
+                            + " Fix the arguments and call the tool again.",
+                        }
+                    )
+                    await save(msgs)
+                    continue
             msgs.append(msg)
             calls = msg.get("tool_calls") or []
             if not calls:

@@ -26,6 +26,7 @@ from fl_domain.artifacts.bom import (
     BomFinding,
     BomLine,
     CalcStep,
+    CoverageChip,
     Item,
     MakeBuyDecision,
     MakeBuyPreview,
@@ -1037,6 +1038,38 @@ def build_bom(inp: BuildInput) -> Bom:
             )
         )
     findings.sort(key=lambda f: (f.rank, f.id))
+    coverage: list[CoverageChip] = []
+    seen_cls: set[str] = set()
+    for s in arch.bom_skeleton:
+        cc_code = s.commodity
+        if not cc_code or s.kind == "assembly" or cc_code in seen_cls or cc_code not in classes:
+            continue
+        c = cc_code
+        seen_cls.add(c)
+        of_class = [ln for ln in lines if ln.commodity_class == c]
+        state: Literal["covered", "suggested", "rejected", "missing", "excluded"]
+        if c in dec.excluded_classes:
+            state = "excluded"
+        elif any(ln.review in ("given", "accepted") for ln in of_class):
+            state = "covered"
+        elif any(ln.review == "suggested" for ln in of_class):
+            state = "suggested"
+        elif (
+            f"class:{c}" in rejected_now
+            or any(ln.review == "rejected" for ln in of_class)
+            or (s.ref and f"ref:{s.ref}" in rejected_now)
+        ):
+            state = "rejected"
+        else:
+            state = "missing"
+        coverage.append(
+            CoverageChip(
+                commodity_class=c,
+                label=classes[c].name,
+                state=state,
+                mbom_only=s.kind == "consumable",
+            )
+        )
     return Bom(
         root=ROOT,
         variants=inp.variants,
@@ -1061,6 +1094,7 @@ def build_bom(inp: BuildInput) -> Bom:
         rejected_suggestions=sorted(rejected_now),
         excluded_classes=sorted(dec.excluded_classes),
         totals=totals,
+        coverage=coverage,
         proposer=prop.proposer,
     )
 

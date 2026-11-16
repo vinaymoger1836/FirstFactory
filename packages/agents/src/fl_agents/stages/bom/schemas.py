@@ -20,32 +20,34 @@ class _Out(BaseModel):
 
 
 class SkeletonDecision(_Out):
-    ref: str = Field(description="Skeleton line ref.")
+    ref: str = Field(default="", description="Skeleton line ref.")
     keep: bool = Field(default=True, description="False if the product clearly lacks it.")
     reason: str = Field(default="", max_length=200)
 
 
 class ExtraLineOut(_Out):
-    name: str = Field(max_length=120)
-    commodity_class: str = Field(description="One of the allowed class codes.")
-    qty: float = Field(gt=0)
+    name: str = Field(default="", max_length=120)
+    commodity_class: str = Field(default="", description="One of the allowed class codes.")
+    qty: float | dict[str, float] = Field(
+        default=1, description="Quantity per product, or per variant code."
+    )
     uom: str = "unit"
     reason: str = Field(default="", max_length=200)
 
 
 class CadLink(_Out):
-    cad_part: str = Field(description="CAD part name exactly as listed.")
-    skeleton_ref: str = Field(description="Skeleton line ref it is.")
+    cad_part: str = Field(default="", description="CAD part name exactly as listed.")
+    skeleton_ref: str = Field(default="", description="Skeleton line ref it is.")
 
 
 class ClassifyLine(_Out):
-    part_no: str
-    commodity_class: str
+    part_no: str = ""
+    commodity_class: str = ""
 
 
 class MaterialPick(_Out):
-    target: str = Field(description="Part number or skeleton ref.")
-    material: str = Field(description="One of the allowed material codes.")
+    target: str = Field(default="", description="Part number or skeleton ref.")
+    material: str = Field(default="", description="One of the allowed material codes.")
 
 
 class ProposerDraft(_Out):
