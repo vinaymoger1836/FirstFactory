@@ -38,6 +38,7 @@ from fl_domain.units import is_valid_unit
 
 __all__ = [
     "ValidationContext",
+    "bom_approval_issues",
     "find_cycle",
     "validate_artifact",
     "validate_bom",
@@ -287,6 +288,95 @@ def validate_bom(bom: Bom, ctx: ValidationContext) -> list[Issue]:
     for dec in bom.make_buy_decisions:
         if dec.part_no not in items:
             out.append(_err("bom.ref", f"make/buy decision for unknown part {dec.part_no}"))
+    out += _check_user_lines(bom)
+    if ctx.catalog is not None:
+        commodity = ctx.catalog.codes("commodity_class")
+        for i, ln in enumerate(bom.ebom):
+            if ln.commodity_class and ln.commodity_class not in commodity:
+                out.append(
+                    _err("bom.commodity", f"unknown class '{ln.commodity_class}'", f"ebom[{i}]")
+                )
+    for i, ln in enumerate(bom.mbom):
+        if ln.review in ("suggested", "rejected"):
+            out.append(
+                _err(
+                    "bom.mbom_review",
+                    f"MBOM line {ln.child} is {ln.review}; only given or accepted lines build "
+                    "the MBOM (docs/03 §4.6)",
+                    f"mbom[{i}]",
+                )
+            )
+    return out
+
+
+_QTY_TOL = 1e-9
+
+
+def _check_user_lines(bom: Bom) -> list[Issue]:
+    """A user BoM line is unchanged from the file except for normalisation (docs/03 §4.5).
+
+    A changed quantity is allowed only when it is recorded as a user edit
+    (``qty.source == "user"``); a changed part number or a line without a file row fails.
+    """
+    out: list[Issue] = []
+    snap = {s.part_no: s for s in bom.user_snapshot}
+    for i, ln in enumerate(bom.ebom):
+        if ln.origin != "user_bom":
+            continue
+        path = f"ebom[{i}]"
+        s = snap.get(ln.child)
+        if s is None:
+            out.append(
+                _err(
+                    "bom.user_changed",
+                    f"user line {ln.child} has no matching row in the BoM file (part number "
+                    "changed?)",
+                    path,
+                )
+            )
+            continue
+        if ln.qty.source == "user":
+            continue
+        variants = [ln.variant] if ln.variant else list(s.qty_by_variant)
+        for v in variants:
+            want = s.qty_by_variant.get(v)
+            if want is None or abs(want - ln.qty.value) > _QTY_TOL * max(1.0, abs(want)):
+                out.append(
+                    _err(
+                        "bom.user_changed",
+                        f"user line {ln.child} ({v}) has qty {ln.qty.value}, the file says "
+                        f"{want}; only a recorded user edit may change it",
+                        path,
+                    )
+                )
+    return out
+
+
+def bom_approval_issues(bom: Bom) -> list[Issue]:
+    """What must be resolved before a BoM can be approved (docs/03 §4.5, §4.3)."""
+    out: list[Issue] = []
+    for level, lines in (("ebom", bom.ebom), ("mbom", bom.mbom)):
+        for i, ln in enumerate(lines):
+            if ln.review == "suggested":
+                out.append(
+                    _err(
+                        "bom.suggested",
+                        f"{ln.child} is still a suggestion: accept or reject it",
+                        f"{level}[{i}]",
+                    )
+                )
+    for f in bom.findings:
+        if f.status == "open" and f.kind != "note":
+            out.append(_err("bom.finding_open", f"open: {f.text}", f"findings/{f.id}"))
+    for d in bom.make_buy_decisions:
+        if not d.confirmed:
+            out.append(
+                _err(
+                    "bom.makebuy_unconfirmed",
+                    f"make/buy for {d.part_no} is not confirmed",
+                    f"make_buy/{d.part_no}",
+                )
+            )
     return out
 
 

@@ -27,6 +27,7 @@ from langgraph.types import Command, interrupt
 from pydantic import BaseModel
 
 from fl_agents.lifecycle import (
+    approval_issues,
     approve_run,
     assumptions_for,
     compute_inputs,
@@ -234,7 +235,15 @@ async def _pausable[R](
         )
         run = await ctx.refresh()
         extra = int(decision.get("extra_budget") or 0)
-        if extra <= 0 and e.kind == "budget":
+        if e.kind == "tools":
+            more = int(decision.get("extra_tool_calls") or 0) or ctx.rt.settings.tool_calls_for(
+                ctx.stage
+            )
+            await ctx.save_work(
+                {"tool_calls_extra": int(ctx.work.get("tool_calls_extra", 0)) + more}
+            )
+            extra = 0
+        elif extra <= 0 and e.kind == "budget":
             extra = ctx.rt.settings.budget_for(ctx.stage)
         await ctx.rt.store.update_run(
             ctx.run_id, status="running", token_budget=int(run["token_budget"]) + extra
@@ -439,6 +448,15 @@ def build_stage_graph(spec: StageSpec) -> CompiledStateGraph[Any, Any, Any, Any]
             version = int(decision.get("version") or ctx.run["version"])
             row = await store.run_version(ctx.project_id, stage, version)
             if row is None or row["status"] not in ("awaiting_approval", "approved"):
+                return Command(goto="approval")
+            blockers = approval_issues(stage, row["artifact"])
+            if blockers:
+                await store.emit(
+                    ctx.project_id,
+                    "warning",
+                    {"stage": stage, "message": f"{len(blockers)} item(s) still need a decision"},
+                    stage=stage,
+                )
                 return Command(goto="approval")
             await approve_run(store, row)
             return Command(goto=END, update={"run_id": str(row["id"])})

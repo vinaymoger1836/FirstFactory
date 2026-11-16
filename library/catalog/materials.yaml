@@ -1,0 +1,125 @@
+# Materials (P3, catalog 2026.11.2): density for mass = CAD volume × density, and an
+# indicative price per kg for make items. Densities are typical handbook values for the
+# grade named; prices are engineering estimates in INR (verify with vendor quotes).
+kind: material
+
+x-est: &est
+  source: catalog-estimate
+  as_of: "2026-11"
+  confidence: 0.5
+  note: Typical handbook density for the grade; indicative price, verify with vendors.
+
+entries:
+  - code: pc_abs
+    name: PC/ABS blend (moulding grade)
+    aliases: [pc abs, pc/abs, polycarbonate abs]
+    category: polymer
+    density_g_cm3: 1.15
+    price_inr_per_kg: {low: 180, base: 230, high: 290, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: abs
+    name: ABS (moulding grade)
+    aliases: [acrylonitrile butadiene styrene]
+    category: polymer
+    density_g_cm3: 1.05
+    price_inr_per_kg: {low: 140, base: 180, high: 230, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: polycarbonate
+    name: Polycarbonate (PC)
+    aliases: [pc, light pipe material]
+    category: polymer
+    density_g_cm3: 1.20
+    price_inr_per_kg: {low: 200, base: 260, high: 330, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: polypropylene
+    name: Polypropylene (PP)
+    aliases: [pp]
+    category: polymer
+    density_g_cm3: 0.90
+    price_inr_per_kg: {low: 100, base: 130, high: 170, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: aluminium_die_cast
+    name: Aluminium die-casting alloy (ADC12 class)
+    aliases: [aluminium, aluminum, adc12, die cast aluminium]
+    category: metal
+    density_g_cm3: 2.74
+    price_inr_per_kg: {low: 230, base: 280, high: 340, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: aluminium_sheet
+    name: Aluminium sheet (1xxx/3xxx class)
+    aliases: [aluminium sheet, aluminum sheet]
+    category: metal
+    density_g_cm3: 2.70
+    price_inr_per_kg: {low: 260, base: 310, high: 380, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: mild_steel
+    name: Mild steel (low carbon)
+    aliases: [steel, ms, crca]
+    category: metal
+    density_g_cm3: 7.85
+    price_inr_per_kg: {low: 60, base: 75, high: 95, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: stainless_304
+    name: Stainless steel 304
+    aliases: [ss304, stainless]
+    category: metal
+    density_g_cm3: 8.00
+    price_inr_per_kg: {low: 220, base: 270, high: 330, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: electrical_steel
+    name: Electrical (silicon) steel laminations
+    aliases: [crngo, silicon steel, lamination steel]
+    category: metal
+    density_g_cm3: 7.65
+    price_inr_per_kg: {low: 110, base: 140, high: 180, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: copper
+    name: Copper (electrolytic, enamelled wire)
+    aliases: [cu, copper wire, enamelled copper]
+    category: metal
+    density_g_cm3: 8.96
+    price_inr_per_kg: {low: 750, base: 850, high: 980, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: nickel
+    name: Nickel (pure nickel strip)
+    aliases: [ni, nickel strip]
+    category: metal
+    density_g_cm3: 8.90
+    price_inr_per_kg: {low: 1800, base: 2400, high: 3200, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est
+
+  - code: fr4_pcba
+    name: Populated FR-4 circuit board (effective)
+    aliases: [pcb, pcba, fr4]
+    category: electronic
+    density_g_cm3: 1.90
+    provenance:
+      <<: *est
+      note: Effective density of a populated board (laminate plus parts); bought as an assembly.
+
+  - code: li_ion_cylindrical
+    name: Cylindrical Li-ion cell (effective)
+    aliases: ["18650", "21700", li-ion cell]
+    category: cell
+    density_g_cm3: 2.80
+    provenance:
+      <<: *est
+      note: Effective density of a cylindrical cell (about 70 g for a 21700); bought per cell.
+
+  - code: paperboard
+    name: Paperboard / corrugated board
+    aliases: [carton, cardboard, paper]
+    category: paper
+    density_g_cm3: 0.70
+    price_inr_per_kg: {low: 45, base: 60, high: 80, as_of: "2026-11", source: catalog-estimate}
+    provenance: *est

@@ -29,6 +29,7 @@ from fl_domain.validators import ValidationContext, validate_json
 __all__ = [
     "EditError",
     "apply_change_set",
+    "approval_issues",
     "approve_run",
     "assumptions_for",
     "compute_inputs",
@@ -162,6 +163,16 @@ async def validate_artifact_dict(
 
 
 # ── approval and staleness ────────────────────────────────────────────
+
+
+def approval_issues(stage: StageKey, artifact: dict[str, Any] | None) -> list[Issue]:
+    """What must be resolved before this version can be approved (stage-specific gate)."""
+    if stage == "bom" and artifact:
+        from fl_domain.artifacts.bom import Bom
+        from fl_domain.validators import bom_approval_issues
+
+        return bom_approval_issues(Bom.model_validate(artifact))
+    return []
 
 
 async def propagate_stale(store: Store, pid: UUID, changed: StageKey) -> list[StageKey]:

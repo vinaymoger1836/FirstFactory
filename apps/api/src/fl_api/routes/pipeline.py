@@ -14,7 +14,13 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from fl_agents.lifecycle import EditError, apply_change_set, edit_values, preview_change_set
+from fl_agents.lifecycle import (
+    EditError,
+    apply_change_set,
+    approval_issues,
+    edit_values,
+    preview_change_set,
+)
 from fl_agents.queue import defer_advance
 from fl_agents.store import Row, to_stage_run
 from fl_api.db import store
@@ -45,6 +51,7 @@ class ActionIn(BaseModel):
     note: str | None = Field(default=None, max_length=2000)
     answers: dict[str, str | float | int] = Field(default_factory=dict)
     extra_budget: int | None = Field(default=None, ge=0, le=1_000_000)
+    extra_tool_calls: int | None = Field(default=None, ge=0, le=100)
 
 
 class EditItem(BaseModel):
@@ -148,6 +155,15 @@ async def approve(stage: str, body: ActionIn, row: CurrentRow) -> dict[str, Any]
     version = body.version or latest["version"]
     if version != latest["version"]:
         raise HTTPException(status.HTTP_409_CONFLICT, "Only the latest version can be approved")
+    blockers = approval_issues(key, latest["artifact"])
+    if blockers:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            {
+                "message": f"{len(blockers)} item(s) still need a decision before approval",
+                "issues": [i.model_dump(mode="json") for i in blockers],
+            },
+        )
     return await _resume(row, key, {"action": "approve", "version": version})
 
 
@@ -158,7 +174,10 @@ async def answer(stage: str, body: ActionIn, row: CurrentRow) -> dict[str, Any]:
     if latest is None or latest["status"] != "awaiting_approval":
         raise HTTPException(status.HTTP_409_CONFLICT, f"{stage} is not waiting for answers")
     known = {q["id"] for q in latest["questions"] or []}
-    unknown = [q for q in body.answers if q not in known]
+    review_ns = ("line:", "qty:", "mb:", "mbconfirm:", "mat:", "finding:", "exclude:")
+    unknown = [
+        q for q in body.answers if q not in known and not (key == "bom" and q.startswith(review_ns))
+    ]
     if not body.answers or unknown:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"Unknown questions: {unknown}")
     return await _resume(row, key, {"action": "answer", "answers": body.answers})
@@ -191,7 +210,15 @@ async def resume(stage: str, body: ActionIn, row: CurrentRow) -> dict[str, Any]:
     latest = await store().latest_run(row["id"], key)
     if latest is None or latest["status"] != "paused":
         raise HTTPException(status.HTTP_409_CONFLICT, f"{stage} is not paused")
-    return await _resume(row, key, {"action": "continue", "extra_budget": body.extra_budget or 0})
+    return await _resume(
+        row,
+        key,
+        {
+            "action": "continue",
+            "extra_budget": body.extra_budget or 0,
+            "extra_tool_calls": body.extra_tool_calls or 0,
+        },
+    )
 
 
 @router.post("/stages/{stage}/edit")

@@ -74,6 +74,8 @@ class Settings(BaseSettings):
         default_factory=lambda: {str(k): v for k, v in DEFAULT_STAGE_BUDGETS.items()}
     )
 
+    tool_call_budgets: dict[str, int] = Field(default_factory=lambda: {"bom": 12})
+
     # Pipeline worker
     pipeline_concurrency: int = 2  # docs/02 §3: at most 2 pipelines executing at once
     file_job_timeout_s: float = 120.0
@@ -94,6 +96,12 @@ class Settings(BaseSettings):
         elif model.startswith("gemini/"):
             key = self.gemini_api_key.get_secret_value()
         return "" if not key or "placeholder" in key.lower() else key
+
+    def tool_calls_for(self, stage: str, overrides: dict[str, int] | None = None) -> int:
+        """Tool-call limit for a stage's tool loop (S2: 12). Override key: '<stage>_tools'."""
+        if overrides and f"{stage}_tools" in overrides:
+            return int(overrides[f"{stage}_tools"])
+        return int(self.tool_call_budgets.get(stage, 12))
 
     def budget_for(self, stage: str, overrides: dict[str, int] | None = None) -> int:
         if overrides and stage in overrides:

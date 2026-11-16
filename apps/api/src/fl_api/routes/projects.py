@@ -188,7 +188,12 @@ async def submit(body: SubmitIn, row: CurrentRow) -> SubmitOut:
     """Start the pipeline: S1 intake runs in the agents service (docs/03 §2)."""
     if row["template"] is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Save the template before submitting")
-    bad = [k for k in body.stage_budgets if k not in DEFAULT_STAGE_BUDGETS]
+    bad = [
+        k
+        for k in body.stage_budgets
+        if k not in DEFAULT_STAGE_BUDGETS
+        and not (k.endswith("_tools") and k[: -len("_tools")] in DEFAULT_STAGE_BUDGETS)
+    ]
     if bad or any(v < 0 for v in body.stage_budgets.values()):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"Bad stage budgets: {bad}")
     await store().update_project(row["id"], status="submitted", stage_budgets=body.stage_budgets)

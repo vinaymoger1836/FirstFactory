@@ -17,6 +17,7 @@ from fl_domain.artifacts.product_spec import BomColumnMap
 __all__ = [
     "MAX_ROWS",
     "SYNONYMS",
+    "bom_rows",
     "parse_qty",
     "propose_mapping",
     "read_table",
@@ -180,7 +181,7 @@ def rows_to_parts(
         pn = _local_id(cell(row, mapping.part_no), f"BOM-{n:04d}")
         if pn in seen:
             seen[pn] += 1
-            pn = f"{pn}~{seen[pn]}"
+            pn = f"{pn}-dup{seen[pn]}"
         else:
             seen[pn] = 1
         per_variant = {
@@ -233,3 +234,57 @@ def rows_to_parts(
     if mapping.qty is None and not mapping.variant_qty:
         notices.append(f"No quantity column was mapped for {att_id}.")
     return parts, notices
+
+
+def bom_rows(
+    headers: list[str],
+    rows: list[list[str]],
+    mapping: BomColumnMap,
+    att_id: str,
+    variants: list[str],
+) -> list[dict[str, Any]]:
+    """Raw BoM rows for S2 with exact per-variant quantities (None where the file is blank).
+
+    Values are taken as written (no cleaning): S2 normalises units and keeps a snapshot to
+    prove user lines are not rewritten (docs/03 §4.5).
+    """
+    idx = {h: i for i, h in enumerate(headers)}
+
+    def cell(row: list[str], col: str | None) -> str:
+        if col is None or col not in idx or idx[col] >= len(row):
+            return ""
+        return row[idx[col]].strip()
+
+    out: list[dict[str, Any]] = []
+    seen: dict[str, int] = {}
+    for n, row in enumerate(rows, start=2):
+        name = cell(row, mapping.name) or cell(row, mapping.part_no)
+        if not name:
+            continue
+        pn = _local_id(cell(row, mapping.part_no), f"BOM-{n:04d}")
+        if pn in seen:
+            seen[pn] += 1
+            pn = f"{pn}-dup{seen[pn]}"
+        else:
+            seen[pn] = 1
+        if mapping.variant_qty:
+            qty = {
+                v: parse_qty(cell(row, mapping.variant_qty[v]))
+                if v in mapping.variant_qty
+                else None
+                for v in variants
+            }
+        else:
+            q = parse_qty(cell(row, mapping.qty)) if mapping.qty else None
+            qty = dict.fromkeys(variants, q)
+        out.append(
+            {
+                "part_no": pn,
+                "name": name[:200],
+                "qty_by_variant": qty,
+                "uom": cell(row, mapping.uom) or None,
+                "material": cell(row, mapping.material) or None,
+                "ref": f"attachment:{att_id}#row{n}",
+            }
+        )
+    return out

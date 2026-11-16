@@ -29,6 +29,7 @@ from fl_domain.library.catalog import (
     CheckTypeEntry,
     CommodityClassEntry,
     MachineClassEntry,
+    MaterialEntry,
     ProcessEntry,
     ZoneKindEntry,
 )
@@ -137,6 +138,7 @@ def check_catalog(catalog: Catalog) -> list[Issue]:
     zones = catalog.codes("zone_kind")
     commodities = catalog.codes("commodity_class")
     archetypes = catalog.codes("archetype")
+    materials = catalog.codes("material")
 
     for e in catalog.entries:
         where = f"{e.kind}:{e.code}"
@@ -205,12 +207,16 @@ def check_catalog(catalog: Catalog) -> list[Issue]:
             _ref(out, commodities, [e.parent], "commodity parent", where)
             _ordered(out, e.lead_time_days, where)
             _ordered(out, e.unit_price_inr, where)
+            _ref(out, procs, e.make_route, "make_route process", where)
+            _ref(out, materials, [e.default_material], "material", where)
             if not is_valid_unit(e.uom):
                 out.append(_err("catalog.units", f"bad uom '{e.uom}'", where))
             if e.iqc_checks and e.default_aql is None:
                 out.append(_warn("catalog.aql", "IQC checks without default_aql", where))
         elif isinstance(e, ArchetypeEntry):
             out += _check_archetype(catalog, e, where)
+        elif isinstance(e, MaterialEntry):
+            _ordered(out, e.price_inr_per_kg, where)
     return out
 
 

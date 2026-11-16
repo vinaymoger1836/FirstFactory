@@ -23,6 +23,7 @@ import logging
 import random
 import re
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal, TypeVar
 from uuid import UUID
@@ -36,11 +37,12 @@ from fl_agents.llm.errors import (
     LlmOutputInvalid,
     LlmUnavailable,
     QuotaExhausted,
+    ToolBudgetExhausted,
 )
 from fl_agents.settings import Settings
 from fl_agents.store.repo import Store
 
-__all__ = ["ROLES", "CallCtx", "Role", "Router", "TokenBucket"]
+__all__ = ["ROLES", "CallCtx", "Role", "Router", "TokenBucket", "Tool"]
 
 log = logging.getLogger(__name__)
 
@@ -73,6 +75,26 @@ class CallCtx:
     project_id: UUID | None = None
     run_id: UUID | None = None
     budget: int = 0  # 0 = no stage budget (e.g. wizard column mapping)
+
+
+@dataclass
+class Tool:
+    """A function the model may call during ``tool_loop``. Results are plain JSON."""
+
+    name: str
+    description: str
+    parameters: dict[str, Any]
+    run: Callable[[dict[str, Any]], Awaitable[Any]]
+
+    def schema(self) -> dict[str, Any]:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": self.parameters,
+            },
+        }
 
 
 @dataclass
@@ -275,21 +297,177 @@ class Router:
             )
             return _parse(role, str(rec["response"]["content"]), out)
 
-        content, _model = await self._call_with_fallback(
-            role, full, out, ctx, key, est, temperature
+        def request(r: str) -> dict[str, Any]:
+            if _RESPONSE_MODE.get(r, "json_object") == "json_schema":
+                return {
+                    "response_format": {
+                        "type": "json_schema",
+                        "json_schema": {"name": out.__name__, "schema": schema, "strict": False},
+                    }
+                }
+            return {"response_format": {"type": "json_object"}}
+
+        msg, _model = await self._call_with_fallback(
+            role, full, request, out.__name__, ctx, key, est, temperature
         )
-        return _parse(role, content, out)
+        return _parse(role, str(msg.get("content") or ""), out)
+
+    async def tool_loop(
+        self,
+        role: Role,
+        transcript: list[dict[str, Any]],
+        tools: list[Tool],
+        submit: type[T],
+        ctx: CallCtx,
+        *,
+        max_tool_calls: int,
+        save: Callable[[list[dict[str, Any]]], Awaitable[None]],
+        on_tool: Callable[[str, dict[str, Any], str], Awaitable[None]] | None = None,
+        temperature: float = 0.0,
+        max_repairs: int = 2,
+    ) -> T:
+        """Tool-calling loop (docs/02 §3 tool_loop) ending in a ``submit_draft`` call.
+
+        ``transcript`` holds the messages so far and is saved after every turn, so a pause
+        (budget, tool-call limit, quota) resumes where it stopped without repeating a call.
+        Each turn is one cassette in record/replay. Tool calls beyond ``max_tool_calls``
+        raise ``ToolBudgetExhausted`` (the stage pauses). Invalid ``submit_draft``
+        arguments are returned to the model as an error (at most ``max_repairs`` times).
+        """
+        submit_tool = {
+            "type": "function",
+            "function": {
+                "name": "submit_draft",
+                "description": "Submit your final draft. Call exactly once, when done.",
+                "parameters": submit.model_json_schema(),
+            },
+        }
+        schemas = [t.schema() for t in tools] + [submit_tool]
+        by_name = {t.name: t for t in tools}
+        msgs = list(transcript)
+        repairs = sum(
+            1 for m in msgs if m.get("role") == "tool" and m.get("name") == "submit_draft"
+        )
+        for _turn in range(max_tool_calls + max_repairs + 4):
+            used = sum(
+                1
+                for m in msgs
+                if m.get("role") == "tool" and m.get("name") not in (None, "submit_draft")
+            )
+            if used >= max_tool_calls:
+                raise ToolBudgetExhausted(used, max_tool_calls)
+            key = request_key(
+                role, msgs, "tools:" + submit.__name__, {"tools": schemas}, temperature
+            )
+            est = _estimate(msgs, 900)
+            await self._check_budget(ctx, est)
+            if self.mode == "replay":
+                rec = self.cassettes.get(key)
+                if rec is None:
+                    await self._log(
+                        ctx,
+                        role=role,
+                        model="replay",
+                        status="error",
+                        key=key,
+                        error="cassette miss",
+                    )
+                    raise CassetteMiss(key, role)
+                usage = rec.get("usage", {})
+                await self._log(
+                    ctx,
+                    role=role,
+                    model=str(rec.get("model", "replay")),
+                    status="replay",
+                    prompt_tokens=int(usage.get("prompt_tokens", 0)),
+                    completion_tokens=int(usage.get("completion_tokens", 0)),
+                    key=key,
+                )
+                msg = dict(
+                    rec["response"].get("message")
+                    or {"role": "assistant", "content": rec["response"].get("content", "")}
+                )
+            else:
+                send = [
+                    {k: v for k, v in m.items() if not (m.get("role") == "tool" and k == "name")}
+                    for m in msgs
+                ]
+                msg, _model = await self._call_with_fallback(
+                    role,
+                    send,
+                    lambda _r: {"tools": schemas, "tool_choice": "auto"},
+                    "tools:" + submit.__name__,
+                    ctx,
+                    key,
+                    est,
+                    temperature,
+                )
+            msgs.append(msg)
+            calls = msg.get("tool_calls") or []
+            if not calls:
+                content = str(msg.get("content") or "")
+                try:
+                    return _parse(role, content, submit)
+                except LlmOutputInvalid:
+                    msgs.append(
+                        {"role": "user", "content": "Call submit_draft with your draft now."}
+                    )
+                    await save(msgs)
+                    continue
+            result: T | None = None
+            for call in calls:
+                fn = call.get("function") or {}
+                name = str(fn.get("name") or "")
+                raw_args = fn.get("arguments") or "{}"
+                try:
+                    args = json.loads(raw_args) if isinstance(raw_args, str) else dict(raw_args)
+                except json.JSONDecodeError:
+                    args = {}
+                if name == "submit_draft":
+                    try:
+                        result = submit.model_validate(args)
+                        reply = "accepted"
+                    except ValidationError as e:
+                        repairs += 1
+                        reply = "Invalid draft: " + "; ".join(
+                            f"{'.'.join(str(x) for x in err['loc'])}: {err['msg']}"
+                            for err in e.errors()[:8]
+                        )
+                        if repairs > max_repairs:
+                            raise LlmOutputInvalid(role, reply) from e
+                else:
+                    tool = by_name.get(name)
+                    try:
+                        out = await tool.run(args) if tool else {"error": f"unknown tool {name}"}
+                    except Exception as e:  # a tool error goes back to the model
+                        out = {"error": f"{type(e).__name__}: {e}"}
+                    reply = json.dumps(out, default=str, ensure_ascii=False)[:4000]
+                    if on_tool is not None:
+                        await on_tool(name, args, reply[:300])
+                msgs.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": call.get("id", ""),
+                        "name": name,
+                        "content": reply,
+                    }
+                )
+            await save(msgs)
+            if result is not None:
+                return result
+        raise LlmOutputInvalid(role, "the model did not submit a draft")
 
     async def _call_with_fallback(
         self,
         role: str,
         messages: list[dict[str, Any]],
-        out: type[BaseModel],
+        request: Callable[[str], dict[str, Any]],
+        schema_name: str,
         ctx: CallCtx,
         key: str,
         est: int,
         temperature: float,
-    ) -> tuple[str, str]:
+    ) -> tuple[dict[str, Any], str]:
         tried: list[str] = []
         current: str | None = role
         last_retry_after: float | None = None
@@ -303,7 +481,8 @@ class Router:
                 return await self._call_role(
                     current,
                     messages,
-                    out,
+                    request(current),
+                    schema_name,
                     ctx,
                     key,
                     est,
@@ -325,30 +504,19 @@ class Router:
         self,
         role: str,
         messages: list[dict[str, Any]],
-        out: type[BaseModel],
+        request: dict[str, Any],
+        schema_name: str,
         ctx: CallCtx,
         key: str,
         est: int,
         temperature: float,
         *,
         fallback_from: str | None,
-    ) -> tuple[str, str]:
+    ) -> tuple[dict[str, Any], str]:
         import litellm  # heavy import, deferred until a live call is needed
         from litellm import exceptions as lx
 
         model = self.settings.role_model(role)
-        mode = _RESPONSE_MODE.get(role, "json_object")
-        if mode == "json_schema":
-            response_format: dict[str, Any] = {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": out.__name__,
-                    "schema": out.model_json_schema(),
-                    "strict": False,
-                },
-            }
-        else:
-            response_format = {"type": "json_object"}
         bucket = self._bucket(role)
         retry_after: float | None = None
         busy = False  # last failure was a timeout/5xx rather than a 429
@@ -359,8 +527,8 @@ class Router:
                 resp = await litellm.acompletion(
                     model=model,
                     messages=messages,
-                    response_format=response_format,
                     temperature=temperature,
+                    **request,
                     api_key=self.settings.provider_key(model),
                     timeout=self.settings.llm_timeout_s,
                     drop_params=True,
@@ -412,7 +580,19 @@ class Router:
                 )
                 raise LlmUnavailable(f"{role} ({model}) failed: {e}") from e
             latency = int((time.monotonic() - t0) * 1000)
-            content = resp.choices[0].message.content or ""
+            raw = resp.choices[0].message
+            content = raw.content or ""
+            msg: dict[str, Any] = {"role": "assistant", "content": content}
+            tcs = getattr(raw, "tool_calls", None) or []
+            if tcs:
+                msg["tool_calls"] = [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+                    }
+                    for tc in tcs
+                ]
             usage = getattr(resp, "usage", None)
             pt = int(getattr(usage, "prompt_tokens", 0) or 0)
             ct = int(getattr(usage, "completion_tokens", 0) or 0)
@@ -433,11 +613,12 @@ class Router:
                     key,
                     role=role,
                     model=model,
-                    schema_name=out.__name__,
+                    schema_name=schema_name,
                     messages=messages,
                     content=content,
+                    message=msg,
                     prompt_tokens=pt,
                     completion_tokens=ct,
                 )
-            return content, model
+            return msg, model
         raise QuotaExhausted(role, retry_after, busy=busy)

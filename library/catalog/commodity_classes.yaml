@@ -21,6 +21,8 @@ entries:
     iqc_checks: [cell_ocv_ir, visual_inspection]
     default_aql: 0.65
     unit_price_inr: {low: 150, base: 250, high: 400, as_of: "2026-11", source: catalog-estimate}
+    default_material: li_ion_cylindrical
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: pcba
@@ -34,6 +36,8 @@ entries:
     iqc_checks: [visual_inspection]
     default_aql: 0.65
     unit_price_inr: {low: 80, base: 180, high: 400, as_of: "2026-11", source: catalog-estimate}
+    make_route: [smt_place, reflow, aoi_inspect, tht_insert_manual]
+    default_material: fr4_pcba
     provenance: *est
 
   - code: electronic_components
@@ -43,6 +47,7 @@ entries:
     storage_class: esd
     lead_time_days: {low: 7, base: 30, high: 90}
     pack_qty: 3000
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: bare_pcb
@@ -52,6 +57,7 @@ entries:
     storage_class: esd
     lead_time_days: {low: 10, base: 20, high: 40}
     pack_qty: 200
+    default_material: fr4_pcba
     provenance: *est
 
   - code: solder_paste
@@ -60,6 +66,7 @@ entries:
     storage_class: general_rack
     lead_time_days: {low: 5, base: 10, high: 20}
     pack_qty: 500
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: molded_enclosure
@@ -73,6 +80,8 @@ entries:
     iqc_checks: [visual_inspection, dimensional_check]
     default_aql: 1.0
     unit_price_inr: {low: 15, base: 35, high: 80, as_of: "2026-11", source: catalog-estimate}
+    make_route: [injection_mold, ultrasonic_weld]
+    default_material: pc_abs
     provenance: *est
 
   - code: plastic_resin
@@ -81,6 +90,8 @@ entries:
     storage_class: bulk_floor
     lead_time_days: {low: 7, base: 15, high: 30}
     pack_qty: 25
+    default_material: pc_abs
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: light_pipe_button
@@ -92,6 +103,8 @@ entries:
     pack_qty: 1000
     iqc_checks: [visual_inspection]
     default_aql: 1.5
+    make_route: [injection_mold]
+    default_material: polycarbonate
     provenance: *est
 
   - code: nickel_strip
@@ -103,6 +116,8 @@ entries:
     pack_qty: 100
     iqc_checks: [dimensional_check]
     default_aql: 1.0
+    default_material: nickel
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: insulation_paper
@@ -112,6 +127,7 @@ entries:
     storage_class: small_parts_bin
     lead_time_days: {low: 7, base: 15, high: 30}
     pack_qty: 1000
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: insulation_tape
@@ -121,6 +137,7 @@ entries:
     storage_class: small_parts_bin
     lead_time_days: {low: 5, base: 10, high: 20}
     pack_qty: 33
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: foam_pad
@@ -129,6 +146,7 @@ entries:
     storage_class: small_parts_bin
     lead_time_days: {low: 5, base: 10, high: 20}
     pack_qty: 1000
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: fasteners
@@ -141,6 +159,8 @@ entries:
     iqc_checks: [dimensional_check]
     default_aql: 2.5
     unit_price_inr: {low: 0.3, base: 0.8, high: 2.0, as_of: "2026-11", source: catalog-estimate}
+    default_material: mild_steel
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: labels
@@ -150,6 +170,7 @@ entries:
     storage_class: small_parts_bin
     lead_time_days: {low: 3, base: 7, high: 15}
     pack_qty: 2000
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: user_manual
@@ -158,11 +179,13 @@ entries:
     storage_class: general_rack
     lead_time_days: {low: 5, base: 10, high: 20}
     pack_qty: 500
+    default_material: paperboard
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: packaging_carton
     name: Packaging (unit boxes, shipper cartons, sleeves)
-    aliases: [carton, box, corrugated, mono carton]
+    aliases: [carton, box, corrugated, mono carton, sleeve, blade sleeve]
     uom: unit
     storage_class: bulk_floor
     lead_time_days: {low: 5, base: 10, high: 20}
@@ -170,6 +193,8 @@ entries:
     cartons_per_pallet: 10
     iqc_checks: [visual_inspection, dimensional_check]
     default_aql: 2.5
+    default_material: paperboard
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: consumable_solder
@@ -179,6 +204,7 @@ entries:
     storage_class: general_rack
     lead_time_days: {low: 3, base: 7, high: 15}
     pack_qty: 500
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: flux
@@ -188,6 +214,7 @@ entries:
     hazards: [flammable]
     lead_time_days: {low: 3, base: 7, high: 15}
     pack_qty: 1000
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: adhesive
@@ -197,6 +224,7 @@ entries:
     hazards: [flammable]
     lead_time_days: {low: 5, base: 10, high: 20}
     pack_qty: 1000
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: copper_winding_wire
@@ -209,6 +237,8 @@ entries:
     iqc_checks: [dimensional_check]
     default_aql: 1.0
     unit_price_inr: {low: 900, base: 1100, high: 1400, as_of: "2026-11", source: catalog-estimate}
+    default_material: copper
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: stator_lamination
@@ -220,6 +250,7 @@ entries:
     pack_qty: 50
     iqc_checks: [dimensional_check, visual_inspection]
     default_aql: 1.0
+    default_material: electrical_steel
     provenance: *est
 
   - code: varnish_resin
@@ -230,6 +261,7 @@ entries:
     hazards: [flammable]
     lead_time_days: {low: 5, base: 10, high: 20}
     pack_qty: 20
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: die_cast_rotor
@@ -242,6 +274,7 @@ entries:
     cartons_per_pallet: 12
     iqc_checks: [dimensional_check, visual_inspection]
     default_aql: 1.0
+    default_material: aluminium_die_cast
     provenance: *est
 
   - code: bearings
@@ -252,6 +285,7 @@ entries:
     pack_qty: 500
     iqc_checks: [dimensional_check]
     default_aql: 0.65
+    default_material: mild_steel
     provenance: *est
 
   - code: shaft
@@ -262,6 +296,7 @@ entries:
     pack_qty: 200
     iqc_checks: [dimensional_check]
     default_aql: 1.0
+    default_material: mild_steel
     provenance: *est
 
   - code: fan_blade
@@ -274,6 +309,7 @@ entries:
     cartons_per_pallet: 8
     iqc_checks: [visual_inspection, dimensional_check]
     default_aql: 1.5
+    default_material: aluminium_sheet
     provenance: *est
 
   - code: wiring_harness
@@ -285,6 +321,7 @@ entries:
     pack_qty: 200
     iqc_checks: [visual_inspection]
     default_aql: 1.0
+    cad_rarely_modelled: true
     provenance: *est
 
   - code: sheet_metal_parts
@@ -296,6 +333,7 @@ entries:
     pack_qty: 50
     iqc_checks: [visual_inspection, dimensional_check]
     default_aql: 1.5
+    default_material: mild_steel
     provenance: *est
 
   - code: remote_control
@@ -307,4 +345,5 @@ entries:
     pack_qty: 100
     iqc_checks: [visual_inspection]
     default_aql: 1.0
+    cad_rarely_modelled: true
     provenance: *est

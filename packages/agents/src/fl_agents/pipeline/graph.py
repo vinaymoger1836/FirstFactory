@@ -26,10 +26,12 @@ class PipelineState(TypedDict, total=False):
 
 
 def stage_specs() -> dict[StageKey, StageSpec]:
+    from fl_agents.stages.bom.spec import BomSpec
     from fl_agents.stages.intake.spec import IntakeSpec
 
     specs: dict[StageKey, StageSpec] = {s: StubSpec(s) for s in STAGE_ORDER}
     specs["intake"] = IntakeSpec()
+    specs["bom"] = BomSpec()
     return specs
 
 

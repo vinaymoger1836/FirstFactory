@@ -99,6 +99,7 @@ class CassetteStore:
         messages: list[dict[str, Any]],
         content: str,
         prompt_tokens: int,
+        message: dict[str, Any] | None = None,
         completion_tokens: int,
     ) -> None:
         self.dir.mkdir(parents=True, exist_ok=True)
@@ -109,7 +110,7 @@ class CassetteStore:
             "schema": schema_name,
             "recorded_at": datetime.now(UTC).isoformat(timespec="seconds"),
             "request": {"messages": sanitize_messages(messages)},
-            "response": {"content": content},
+            "response": {"content": content, **({"message": message} if message else {})},
             "usage": {"prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens},
         }
         tmp = self._path(key).with_suffix(".tmp")

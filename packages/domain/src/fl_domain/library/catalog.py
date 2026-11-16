@@ -27,6 +27,7 @@ __all__ = [
     "EntryKind",
     "ExampleVariant",
     "MachineClassEntry",
+    "MaterialEntry",
     "MtmElementEntry",
     "ParamSpec",
     "ProcessEntry",
@@ -43,6 +44,7 @@ EntryKind = Literal[
     "commodity_class",
     "archetype",
     "mtm_element",
+    "material",
 ]
 Skill = Literal["unskilled", "semi_skilled", "skilled", "highly_skilled"]
 TaskType = Literal["manual", "machine_paced", "long_test", "offline_rack", "batch", "inspection"]
@@ -249,6 +251,30 @@ class CommodityClassEntry(_Entry):
     default_make_or_buy: Literal["make", "buy"] = "buy"
     unit_price_inr: PriceRange | None = None
     parent: Code | None = Field(default=None, description="Taxonomy parent class.")
+    make_route: list[Code] = Field(
+        default_factory=list,
+        description="Processes that would make this class in-house (make/buy preview, P3).",
+    )
+    default_material: Code | None = Field(
+        default=None, description="Material assumed when a line gives none (mass from CAD)."
+    )
+    cad_rarely_modelled: bool = Field(
+        default=False,
+        description="CAD seldom shows this class (cells, ICs, labels, packaging, consumables, "
+        "fasteners): a BoM line without a CAD match is not flagged (docs/03 §4.6).",
+    )
+
+
+# ── material ──────────────────────────────────────────────────────────
+
+
+class MaterialEntry(_Entry):
+    """A material for mass (CAD volume × density) and indicative cost (P3)."""
+
+    kind: Literal["material"] = "material"
+    category: Literal["polymer", "metal", "composite", "paper", "cell", "electronic"]
+    density_g_cm3: float = Field(gt=0, description="Typical density, g/cm³.")
+    price_inr_per_kg: PriceRange | None = None
 
 
 # ── archetype ─────────────────────────────────────────────────────────
@@ -314,7 +340,8 @@ CatalogEntry = Annotated[
     | ZoneKindEntry
     | CommodityClassEntry
     | ArchetypeEntry
-    | MtmElementEntry,
+    | MtmElementEntry
+    | MaterialEntry,
     Field(discriminator="kind"),
 ]
 

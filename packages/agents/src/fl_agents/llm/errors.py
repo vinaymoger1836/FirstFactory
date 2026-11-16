@@ -10,6 +10,7 @@ __all__ = [
     "LlmUnavailable",
     "PauseRequired",
     "QuotaExhausted",
+    "ToolBudgetExhausted",
 ]
 
 
@@ -90,3 +91,16 @@ class LlmOutputInvalid(LlmError):
     def __init__(self, role: str, errors: str) -> None:
         super().__init__(f"'{role}' output did not match the schema: {errors}")
         self.errors = errors
+
+
+class ToolBudgetExhausted(PauseRequired):
+    """The tool loop reached its tool-call limit (docs/02 §3; 12 for S2 by default)."""
+
+    kind = "tools"
+
+    def __init__(self, used: int, limit: int) -> None:
+        super().__init__(f"The agent used {used} of its {limit} tool calls.")
+        self.used, self.limit = used, limit
+
+    def payload(self) -> dict[str, object]:
+        return {"kind": self.kind, "message": str(self), "used": self.used, "limit": self.limit}
