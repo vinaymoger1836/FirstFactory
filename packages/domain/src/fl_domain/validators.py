@@ -238,29 +238,7 @@ def validate_bom(bom: Bom, ctx: ValidationContext) -> list[Issue]:
         for v in it.variants:
             if v not in variants:
                 out.append(_err("bom.variant", f"item {it.part_no} lists unknown variant {v}"))
-    # Completeness per variant: root has children, and every assembly reached has children.
-    for v in bom.variants:
-        lines = bom.lines_for(v)
-        children: dict[str, list[str]] = defaultdict(list)
-        for ln in lines:
-            children[ln.parent].append(ln.child)
-        if not children.get(bom.root):
-            out.append(_err("bom.incomplete", f"MBOM for {v} has no lines under the root"))
-            continue
-        todo, seen = [bom.root], set[str]()
-        while todo:
-            n = todo.pop()
-            if n in seen:
-                continue
-            seen.add(n)
-            node_item = items.get(n)
-            if (
-                node_item is not None
-                and node_item.kind in ("product", "assembly")
-                and not children.get(n)
-            ):
-                out.append(_err("bom.incomplete", f"assembly {n} has no MBOM lines for {v}"))
-            todo.extend(children.get(n, []))
+    out += _completeness(bom, draft=any(ln.review == "suggested" for ln in bom.ebom))
     out += _check_units(bom)
     if ctx.catalog is not None:
         commodity = ctx.catalog.codes("commodity_class")
@@ -306,6 +284,40 @@ def validate_bom(bom: Bom, ctx: ValidationContext) -> list[Issue]:
                     f"mbom[{i}]",
                 )
             )
+    return out
+
+
+def _completeness(bom: Bom, *, draft: bool) -> list[Issue]:
+    """Complete MBOM per variant: root has children, every assembly reached has children.
+
+    While suggestions are pending (a draft under review) gaps are warnings: the MBOM fills
+    as lines are accepted. At approval they are errors (``bom_approval_issues``).
+    """
+    out: list[Issue] = []
+    items = {i.part_no: i for i in bom.items}
+    mk = _warn if draft else _err
+    for v in bom.variants:
+        lines = bom.lines_for(v)
+        children: dict[str, list[str]] = defaultdict(list)
+        for ln in lines:
+            children[ln.parent].append(ln.child)
+        if not children.get(bom.root):
+            out.append(mk("bom.incomplete", f"MBOM for {v} has no lines under the root"))
+            continue
+        todo, seen = [bom.root], set[str]()
+        while todo:
+            n = todo.pop()
+            if n in seen:
+                continue
+            seen.add(n)
+            node_item = items.get(n)
+            if (
+                node_item is not None
+                and node_item.kind in ("product", "assembly")
+                and not children.get(n)
+            ):
+                out.append(mk("bom.incomplete", f"assembly {n} has no MBOM lines for {v}"))
+            todo.extend(children.get(n, []))
     return out
 
 
@@ -368,6 +380,7 @@ def bom_approval_issues(bom: Bom) -> list[Issue]:
     for f in bom.findings:
         if f.status == "open" and f.kind != "note":
             out.append(_err("bom.finding_open", f"open: {f.text}", f"findings/{f.id}"))
+    out += _completeness(bom, draft=False)
     for d in bom.make_buy_decisions:
         if not d.confirmed:
             out.append(

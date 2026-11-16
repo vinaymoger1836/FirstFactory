@@ -168,7 +168,10 @@ class Bom(DomainModel):
     variants: list[LocalId] = Field(min_length=1)
     items: list[Item] = Field(min_length=1)
     ebom: list[BomLine] = Field(default_factory=list)
-    mbom: list[BomLine] = Field(min_length=1)
+    mbom: list[BomLine] = Field(
+        default_factory=list,
+        description="Empty while every line is still a suggestion; complete at approval.",
+    )
     make_buy_decisions: list[MakeBuyDecision] = Field(default_factory=list)
     commodity_classes: list[Code] = Field(default_factory=list)
     case: BomCase | None = Field(default=None, description="A CAD only, B complete, C partial.")

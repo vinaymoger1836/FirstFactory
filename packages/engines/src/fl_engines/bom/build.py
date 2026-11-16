@@ -1075,17 +1075,7 @@ def build_bom(inp: BuildInput) -> Bom:
         variants=inp.variants,
         items=list(items.values()),
         ebom=ebom,
-        mbom=mbom
-        or [
-            BomLine(
-                id="M-EMPTY",
-                parent=ROOT,
-                child=ROOT,
-                qty=_prov(1.0, "engine", 1.0),
-                uom="unit",
-                level="mbom",
-            )
-        ],
+        mbom=mbom,
         make_buy_decisions=decisions_out,
         commodity_classes=sorted({i.commodity_class for i in items.values() if i.commodity_class}),
         case=case,
