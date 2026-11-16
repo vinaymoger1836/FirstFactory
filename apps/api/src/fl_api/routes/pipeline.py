@@ -8,10 +8,11 @@ downstream stale, old thread superseded).
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Response, status
 from pydantic import BaseModel, Field
 
 from fl_agents.lifecycle import (
@@ -22,6 +23,7 @@ from fl_agents.lifecycle import (
     preview_change_set,
 )
 from fl_agents.queue import defer_advance
+from fl_agents.stages.bom.workbook import bom_workbook
 from fl_agents.store import Row, to_stage_run
 from fl_api.db import store
 from fl_api.routes.projects import CurrentRow
@@ -311,6 +313,40 @@ async def apply(cs_id: str, row: CurrentRow) -> dict[str, Any]:
         raise _edit_error(e) from e
     stale = [s["stage"] for s in await store().pipeline(row["id"]) if s["status"] == "stale"]
     return {"version": new["version"], "stage": new["stage"], "stale": stale}
+
+
+@router.get("/stages/{stage}/runs/{version}/workbook")
+async def bom_workbook_download(stage: str, version: int, row: CurrentRow) -> Response:
+    """The BoM workbook (docs/03 §4.8) for one BoM version."""
+    key = _check_stage(stage)
+    if key != "bom":
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Only the BoM stage has a workbook")
+    r = await store().run_version(row["id"], key, version)
+    if r is None or not r["artifact"]:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"{stage} v{version} has no BoM")
+    data = await asyncio.to_thread(bom_workbook, r["artifact"], row["name"])
+    return Response(
+        data,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="bom-v{version}.xlsx"'},
+    )
+
+
+@router.get("/stages/{stage}/audit")
+async def audit(stage: str, row: CurrentRow) -> list[dict[str, Any]]:
+    """Who-did-what log for a stage: status changes, versions, warnings, tool calls."""
+    key = _check_stage(stage)
+    events = await store().stage_events(row["id"], key)
+    return [
+        {
+            "id": e["id"],
+            "kind": e["kind"],
+            "at": e["created_at"].isoformat(),
+            **(e["payload"] or {}),
+        }
+        for e in events
+        if e["kind"] in ("status", "version", "warning", "tool_call", "paused", "skipped")
+    ]
 
 
 @router.get("/llm-usage")

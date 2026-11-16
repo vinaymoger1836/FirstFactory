@@ -423,6 +423,18 @@ class Store:
             ).all()
         return [dict(r._mapping) for r in rows]
 
+    async def stage_events(self, pid: UUID, stage: str, limit: int = 500) -> list[Row]:
+        async with self.engine.connect() as c:
+            rows = (
+                await c.execute(
+                    select(t.stage_event)
+                    .where(and_(t.stage_event.c.project_id == pid, t.stage_event.c.stage == stage))
+                    .order_by(t.stage_event.c.id)
+                    .limit(limit)
+                )
+            ).all()
+        return [dict(r._mapping) for r in rows]
+
     # ── threads ───────────────────────────────────────────────────────
 
     async def new_thread(self, pid: UUID, started_from: str) -> str:

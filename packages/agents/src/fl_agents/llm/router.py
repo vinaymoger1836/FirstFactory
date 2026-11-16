@@ -395,7 +395,7 @@ class Router:
                 msg, _model = await self._call_with_fallback(
                     role,
                     send,
-                    lambda _r: {"tools": schemas, "tool_choice": "auto"},
+                    lambda _r: {"tools": schemas, "tool_choice": "auto", "_skip_mcp_handler": True},
                     "tools:" + submit.__name__,
                     ctx,
                     key,
