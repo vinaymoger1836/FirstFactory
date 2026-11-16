@@ -43,7 +43,8 @@ The platform designs the work-order system, not an MES.
 - **WO types:** production, rework, lab sample, changeover.
 - **Traceability:** power bank — cell lot → pack serial → unit QR; fan — motor serial → unit QR. Serial format and label content defined.
 - **Release logic** per chosen strategy: mixed-model → daily levelled sequence (e.g. PB `10K,20K,10K,10K,20K` repeating for 60/40); dedicated → per-line daily quantity; batch → batch sizes and changeover calendar.
-- **Sample week plan** (WOs for one week at target volume) and **draft work instructions** per station written by the `writer` role from the station's tasks, tools and checks — clearly marked "draft, to be validated on the shop floor".
+- **Sample week plan** (WOs for one week at target volume).
+- **Work instructions are not produced here.** They are generated in the documents step of S12, after layout, simulation and finance have settled the stations, so they are written once from final data. See doc 15 (templates, coverage validators, review). The WO template lists, per operation, the work instruction number it will point to.
 
 ### 2.2 Shifts and roster
 

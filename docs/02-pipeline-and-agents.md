@@ -7,17 +7,17 @@ Thirteen stages form a directed acyclic graph. Each stage reads approved artifac
 | # | Stage key | Depends on | Main output | Engine (deterministic) | Agent work (LLM) |
 |---|---|---|---|---|---|
 | S1 | `intake` | — | `ProductSpec` | CAD extraction, unit normalisation, merge rules | Classify archetype, extract fields from text/PDF/photos, raise questions |
-| S2 | `bom` | S1 | `Bom` (EBOM + MBOM), make/buy | Validation, EBOM→MBOM, cost/area preview | Draft BoM from archetype skeleton, enrich lines |
+| S2 | `bom` | S1 | `Bom` (EBOM + MBOM), make/buy | Validation, gap check and CAD cross-check, EBOM→MBOM, cost/area preview | Draft lines CAD cannot show from the archetype skeleton, enrich user lines, suggest missing parts (doc 03 §4) |
 | S3 | `routing` | S2 | `Routing` + precedence graph + time standards | Catalog time models, DAG checks | Choose processes from catalog, sequence operations |
 | S4 | `quality` | S3 | `QualityPlan` | AQL tables, inspector hours, FPY → rework | Select checks from catalog and compliance list |
 | S5 | `capacity` | S3, S4, operating pattern | `CapacityDesign` (3 strategies) + chosen strategy | Takt, CP-SAT balancing, equipment sizing | Explain trade-offs, recommend a strategy |
 | S6 | `inventory` | S2, S5, vendor lead times | `InventoryDesign` (zones, policies, flow matrix) | Safety stock, storage sizing, MHE counts | Classify storage types, flag hazards |
-| S7 | `workorders_shifts` | S3, S5 | `WorkOrderDesign`, `Roster` | Release sequence, headcount, compliance checks | Draft work instructions per station |
+| S7 | `workorders_shifts` | S3, S5 | `WorkOrderDesign`, `Roster` | Release sequence, headcount, compliance checks | Explain the work-order scheme and roster trade-offs (work instructions moved to S12, doc 15) |
 | S8 | `utilities` | S5, S6, S7 | `UtilityDesign` | Load, MD, transformer, air, HVAC, water | Explain and flag unusual loads |
 | S9 | `layout` | S4, S5, S6, S7, S8 | `Layout` (2D + 3D scene) | CP-SAT block layout, line layout, checks | Explain layout, propose adjacency overrides |
 | S10 | `simulation` | S5, S7, S9 | `SimResult` + recommendations | SimPy model, replications, KPIs | Interpret KPIs, propose fixes as change sets |
 | S11 | `finance` | S2, S5–S9, vendors | `FinanceModel` | Capex, opex, P&L, NPV/IRR, sensitivity | Narrative summary |
-| S12 | `reports` | all | `ReportPack` | Rendering, exports, SysML v2 | Executive summary text |
+| S12 | `reports` | all | `ReportPack` | Rendering, exports, SysML v2, document skeletons and coverage checks (Factory Package) | Executive summary text; work-instruction, inspection-instruction and SOP wording (doc 15) |
 | P1 | `vendors` | S2 (parallel) | `VendorReport` | Scoring, dedupe | Search, read pages, extract facts with sources |
 
 Custom workcenters are not a stage: the user can add them in S5, and everything downstream recalculates.
@@ -46,7 +46,7 @@ The operating pattern (shifts per day, days per week, target OEE) is captured at
 - One parent graph per project with a node per stage; each stage node is a subgraph.
 - Postgres checkpointer stores graph state so a run survives restarts and can pause indefinitely for approval (`interrupt`).
 - **Graph state holds IDs, not data.** Artifacts live in domain tables (`stage_run.artifact` JSONB with Pydantic validation). The graph can change without migrating stored projects (ADR-003).
-- Long jobs (CAD extraction, CP-SAT, simulation) run in a worker process (`arq` + Redis or a Postgres-backed queue; P0 decides) so the API stays responsive. Progress events stream to the browser over SSE.
+- Long jobs (CAD extraction, CP-SAT, simulation) run in a worker process (procrastinate on Postgres, chosen in P0, ADR-019 *Proposed*; Redis is used only for heartbeats) so the API stays responsive. Progress events stream to the browser over SSE.
 - Concurrency: at most 2 pipelines executing at once on the POC server; further runs queue (doc 11).
 
 ### Stage subgraph (same shape for every stage)
@@ -91,7 +91,7 @@ load_inputs → plan → tool_loop ⇄ tools → draft (structured output)
 
 - Model names live in config, so a paid model can replace any role later without code changes.
 - Free-tier limits are per model and per organisation (doc 11 §5). The router enforces per-role RPM/TPM budgets with a token bucket, retries 429s with backoff, and degrades to the fallback role.
-- **Token budget per stage** (configurable): e.g. intake 30k, BoM 25k, routing 30k, quality 15k, capacity 8k, others ≤ 10k, vendors 60k. A stage that would exceed its budget stops and asks the user to continue.
+- **Token budget per stage** (configurable): e.g. intake 30k, BoM 25k, routing 30k, quality 15k, capacity 8k, others ≤ 10k, vendors 60k, S12 documents step 80k (doc 15 §5.1; resumable, per-document). A stage that would exceed its budget stops and asks the user to continue.
 - Prompts keep context small: agents receive IDs and summaries, and fetch details by tool. Engines do the arithmetic, which removes the largest token sink.
 - Every LLM call is logged (role, model, tokens, latency, stage run) for cost and quota tracking.
 

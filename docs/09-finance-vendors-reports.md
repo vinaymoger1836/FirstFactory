@@ -69,7 +69,7 @@ Starts when the BoM (and make/buy) is approved; refreshes when they change.
 ### 3.1 Report sections
 
 1. Executive summary (one page: what to build, capex range, headcount, area, power, unit cost, payback)
-2. Product and BoM (EBOM, MBOM, make/buy)
+2. Product and BoM (summary and top lines; full EBOM, MBOM, make/buy and open items in the BoM workbook, doc 03 §4.8)
 3. Process and line design (routing, the three strategies, chosen line)
 4. Quality plan and compliance checklist (BIS CRS, BEE/QCO, labour, Fire NOC, pollution-control consent category — to be confirmed)
 5. Inventory and warehouse
@@ -82,13 +82,16 @@ Starts when the BoM (and make/buy) is approved; refreshes when they change.
 12. Assumptions and risks register (every value with confidence < 0.6 or `source ∈ {llm, web}`)
 13. Appendix: SysML v2 model summary, catalog and pack versions, disclaimer
 
+Beside the report, S12 produces the **Factory Package** (doc 15): work instruction per station, inspection instruction and check sheet per check, process flow chart, control plan, SOP set, training matrix and equipment list. Each is reviewed and approved per document, and each carries the label *Draft — validate on the shop floor*. The package is delivered as `factory-package/` in the ZIP export (doc 15 §6).
+
 ### 3.2 Formats
 
 | Format | Tool |
 |---|---|
 | Web report (interactive) | React pages from artifacts |
 | PDF | Jinja2 → HTML → WeasyPrint |
-| XLSX workbook (BoM, routing, stations, policies, roster, utilities, capex, P&L, vendors) | openpyxl |
+| XLSX workbook (BoM with EBOM / MBOM / make-buy / variants / open items, routing, stations, policies, roster, utilities, capex, P&L, vendors) | openpyxl |
+| Factory Package documents: PDF per document and combined handbook; XLSX check sheets, control plan, training matrix, equipment list; editable DOCX for work instructions and SOPs | WeasyPrint, openpyxl, `python-docx` (ADR-023) |
 | DXF layout | ezdxf |
 | SysML v2 `.sysml` | Own serializer (doc 04 §6) |
 | Full project export (ZIP: JSON artifacts + files + reports) | API |

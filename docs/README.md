@@ -8,11 +8,11 @@ This package is design only. Implementation happens in Claude Code, one phase at
 
 | Item | Value |
 |---|---|
-| Stage | Architecture complete, ready for P0 |
+| Stage | Architecture complete. **P0 and P1 built** (2026-11-12); next is P2. Updated 2026-11-13: BoM-centred intake (ADR-022) and the Factory Package (ADR-023) |
 | Scope | POC on free tools; simple electronics and mechanical products; India (Karnataka first) |
 | Golden products | Power bank (10,000 / 20,000 mAh) and BLDC ceiling fan (1200 / 900 mm) |
 | Standard | SysML v2 (exported from the typed domain model) |
-| Date | 2026-11-11 |
+| Date | 2026-11-13 (first issued 2026-11-11) |
 
 ## Documents
 
@@ -31,7 +31,8 @@ This package is design only. Implementation happens in Claude Code, one phase at
 | 11 | [Hosting, security, operations](11-hosting-security-ops.md) | Oracle Always Free deployment, no-login abuse controls, retention, LLM quotas |
 | 12 | [ADRs](12-adrs.md) | Every decision with alternatives and consequences |
 | 13 | [Roadmap and risks](13-roadmap-and-risks.md) | Phases, risk register, open items |
-| 14 | [Claude Code hand-off](14-claude-code-handoff.md) | Repo layout, phase prompts, acceptance tests, golden cases |
+| 14 | [Claude Code hand-off](14-claude-code-handoff.md) | Status, repo layout, phase prompts (P0 and P1 done), acceptance tests, golden cases G1–G9 |
+| 15 | [Factory Package](15-factory-package.md) | Work instructions, inspection sheets, control plan, SOPs, training matrix, equipment list: templates, generation rules, phase P8b |
 | — | [CLAUDE.md](CLAUDE.md) | Rules for Claude Code, copied to the repo root |
 
 An interactive architecture page (clickable pipeline, data model, deployment, phase plan and calculators) accompanies this package as a published artifact.
@@ -53,6 +54,9 @@ An interactive architecture page (clickable pipeline, data model, deployment, ph
 | Knowledge | Versioned process catalog (YAML + admin page); projects pin a version (ADR-009) |
 | Regional data | Karnataka data pack with effective dates and sources (ADR-010) |
 | Template input | Web wizard only for the POC (ADR-015) |
+| BoM | Centre of the pipeline; three intake cases (CAD only, complete, incomplete); AI additions are suggestions the user accepts; EBOM and MBOM both delivered (ADR-022) |
+| Documents | Factory Package of work instructions, inspection sheets, control plan, SOPs; generated in S12 from engine skeletons, wording only by the LLM, labelled Draft (ADR-023) |
+| Queue | procrastinate on Postgres (ADR-019, Proposed) |
 | Hosting | Oracle Always Free Ampere A1 (2 OCPU / 12 GB) + Cloudflare Pages (ADR-011) |
 | Access | No login: capability links, Turnstile, rate limits, 30-day retention with export (ADR-012) |
 | Fan | BLDC; controller PCBA bought in |

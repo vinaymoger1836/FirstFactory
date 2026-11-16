@@ -37,7 +37,7 @@ No logins in the POC. A project is reached through its private link (doc 11).
 ## 4. Principles
 
 1. **LLM proposes, engine calculates, user approves.** Agents read inputs, choose from the catalog, draft and research. Every number (takt, station counts, kVA, m², ₹) comes from deterministic, tested Python. (ADR-001)
-2. **Every value carries provenance.** `source` ∈ {user, cad, datasheet, vision, llm, library, web, engine} plus a confidence 0–1 and a note. Low-confidence values are visibly marked and collected in the report's assumptions register.
+2. **Every value carries provenance.** `source` ∈ {user, cad, datasheet, bom_file, vision, llm, library, web, engine} plus a confidence 0–1 and a note. Low-confidence values are visibly marked and collected in the report's assumptions register.
 3. **A dependency graph, not a wizard.** Stages are versioned. Editing an upstream stage marks downstream stages stale; nothing upstream is lost. (ADR-005)
 4. **Data, not code.** Processes, machine classes, tariffs, wages, labour rules and certifications live in versioned data (catalog and data packs) with effective dates and sources. (ADR-009, ADR-010)
 5. **Never invent the world.** No vendor, regulation or price appears without a source URL or a library entry. Unknowns are shown as unknowns.
@@ -66,13 +66,14 @@ Admin ──Cloudflare Access──▶ Admin page (catalog + data packs)
 
 | Output | Format | Grade |
 |---|---|---|
-| Product spec, BoM (EBOM → MBOM) | Web, XLSX | Planning |
+| Product spec, BoM (EBOM and MBOM workbook, make/buy) | Web, XLSX | Planning; AI-suggested lines marked |
 | Routing, time standards, precedence graph | Web, XLSX | Planning; LLM-estimated times flagged |
 | Quality plan (IQC / IPQC / EOL / OQC / lab) | Web, PDF | Planning; certification list is informational |
 | Line design — three strategies | Web, XLSX | Planning |
 | Inventory policy, storage zones | Web, XLSX | Planning |
-| Work-order templates, sample week, draft work instructions | Web, PDF | Draft |
+| Work-order templates, sample week | Web, PDF | Planning |
 | Rosters, headcount, compliance check | Web, XLSX | Planning; not legal advice |
+| **Factory Package (doc 15):** work instruction per station, inspection instruction and check sheet per check, process flow chart, control plan, SOP set, training matrix, equipment list with specifications | Web, PDF, XLSX, DOCX | Draft; validate on the shop floor |
 | Utilities (kVA, transformer, DG, air, HVAC, water, fire) | Web, PDF | Budgetary; needs a licensed electrical/MEP engineer |
 | Layout 2D / 3D, site plan | Web, SVG, DXF | Concept; needs an architect for approvals |
 | Simulation results | Web, CSV | Planning |
@@ -81,6 +82,8 @@ Admin ──Cloudflare Access──▶ Admin page (catalog + data packs)
 | SysML v2 model | `.sysml` | Model of the designed system |
 
 Every report carries a disclaimer: planning estimates, not engineering certification, legal or financial advice.
+
+The outputs fall into three sets (doc 15 §1): **Build** (layout, utilities, equipment list, vendors), **Run** (work orders, roster, work instructions, inspection and control documents, SOPs) and **Business** (finance, compliance, assumptions, simulation).
 
 ## 7. Tech stack (all free)
 
@@ -100,7 +103,7 @@ Every report carries a disclaimer: planning estimates, not engineering certifica
 | CAD | CadQuery / OCP, trimesh | STEP and STL; GLB for the viewer |
 | Finance | numpy-financial | NPV, IRR, schedules |
 | Research | Tavily free tier or self-hosted SearXNG; trafilatura | Public pages only |
-| SysML v2 | Own serializer on the domain model; validated with `sysmlpy` | `sysml2kit` evaluated in P0 |
+| SysML v2 | Own serializer on the domain model; validated with `sysmlpy` (pinned) | `sysml2kit` evaluated in P0 and not adopted (no actions or successions) |
 | Database | PostgreSQL 16 + pgvector | On the same VM |
 | Reports | Jinja2 → Markdown/HTML → WeasyPrint PDF; openpyxl; ezdxf | |
 | Hosting | Oracle Always Free Ampere A1, Docker Compose, Caddy | Cloudflare Pages, Turnstile, Access |
@@ -113,7 +116,9 @@ Every report carries a disclaimer: planning estimates, not engineering certifica
 | Planned cycle time (PCT) | Takt × target OEE; what stations are balanced to |
 | OEE | Overall equipment effectiveness (availability × performance × quality) |
 | SALBP-1 | Simple assembly line balancing: minimise stations for a given cycle time |
-| EBOM / MBOM | Engineering BoM (what it is) / manufacturing BoM (how it is built) |
+| EBOM / MBOM | Engineering BoM (what it is) / manufacturing BoM (how it is built); both are delivered |
+| WI / SOP | Work instruction (steps at one station) / standard operating procedure (a factory-wide routine) |
+| Control plan | Table of what is checked at each operation, how, how often, and what to do on failure |
 | IQC / IPQC / EOL / OQC | Incoming / in-process / end-of-line / outgoing quality control |
 | FPY | First-pass yield |
 | AQL | Acceptable quality limit (sampling plans, ISO 2859-1 / IS 2500) |

@@ -103,24 +103,35 @@ Status values: **Accepted**, Proposed, Superseded. New or changed decisions duri
 **Status:** Accepted
 **Consequences:** 8 vs 398 capacity channels in the golden case — shown to users as a design lever.
 
-### ADR-019 — Postgres-backed job queue (procrastinate) instead of arq + Redis
-**Status:** Proposed (P0, spike e; awaiting owner approval)
-**Context:** docs/02 §3 left the worker queue open ("arq + Redis or a Postgres-backed queue; P0 decides"). Jobs are few and long (CAD extraction, CP-SAT up to 60 s, simulation for minutes). docs/02 §7 requires a crashed worker's job to be retried. The VM is 2 OCPU / 12 GB, and Postgres is already the system of record (ADR-003).
-**Decision:** Use procrastinate 3.x on the existing Postgres. Each worker runs at concurrency 1 on its own queue (`engines`, `cad`). A periodic sweep retries jobs whose worker missed heartbeats (stalled after 30 s). Redis stays for rate limits, token buckets and heartbeats only; it holds no durable job state.
-**Alternatives:** arq + Redis. arq is in maintenance-only mode (its README), pins `redis<6`, and recovers a killed job only after `job_timeout + 10 s`, so a long job's timeout would delay recovery by the same amount. Hand-rolled `SKIP LOCKED` was rejected as more code to own.
-**Evidence (P0, amd64, one worker at concurrency 1):** enqueue→start p50 6.4 ms / p95 25 ms (arq: seconds, poll-bound); 200-job drain 1.3 s (arq 10–100 s depending on `poll_delay`); SIGKILL mid-job, then recovered in 30.5 s (arq 38 s with a 30 s `job_timeout`); idle worker RSS about 48 MB for both.
-**Consequences:** One fewer durable store to back up. Jobs can later be enqueued in the same transaction as the `stage_run` row. The cad-worker needs Postgres access on its internal network: give it a dedicated DB role limited to the queue tables (P9). Procrastinate is also looking for maintainers; its scope is small enough to replace if needed.
+---
 
-### ADR-020 — Deterministic hashed n-gram embedding for catalog search (pgvector), combined with full-text rank
-**Status:** Proposed (P1; awaiting owner approval)
-**Context:** docs/04 §4 and docs/10 §1 call for a pgvector index on catalog entries for `catalog.search`, but no embedding model is specified. Agents may only reach LLM providers through router roles with budgets (CLAUDE.md rule 7), there is no embedding role, the VM has 2 OCPU / 12 GB, the catalog is small (186 entries in 2026.11.1) and it is loaded in the `migrate` step, which has no internet egress in production.
-**Decision:** Embed `code + name + aliases + description + kind` with a deterministic signed feature-hashing of word unigrams, word bigrams and character trigrams into 256 dimensions, L2-normalised (`fl_library.embed`, model id `hash-ngram-v1`, stored per version in `library_version.embedding_model/dim`). Store it in `catalog_entry.embedding vector(256)` with an HNSW (`vector_cosine_ops`) index. Search takes the union of the 50 nearest neighbours (HNSW) and full-text matches (GIN on `to_tsvector('english', …)`), then ranks by `0.7 × cosine + 0.3 × min(10 × ts_rank, 1)`.
-**Alternatives:** (a) a provider embedding API through a new router role: costs quota, needs network at load time, results change if the provider changes the model; (b) a local sentence-transformer (e.g. fastembed/ONNX): better semantics, but a ~100–400 MB model download in images and on arm64, plus CPU at load; (c) full-text search only: no pgvector, misses sub-word matches (`hipot` vs `hi-pot`).
-**Evidence (P1 e2e):** "battery spot welding" → `spot_weld_nickel` (0.72 vs next 0.33); "hi-pot dielectric withstand test" → `hipot`; "varnish curing oven" → `cure_oven_batch`; "lithium battery hazardous store" → `li_ion_store`; "magnet wire" → `copper_winding_wire` (via the alias). EXPLAIN confirms the HNSW index serves nearest-neighbour queries.
-**Consequences:** No model, no network, identical vectors on amd64 and arm64, microseconds per entry. It is lexical, not semantic: synonyms must be in `aliases`, which the admin page (P8) should make easy to edit. A learned model can replace it later behind the same column by re-embedding on load (new `embedding_model` id; dimension stored per version).
+ADR-019 to ADR-021 were raised during P0 and P1 and exist in the repo's `docs/12-adrs.md`; they are summarised here so this package stays in step. They stay *Proposed* until the owner approves them.
 
-### ADR-021 — Library loader as its own workspace package, run in the compose `migrate` step
-**Status:** Proposed (P1; awaiting owner approval)
-**Context:** docs/14 §2 lists `library/` (YAML data) but no code location for the loader; docs/10 says the catalog is "loaded into Postgres on deploy" and must pass the §1.4/§2.3 tests. The tests need the domain models (`fl_domain`) and the safe formula evaluator (`fl_engines.expr`); the loader needs a Postgres driver. `fl_domain` must stay free of engines and I/O.
-**Decision:** New workspace package `packages/library` (`fl_library`: YAML I/O, catalog and pack tests, embedding, versioned load, golden fixture checks, `fl-library` CLI). The API image contains `library/` and the compose `migrate` service runs `alembic upgrade head && fl-library load`, so any validation error stops the stack before the API starts. Loading is one transaction under an advisory lock; a version already loaded with the same content hash is a no-op, and the same version with different content is refused (publish a new version instead, ADR-009).
-**Consequences:** The API depends on `fl-library` (and psycopg, already locked for the worker). Deploys fail fast on bad library data. The admin page (P8) will reuse the same tests before publishing a new version.
+### ADR-019 — Worker queue: procrastinate (Postgres), not arq + Redis
+**Status:** Proposed (P0)
+**Decision:** Background jobs run on procrastinate over Postgres, one queue per worker (`engines`, `cad`), with a one-minute stalled-job sweep. Redis stays for worker heartbeats only.
+**Why:** In the P0 bench, enqueue-to-start p50 was 6 ms against 48 s for arq at its default poll; recovery after a killed worker is heartbeat-based (30 s) instead of growing with `job_timeout`; arq is in maintenance mode; Postgres is already the system of record.
+
+### ADR-020 — Library search embeddings: deterministic hashed n-gram vectors
+**Status:** Proposed (P1)
+**Decision:** `catalog.search` uses 256-dimension hashed n-gram vectors plus full-text rank, stored in pgvector.
+**Why:** No embedding model was specified, and the loader must work with no network or quota. A learned embedding can replace it later behind the same search function.
+
+### ADR-021 — Library loader in its own package (`packages/library`)
+**Status:** Proposed (P1)
+**Decision:** YAML loading, catalog and pack tests, versioned Postgres load and the `fl-library` CLI live in `packages/library`, not in `packages/domain` or `packages/engines`.
+**Why:** Keeps the domain model and engines free of database and file-system code.
+
+### ADR-022 — BoM is the centre of the pipeline; three intake cases; suggestions, not silent additions
+**Status:** Accepted (owner, 2026-11-13)
+**Context:** CAD files do not contain cells, ICs, labels, packaging or consumables, so a BoM cannot be derived from CAD alone; users may bring a full BoM, a partial one or nothing. Every later stage reads the MBOM.
+**Decision:** S2 handles three cases (CAD only, complete BoM, incomplete BoM; doc 03 §4.1). User BoM lines are never rewritten. Probable gaps (found against the archetype skeleton by commodity class, and against CAD) are shown as **suggestions** the user accepts or rejects. Each line records `origin` and `review`. The wizard asks "Do you have a BoM?" as a hint only. EBOM and MBOM are both delivered as a BoM workbook.
+**Alternatives:** Require a BoM (blocks users without one); derive the BoM from CAD alone (incomplete); add missing parts automatically (hides AI guesses inside the user's BoM).
+**Consequences:** More S2 UI (editable review table); additive model changes in P3 (`BomLine.origin`, `BomLine.review`, `BomFinding`); a clear approval gate on a reviewed BoM.
+
+### ADR-023 — Factory Package: documents for building and running the factory
+**Status:** Accepted (owner, 2026-11-13)
+**Context:** The platform's output should cover everything needed to build and run a factory, including work instructions and quality documents, not only reports.
+**Decision:** Add a Tier 1 document set (work instruction per station, inspection instruction and check sheet per check, process flow chart, control plan, SOP set, training matrix, equipment list; doc 15). Documents are generated in a documents step inside S12 from engine-built skeletons; the `writer` role writes wording only; coverage validators check that no operation, BoM line, check or hazard is dropped. All documents are labelled *Draft — validate on the shop floor*. Work-instruction drafting moves out of S7. Export as PDF, XLSX and editable DOCX (`python-docx`, to be checked for licence and arm64 at P8b). Built in phase P8b.
+**Alternatives:** Generate work instructions in S7 (earlier, but stale after layout or simulation changes and token cost paid twice); free-text LLM documents (cannot guarantee safety or quality content is present); defer all documents (the deliverable would stop short of what a first factory needs).
+**Consequences:** About 60k extra tokens per product (estimate, measured in P8b) with per-document caching; more review work for the user; Tier 2 documents (PFMEA, maintenance plan, calibration register, EHS plan, commissioning checklist) are not in the POC.

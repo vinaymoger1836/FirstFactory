@@ -63,6 +63,8 @@ class Item(BaseModel):
 class BomLine(BaseModel):
     parent: str; child: str; qty: Prov[float]; uom: str; variant: str | None
     level: Literal["ebom","mbom"]; ebom_ref: str | None
+    origin: Literal["user_bom","cad","skeleton","reasoner","engine"]       # added in P3 (doc 03 §4.7)
+    review: Literal["given","suggested","accepted","rejected"]             # `suggested` must be resolved before approval
 
 class Operation(BaseModel):
     op_no: str; item: str; process: CatalogRef; description: str
@@ -113,7 +115,7 @@ pgvector index on catalog entries (name + description + aliases) for `catalog.se
 | Artifact | Checks |
 |---|---|
 | ProductSpec | Required tier present; variant mix = 100%; units valid |
-| Bom | Complete MBOM per variant; no cycles in BoM tree; commodity classes exist |
+| Bom | Complete MBOM per variant; no cycles in BoM tree; commodity classes exist; no line left `suggested` at approval; `user_bom` lines unchanged apart from normalisation (last two added in P3) |
 | Routing | Precedence graph acyclic; every MBOM line consumed exactly by ≥1 operation; every op has a workcenter class; every time has a method |
 | QualityPlan | Every IQC item exists in MBOM; every inline check maps to an op; AQL plans valid for lot sizes |
 | CapacityDesign | Every op assigned once per strategy; station load ≤ PCT × (1 + allowed overload) per variant; precedence respected |
@@ -125,7 +127,9 @@ pgvector index on catalog entries (name + description + aliases) for `catalog.se
 
 ## 6. SysML v2 mapping
 
-The SysML v2 model is generated from approved artifacts at S12 (and on demand). The serializer is our own thin module writing textual notation for a defined subset; output is parsed and checked with `sysmlpy` (and optionally OpenSysML's CLI) in CI. `sysml2kit` is evaluated in P0 as an alternative writer (it is pre-alpha).
+The SysML v2 model is generated from approved artifacts at S12 (and on demand). The serializer is our own thin module writing textual notation for a defined subset; output is parsed and checked with `sysmlpy` (and optionally OpenSysML's CLI) in CI. `sysml2kit` was evaluated in P0 and **not adopted**: it has no specialisation, action definitions or successions, so routing cannot be expressed (P0 report §5d; ADR-002 unchanged).
+
+P0 findings that apply to P8: sysmlpy's bundled library has no `SI` package, so the serializer omits `import SI::*` (the example below shows it for readability) and unit literals such as `[mm]` need a decision on bundling the OMG library for validation; sysmlpy warns `IMPLICIT_LIBRARY_IMPORT` for `ElectricChargeValue` even with an explicit import (treat warnings as non-fatal); a cold parse takes about 4 s, so validate at export time only; pin sysmlpy exactly and confirm its licence (README says MIT, PyPI metadata is empty) before P8.
 
 | Domain | SysML v2 construct |
 |---|---|

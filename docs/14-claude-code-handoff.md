@@ -4,6 +4,19 @@ How to turn this design into code with Claude Code, one phase at a time. Each ph
 
 Owner's working rules in `CLAUDE.md` apply to every phase: Claude Code never commits or pushes (you do), nothing sensitive or generated goes into git, no unit tests after small changes (one end-to-end check when needed, usually at phase end), and the UI follows the accessibility and light/dark theme rules.
 
+## 0. Status (2026-11-13)
+
+**P0 and P1 are complete** (reports: `docs/phase-reports/P0.md`, `P1.md` in the repo). The next phase is **P2**. What changed in the design after P1, and where each change lands:
+
+| Change | Docs | Lands in |
+|---|---|---|
+| BoM intake: three cases, gap check, suggestions, review table, BoM workbook (ADR-022) | 03 §4 | Wizard additions in P2; S2 and model changes in P3; workbook in P8 |
+| Factory Package: work instructions, inspection sheets, control plan, SOPs, training matrix, equipment list (ADR-023) | 15 | Check fields in P3; drafting removed from S7 in P5; documents step in new phase **P8b** |
+| ADR-019 (procrastinate), ADR-020 (hashed embeddings), ADR-021 (`packages/library`) raised by P0/P1 | 12 | Already built; await owner approval |
+| Data confirmations before P5 and P6 (70 of 84 pack values are `verify`) | 13 §3 | Owner, before P5 and P6 |
+
+**Syncing this package into the repo.** Copy `15-factory-package.md` into `docs/`. For `01`, `02`, `03`, `04`, `06`, `09`, `13`, `14` and `README.md` the package versions can replace the repo versions. **Do not overwrite `docs/12-adrs.md` or the repo's `CLAUDE.md`**: the repo's `12` holds the full text of ADR-019 to ADR-021 (this package only summarises them), so add ADR-022 and ADR-023 to it by hand; and the repo's `CLAUDE.md` has the Commands section that P0 filled in. You commit; Claude Code does not.
+
 ## 1. One-time setup
 
 **Install** (all free): Docker + Docker Compose (with buildx for multi-arch), Python 3.12 + `uv`, Node 22 + `pnpm`, git, GitHub CLI.
@@ -13,7 +26,7 @@ Owner's working rules in `CLAUDE.md` apply to every phase: Claude Code never com
 ```bash
 mkdir factory-layout-platform && cd factory-layout-platform && git init
 mkdir -p docs
-cp /path/to/this/package/*.md docs/          # README, 01–14
+cp /path/to/this/package/*.md docs/          # README, 01–15 (already done for this repo; see §0 for re-syncing)
 cp docs/CLAUDE.md ./CLAUDE.md                 # Claude Code reads it from the repo root
 git add . && git commit -m "Architecture package"   # you commit; Claude Code never does
 ```
@@ -32,6 +45,7 @@ packages/
   engines/             pure Python: capacity, quality_sizing, inventory, roster,
                        utilities, layout, simulation, finance, sysml (no LLM imports)
   agents/              LangGraph graphs, stage subgraphs, prompts, tools, LLM router
+  library/             catalog and pack loader, validation, embeddings, `fl-library` CLI (ADR-021, added in P1)
   ts-types/            generated TypeScript types (built at build time, git-ignored)
 library/
   catalog/             YAML catalog seed
@@ -41,6 +55,8 @@ golden/
   ceiling_fan/
   benchmarks/          SALBP instances, tiny QAP, queueing cases
 infra/                 docker-compose.yml, caddy, deploy scripts
+scripts/               e2e.py (run by `make e2e`), e2e_p1.py
+spikes/                P0 spike code (outside the workspace lock; results in docs/phase-reports/P0.md)
 docs/                  this package + phase-reports/ + versions.md
 ```
 
@@ -67,12 +83,16 @@ docs/                  this package + phase-reports/ + versions.md
 | G5 Balancing | Scholl SALBP-1 instances (Jackson, Mertens, Bowman) | Documented optimal station counts |
 | G6 Layout | 4–5 zone QAP | Equals brute-force optimum |
 | G7 Simulation | Deterministic serial line; M/M/1 at ρ = 0.8 | Throughput = 1/max(cycle); mean L = 4 within CI |
+| G8 BoM intake (from P3) | G1 and G2 with (a) the golden BoM file, (b) the golden BoM with its label, user manual, carton and solder-consumable lines removed, (c) the STEP sample only (recorded LLM responses) | (a) every user line unchanged, MBOM equals the golden MBOM; (b) exactly the four removed classes are proposed as suggestions and none is added before the user accepts; (c) CAD-matched lines have `origin=cad`, all other lines are `reasoner` or `skeleton` and flagged; in all cases approval is blocked while any line is `suggested` |
+| G9 Factory Package (from P8b) | G1 and G2 approved artifacts | Every operation, consumed BoM line, quality check and catalog hazard at each station appears in that station's work instruction (100 %); step times sum to the station load within 1 %; a planted work instruction with a dropped hazard fails the coverage validator |
 
 These are the end-to-end checks. G1 and G2 run through the real pipeline with recorded LLM responses (cassettes), so results are repeatable and use no quota. Each phase's acceptance list says which golden checks apply at that point.
 
 ## 5. Phase prompts
 
-### P0 — Foundations and spikes
+### P0 — Foundations and spikes ✅ complete (2026-11-11)
+
+> Done; `make e2e` 14/14 on amd64 and arm64. Prompt kept for reference only. Do not re-run. Open: spike c needs the owner's Groq and Gemini keys (doc 13 §3).
 
 ```text
 Phase 0 — Foundations and spikes for the Factory Layout Platform.
@@ -97,7 +117,9 @@ Finish with docs/phase-reports/P0.md.
 
 **You check:** run `docker compose up` locally; read the spike results; approve the SysML and queue recommendations (ADR if they change a decision).
 
-### P1 — Domain model, library and Karnataka pack
+### P1 — Domain model, library and Karnataka pack ✅ complete (2026-11-12)
+
+> Done; e2e 41/41; catalog 2026.11.1, pack KA 2026.11.1 (70 of 84 values `verify`). Prompt kept for reference only. Do not re-run. Spot-check the three pack values listed in doc 13 §3.
 
 ```text
 Phase 1 — Domain model, reference library, Karnataka data pack, golden fixtures.
@@ -121,12 +143,14 @@ Finish with docs/phase-reports/P1.md listing every pack value with its source an
 
 ```text
 Phase 2 — Pipeline harness, web wizard, S1 intake.
-Read first: CLAUDE.md, docs/02 (all), docs/03 §1–3, docs/11 §2, docs/12 ADR-001, 003, 004, 005, 012, 015.
+Read first: CLAUDE.md, docs/02 (all), docs/03 §1–3, docs/11 §2, docs/12 ADR-001, 003, 004, 005, 012, 015, 019, and docs/phase-reports/P0.md and P1.md.
+Build on what P0 and P1 delivered: the compose stack, procrastinate worker (queues `engines` and `cad`), `fl_domain` models and `ARTIFACT_MODELS`, `packages/library` (catalog 2026.11.1, pack KA 2026.11.1), the design tokens and accessible shell in apps/web, and the TS type generation. Do not rebuild them.
+P0 findings to apply: scale GLB output from the cad-worker by 0.001 (mm to metres); the web dev server must be opened on http://localhost:5173; enable `log_connections` and set `application_name` per service if the Postgres backend crash recurs.
 Plan first, then build:
 1. packages/agents: LangGraph parent graph with all 13 stage nodes (stubs except S1), stage subgraph template (load → plan → tools → draft → validate/repair → compute → summarise → interrupt), Postgres checkpointer.
 2. StageRun lifecycle, inputs_hash, stale propagation, change-set application (docs/02 §2, §6).
 3. LLM router with roles, budgets, 429 backoff, fallbacks, llm_call logging; record/replay of LLM responses (cassettes) for the end-to-end check.
-4. apps/web: JSON-Schema-driven wizard (5 steps + review, samples for G1/G2), pipeline view (React Flow), generic stage screen (artifact, provenance badges, questions, approve/edit/re-run/reject), SSE progress. Clean, modern UI in light and dark themes, accessible menus, purposeful animation for step changes and progress (CLAUDE.md owner's rules 4–5).
+4. apps/web: JSON-Schema-driven wizard (5 steps + review, samples for G1/G2). Step 3 "Files and parts" asks "Do you have a BoM?" (`bom_hint`: have_full / have_partial / none), shows the BoM column mapping for confirmation, and takes an optional parts table (`parts_paste`); add both fields to `ProductTemplate` (docs/03 §1.2, §2). Pipeline view (React Flow), generic stage screen (artifact, provenance badges, questions, approve/edit/re-run/reject), SSE progress. Clean, modern UI in light and dark themes, accessible menus, purposeful animation for step changes and progress (CLAUDE.md owner's rules 4–5).
 5. S1 intake: processors for wizard text, PDF, STEP (cad-worker sandbox), STL, photos (vision role); merge rules and questions (docs/03 §3).
 Acceptance (end-to-end check at phase end):
 - G1 and G2 wizard samples run S1 to awaiting_approval with cassettes; the STEP sample yields an assembly tree and GLB.
@@ -141,14 +165,17 @@ Finish with docs/phase-reports/P2.md.
 
 ```text
 Phase 3 — S2 BoM, S3 routing, S4 quality plan, vendor research.
-Read first: CLAUDE.md, docs/03 §4, docs/05 §1–2, docs/09 §2, docs/10 §1, docs/12 ADR-013, 017, 018.
+Read first: CLAUDE.md, docs/03 §4 (all), docs/05 §1–2, docs/09 §2, docs/10 §1, docs/15 §3 and §8, docs/12 ADR-013, 017, 018, 022, 023.
 Plan first, then build:
-1. S2: user-BoM normaliser; archetype skeleton + reasoner drafting; EBOM→MBOM engine; make/buy decisions with catalog-based preview (capex/area/headcount).
+1. S2 (docs/03 §4): the three cases (CAD only, complete BoM, incomplete BoM). User-BoM normaliser that never rewrites user lines; archetype skeleton + CAD-part matching + reasoner drafting for the lines CAD cannot show; gap check by commodity class and CAD cross-check producing `BomFinding` suggestions and questions (rejected suggestions remembered); `BomLine.origin` and `BomLine.review` (additive model change; regenerate schema and TS types); validators "no `suggested` line at approval" and "user lines unchanged"; EBOM→MBOM engine; make/buy decisions with catalog-based preview (capex/area/headcount). UI: editable BoM review table (filter by origin, review status, confidence; inline edit sets `source=user`; bulk accept/reject) in both themes, keyboard accessible.
+   Also in S4 (item 3 below): record per check the fields doc 15 §3 needs (characteristic, limit, method, instrument class, frequency, reaction). Where the catalog `check_type` lacks them, add them as an additive catalog change and bump the catalog to 2026.11.2 (no projects exist yet, so no migration of stored projects).
 2. S3: process selection from catalog; time standards in priority order with formula evaluator (safe expression engine, no eval); precedence graph; validators.
 3. S4: quality layers, AQL table lookup (ISO 2859-1 level II), inspector hours, inline checks injected as routing ops, FPY-based rework sizing, compliance links from the pack, power bank test-policy toggle.
 4. Vendor research agent (parallel after S2): search, fetch (SSRF guard), evidence-required extraction, scoring, dedupe, shared cache with TTL.
 Acceptance (end-to-end check at phase end):
 - G1/G2 produce complete MBOMs and routings; all validators pass; LLM-estimated times are flagged.
+- G8 (docs/14 §4): all three BoM cases behave as specified, with recorded LLM responses.
+- Every G1/G2 check in the quality plan carries the doc 15 §3 fields.
 - AQL sample sizes in the G1/G2 quality plans match the standard table.
 - In the G1 vendor run (recorded pages), every vendor shown has a source URL; a planted page without evidence produces no vendor.
 Finish with docs/phase-reports/P3.md.
@@ -175,9 +202,10 @@ Finish with docs/phase-reports/P4.md with the strategy tables for G1 and G2.
 
 ```text
 Phase 5 — S7 work orders and shifts, S8 utilities.
-Read first: CLAUDE.md, docs/06 §2–3, docs/10 §2.
+Read first: CLAUDE.md, docs/06 §2–3, docs/10 §2, docs/13 §3.
+Before building, tell me which `verify` pack values this phase depends on (KERC March 2026 order and effective date, electricity tax, Karnataka OSH hours/spread-over/overtime/night shift, welfare and fire thresholds). Unknown values stay unknown and go to the assumptions register; do not guess them.
 Plan first, then build:
-1. WO template, types, traceability, release sequence per strategy, sample week, draft work instructions (writer role, marked draft).
+1. WO template, types, traceability, release sequence per strategy, sample week. No work instructions here: they are generated in the S12 documents step (docs/15); the WO template only carries the work-instruction number each operation will point to.
 2. Roster: direct, relievers, supervisors, indirect ratios, compliance checks against the KA pack, welfare zones, labour cost.
 3. Utilities: electrical (connected → MD → CD → supply → transformer/DG/UPS/APFC, kWh, tariff cost), air, HVAC (incl. test-rack heat), water, fire; utility rooms as zones.
 Acceptance (end-to-end check at phase end):
@@ -190,7 +218,8 @@ Finish with docs/phase-reports/P5.md.
 
 ```text
 Phase 6 — S9 layout, 2D/DXF, 3D viewer and editing.
-Read first: CLAUDE.md, docs/07 (all), docs/12 ADR-006, 008.
+Read first: CLAUDE.md, docs/07 (all), docs/12 ADR-006, 008, docs/13 §3.
+Before building, list the layout-related pack values still unknown (KIADB ground coverage, FAR, setbacks, NBC exit travel distance) and treat them as unknown inputs with a visible notice, not as defaults.
 Plan first, then build:
 1. Relationship chart; CP-SAT block layout with candidate shapes, NoOverlap2D, pins, keep-apart, aisles; CRAFT fallback.
 2. Line layout (I/U/L); greenfield building + site plan; existing shed mode with columns and shortfall report.
@@ -225,7 +254,7 @@ Phase 8 — S11 finance, S12 reports, SysML export, admin page.
 Read first: CLAUDE.md, docs/09, docs/04 §6, docs/10 §3.
 Plan first, then build:
 1. Finance engine (capex groups, working capital, opex, P&L, depreciation, financing, NPV/IRR, break-even, sensitivity) with low/base/high.
-2. Report pack: web, PDF, XLSX, DXF, SysML (.sysml validated by sysmlpy), ZIP export; assumptions register; disclaimers.
+2. Report pack: web, PDF, XLSX (including the BoM workbook of docs/03 §4.8), DXF, SysML (.sysml validated by sysmlpy, pinned; see docs/04 §6 for the P0 findings on `SI::*`), ZIP export; assumptions register; disclaimers. Add a `documents` list to `ReportPack` (filled in P8b).
 3. Admin page: browse/edit/validate/publish catalog and pack versions, diff, test bench; Cloudflare Access + passcode.
 Acceptance (end-to-end check at phase end):
 - G4 exact; totals reconcile with source artifacts.
@@ -234,11 +263,30 @@ Acceptance (end-to-end check at phase end):
 Finish with docs/phase-reports/P8.md.
 ```
 
+### P8b — Factory Package (documents)
+
+```text
+Phase 8b — Documents step in S12: the Factory Package.
+Read first: CLAUDE.md, docs/15 (all), docs/09 §3, docs/02 §3–4, docs/12 ADR-001, 023.
+Plan first, then build:
+1. Document skeleton engine: per station (work instruction), per check (inspection instruction and check sheet), per variant (flow chart, control plan), per topic (SOPs), plus training matrix and equipment list, filled from approved artifacts and catalog data (docs/15 §2–3).
+2. `writer`-role drafting as structured output, one document at a time, resumable, cached by per-document `inputs_hash`; separate 80k token budget; SOPs as parameterised templates.
+3. Coverage validators (docs/15 §4): every operation, consumed BoM line, check and catalog hazard present; step times sum to the station load; nothing outside the skeleton.
+4. Review UI: document list with status, inline editing (edits are `source=user` and survive re-runs), approve per document or in bulk; clean in light and dark themes, keyboard accessible.
+5. Exports: PDF per document and combined handbook (WeasyPrint), XLSX check sheets, control plan, training matrix, equipment list (openpyxl), editable DOCX for work instructions and SOPs (check `python-docx` licence and arm64 first and record in docs/versions.md), `factory-package/` ZIP layout (docs/15 §6). Every document labelled "Draft — validate on the shop floor" with a blank sign-off block.
+Acceptance (end-to-end check at phase end):
+- G9 (docs/14 §4): 100 % coverage for G1 and G2; a planted work instruction with a dropped hazard fails the validator.
+- Editing one station in S5 makes only that station's documents stale; unchanged documents are reused.
+- Token use for a full G1 documents run is measured and recorded against the 60k estimate.
+Finish with docs/phase-reports/P8b.md.
+```
+
 ### P9 — Production hardening and deploy
 
 ```text
 Phase 9 — Deploy to Oracle Always Free and harden.
-Read first: CLAUDE.md, docs/11 (all), docs/12 ADR-011, 012.
+Read first: CLAUDE.md, docs/11 (all), docs/12 ADR-011, 012, docs/phase-reports/P0.md §6–7.
+Carry over from P0: run `make e2e` natively on Ampere (arm64 was only emulated); give the cad-worker a dedicated DB role limited to procrastinate tables; pin GitHub Actions by commit SHA before enabling pushes; slim the 3.17 GB cad-worker image; add Turnstile, rate limits and a throttle on `POST /projects` (unthrottled in P0).
 Plan first, then build:
 1. Provision A1 at exactly 2 OCPU / 12 GB; Docker Compose prod; Caddy; Cloudflare DNS, Pages, Turnstile, Access.
 2. Rate limits, global LLM budget, queue with position, BYO key, upload limits and sandbox, retention job, backups to Object Storage, restore runbook.
@@ -274,3 +322,5 @@ Finish with docs/phase-reports/P9.md.
 | Quota-safe | `llm_call` totals for a full golden run are within the budget in docs/02 §4 |
 | Data not code | No tariff, wage, time or price constants hard-coded in engines |
 | Docs current | Phase report and any ADR updates present |
+| BoM is trustworthy (P3) | Upload the G1 BoM, then the same BoM with parts removed, then only the STEP: check that your lines never change, that suggestions need your accept/reject, and that you cannot approve with one unresolved |
+| Documents are drafts (P8b) | Open a work instruction: the Draft label and blank sign-off are there; every hazard, check and BoM line for that station is present; edit a step and re-run, and your edit survives |

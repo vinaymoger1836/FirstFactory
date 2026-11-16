@@ -53,6 +53,8 @@ finance_inputs:
   discount_rate_pct: 12
   horizon_years: 5
 attachments: [ { id, kind: step|stl|photo|pdf|bom_csv|text, file_ref, note } ]
+bom_hint: have_full | have_partial | none        # wizard question "Do you have a BoM?"; a hint only, S2 still checks the file
+parts_paste: [ { name, qty?, note? } ]?          # optional parts typed or pasted in the wizard (no file)
 structure:                        # filled by S1/S2
   assemblies: tree
   parts: [ { part_no, name, qty, material, mass_g, bbox_mm, process_hint, make_or_buy } ]
@@ -70,12 +72,14 @@ Every leaf value that is not a pure identifier is stored as:
   "ref": "attachment:att_03#page2", "note": "Rated capacity from cell datasheet" }
 ```
 
-`source` ∈ `user | cad | datasheet | vision | llm | library | web | engine`. Units are normalised with `pint`.
+`source` ∈ `user | cad | datasheet | bom_file | vision | llm | library | web | engine` (`bom_file` was added in P1; it sits between `datasheet` and `vision` in the merge order). Units are normalised with `pint`.
 
 ## 2. Web wizard
 
-Steps: 1 Product → 2 Variants & volume → 3 Files → 4 Site → 5 Money (optional) → Review.
+Steps: 1 Product → 2 Variants & volume → 3 Files and parts → 4 Site → 5 Money (optional) → Review.
 
+- Step 3 asks **"Do you have a BoM?"** with three answers: *Yes, I will upload it* · *I have part of it* · *No, draft one for me*. The answer sets `bom_hint`. It never blocks submission and it does not change what S2 verifies. Step 3 also takes CAD, photos and datasheets, and an optional parts table (typed or pasted) for users with a short list but no file.
+- After a BoM file is uploaded the wizard shows its column mapping (proposed by the `extractor` role, rules first) for the user to confirm or fix before submit; an unmapped quantity column is shown as a warning.
 - Tooltips explain each field in plain language with an example.
 - "Load sample" fills the power bank or fan example.
 - Required fields block; recommended fields show "We will suggest this".
@@ -92,7 +96,8 @@ Steps: 1 Product → 2 Variants & volume → 3 Files → 4 Site → 5 Money (opt
 | STL | trimesh | Single mesh bbox, volume, area | Low (no assembly) |
 | Photos (jpg/png/webp) | `vision` role | Candidate components, visible features (ports, LEDs, blades, canopy), approximate size cues | Low (≤ 0.4) |
 | PDF (datasheets, drawings) | pdfplumber → `extractor` role | Specs with units (mAh, V, W, RPM, sweep, ports) | Medium–high with page reference |
-| BoM CSV / XLSX | Column mapper → normaliser | Lines (handled in S2) | High |
+| BoM CSV / XLSX | Column mapper (confirmed in the wizard) → normaliser | Raw lines kept as `bom_file` candidates in `structure.parts`; cleaning, enrichment and gap checks happen in S2 (§4) | High for lines the user wrote |
+| Pasted parts table | `extractor` role | Candidate lines without part numbers | Medium |
 | Wizard text | `extractor` role | Structured fields | Medium |
 
 STEP files are processed in a separate container with CPU/memory/time limits (60 s, 2 GB) because OCP is heavy and files are untrusted.
@@ -111,10 +116,17 @@ STEP files are processed in a separate container with CPU/memory/time limits (60
 
 ## 4. Stage S2 — BoM
 
-### 4.1 Two routes
+### 4.1 Three cases
 
-- **User BoM supplied:** map columns, normalise units and part numbers, detect duplicates and missing quantities, enrich each line with material, commodity class (from catalog taxonomy), and a make/buy suggestion.
-- **No BoM:** start from the archetype skeleton (library, doc 10), then the `reasoner` fills specifics from the spec as structured output. Each line has confidence; skeleton lines not justified by the spec are dropped or questioned.
+S2 starts only after the S1 `ProductSpec` is approved. It picks its route from what S1 actually found, not from `bom_hint`:
+
+| Case | What the user gave | S2 does |
+|---|---|---|
+| **A. CAD only** (or photos, or description only) | STEP/STL, photos, text; no BoM lines | Start from the archetype skeleton (§4.2). Match CAD parts to skeleton lines by part name and geometry (`source=cad`, high confidence for what CAD shows). The `reasoner` drafts the lines CAD cannot show (cells, PCBA, labels, manual, packaging, consumables) from the spec as structured output (`source=llm`). Skeleton lines the spec does not justify are dropped or turned into questions. Unknown archetype → `generic_*` skeleton, a notice, and many more questions. |
+| **B. Complete BoM** | CSV/XLSX that covers the product | Confirm column mapping; normalise units and part numbers; detect duplicates, missing or zero quantities; enrich each line with material, commodity class and a make/buy suggestion. **The user's lines are never rewritten.** Gap check (§4.6) runs anyway, because a complete engineering BoM usually has no consumables, packaging or sub-assembly grouping; those are added in the MBOM step (§4.4). |
+| **C. Incomplete BoM** | A BoM missing parts, quantities or variant columns | Everything in B for the lines given. Then the gap check (§4.6) compares the BoM with the archetype skeleton and with CAD, and lists probable missing parts as **suggestions** for the user to accept or reject. Nothing is added silently. |
+
+Cases combine: a BoM plus CAD runs B or C with the CAD cross-check (§4.6) on top. Photos and datasheets only raise or lower confidence and add questions.
 
 Power bank skeleton (variant deltas in brackets): Li-ion cells (2 / 4 × 21700 or pouch) · BMS + charge PCBA · USB-C and USB-A ports (on PCBA) · enclosure top/bottom (PC/ABS, molded, bought) · LED light pipe · button · nickel strip · insulation (fish paper, Kapton) · foam pads · screws · rating label · QR label · user manual · retail box · shipper carton · consumables (solder wire, flux, adhesive).
 
@@ -148,9 +160,54 @@ The preview is computed by a lightweight version of S5/S8/S11 using catalog data
 
 `Bom { ebom, mbom, make_buy_decisions, commodity_classes }`. On approval, the vendor agent starts in parallel (doc 09 §2) using commodity classes and make/buy decisions.
 
+The BoM is the centre of the pipeline: routing, quality plan, capacity, inventory, vendors, work instructions and cost all read the approved MBOM. That is why S2 has the strictest gate (§4.5) and why every line shows where it came from (§4.7).
+
 ### 4.5 Validators
 
 - Every variant has a complete MBOM; quantities > 0; units valid.
 - Every "make" item has at least one candidate process in the catalog or is flagged `uncatalogued`.
 - Every commodity class exists in the catalog taxonomy.
 - Variant deltas reference existing lines (no orphan variant parts).
+- **No line is left in review status `suggested` at approval** (accepted or rejected first, §4.7).
+- A line with `origin=user_bom` is unchanged from the file except for normalisation (units, part-number format); any other edit is recorded as a user edit.
+
+### 4.6 Gap check and CAD cross-check
+
+Runs in every case after cleaning, before the EBOM is shown. All findings are **suggestions or questions**, never silent changes.
+
+1. **Against the archetype skeleton, by commodity class, not by name.** If the BoM has no line in a class the skeleton expects (for example `label`, `user_manual`, `packaging_carton`, `consumable_solder`), propose one line for that class. Class-based matching avoids false gaps when the user names a part differently. Rejected suggestions are remembered for the project and are not proposed again on a re-run.
+2. **Against CAD (when STEP is attached).**
+   - A CAD part with no BoM match (`part_no` equal, else name similarity plus bounding box within 5%) → "CAD shows *X*, not in your BoM. Add it?"
+   - A quantity that differs (CAD has 4 screw solids, BoM says 2) → a question showing both values and sources (the merge rule in §3.2).
+   - BoM lines with no CAD match are **not** flagged when their class is something CAD rarely models (cells, ICs, labels, packaging, consumables, fasteners); other unmatched lines get an information note.
+3. **Line quality.** Missing or zero quantity, unknown unit, duplicate part numbers, a variant column that names a variant not in the template → a question per issue, grouped.
+4. Findings are sorted by effect (missing parts first, then quantity conflicts, then notes) so the review screen starts with what matters.
+
+### 4.7 Line origin and review status
+
+Each BoM line carries two fields in addition to `Prov`:
+
+| Field | Values | Purpose |
+|---|---|---|
+| `origin` | `user_bom` · `cad` · `skeleton` · `reasoner` · `engine` | Where the line came from. `engine` = added by the EBOM→MBOM step (consumables, packaging, grouping). |
+| `review` | `given` (user supplied) · `suggested` · `accepted` · `rejected` | `suggested` lines must be resolved before approval. Accepted suggestions keep their origin and stay visible in the assumptions list. |
+
+The S2 screen is an **editable table**: filter by origin, review status or confidence; edit a quantity or part inline (the edit sets `source=user`, confidence 1.0); accept or reject suggestions in bulk. Low-confidence lines sort first.
+
+### 4.8 BoM workbook (export)
+
+One XLSX (openpyxl), included in the report pack (doc 09 §3):
+
+| Sheet | Content |
+|---|---|
+| EBOM | Part, description, quantity per variant, material, commodity class, origin, confidence |
+| MBOM | EBOM lines plus consumables, packaging and sub-assembly grouping; `ebom_ref` link |
+| Make-Buy | Decision per line, catalog-based cost, area and headcount preview, approval |
+| Variants | Lines that differ between variants |
+| Open items | Lines still below confidence 0.6, or accepted from AI suggestions, for the assumptions register |
+
+The EBOM is the design view; the MBOM is what purchasing, work orders and work instructions use. Both are delivered.
+
+### 4.9 Implementation notes (after P1)
+
+P1 already provides the `Bom` model and validators (refs, qty > 0, cycles, complete MBOM per variant, commodity classes, make items routable or `uncatalogued`) and `Prov.source=bom_file`. The additions in §4.6–4.7 are **additive model changes** done in P3: `BomLine.origin`, `BomLine.review`, a `BomFinding` type for suggestions and questions, and the two validators in §4.5. `bom_hint` and `parts_paste` are added to `ProductTemplate` in P2 (wizard). Both need a regenerated JSON Schema and TS types, and no stored projects exist yet, so no data migration is needed.
