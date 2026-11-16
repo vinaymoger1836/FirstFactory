@@ -153,3 +153,12 @@ ADR-019 to ADR-021 were raised during P0 and P1 and exist in the repo's `docs/12
 4. `StageStatus` gains `paused`: a stage that would exceed its token budget, or whose provider quota stays exhausted after retries and fallbacks, pauses with a LangGraph interrupt. "Continue" raises the budget and re-runs the node; finished per-source work is kept in `stage_run.work`, and each source makes at most one model call, so no call is repeated.
 5. Answering a question creates a new version (deterministic re-merge, no model call); re-run and reject create a new version with the note.
 **Consequences:** Additive domain changes (`paused`, `StageRun.placeholder/issues/notices/tokens_used/token_budget`, `Question.kind/unit`, `ChangeOp.op`); placeholders are approved automatically and say so on screen.
+
+### ADR-026 — S2 BoM: tool-calling proposer, mass and cost from a material catalog, workbook in P3
+**Status:** Proposed (P3a)
+**Context:** The owner's S2 prototype (BoM Agent MVP) shows the model drafting the BoM by calling tools under a budget, every line carrying mass and cost with a visible calculation, a 3D view linked to the lines, and an export step with the BoM workbook. docs/02 §3 already describes a tool loop; docs/03 §4.8 placed the workbook in P8; the catalog had no material densities.
+**Decision:**
+1. The S2 proposer is a `reasoner` tool loop (catalog_search, catalog_get, bom_skeleton, pack_get, calc_mass, ask_user, then one `submit_draft`), at most 12 tool calls per run (`<stage>_tools` override), transcript saved after each turn and one cassette per turn. It only chooses (keep/drop skeleton lines, CAD links, classes, materials, extra lines); it never writes quantities, masses or prices. Without a model key the rules engine proposes. For B/C the model runs only when rules cannot classify a line.
+2. Catalog 2026.11.2 adds a `material` kind (density, indicative price per kg; estimates) and three commodity-class fields: `make_route` (make/buy preview), `default_material`, `cad_rarely_modelled`. Mass = CAD volume × density; unit cost = catalog class price (buy) or mass × material rate (make); every number carries a calculation trail.
+3. The BoM workbook (EBOM, MBOM, Make-Buy, Variants, Open items) is delivered by S2 now, not P8.
+**Consequences:** About 4–9k tokens per case-A BoM (gpt-oss reasoning); a new catalog version (existing projects stay on 2026.11.1); P8 reuses the workbook in the report pack.

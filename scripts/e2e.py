@@ -46,6 +46,7 @@ import urllib.request
 from pathlib import Path
 
 from e2e_p2 import p2_checks, web_checks
+from e2e_p3 import p3_checks
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = [
@@ -58,7 +59,7 @@ COMPOSE = [
     "-f",
     "infra/docker-compose.e2e.yml",
 ]
-PHASE = "P2"
+PHASE = "P3a"
 GOLDEN = {
     "G1": "Power bank: demand, takt, PCT, test positions/channels",
     "G2": "BLDC fan: demand, takt, PCT, run-in positions, varnish ovens",
@@ -440,6 +441,7 @@ def main() -> int:
     library_checks()
     host_checks()
     p2_checks(base, COMPOSE, psql, record, mode)
+    p3_checks(base, psql, record, mode)
     web_checks(record)
 
     print("==> Golden cases (docs/14 §4)", flush=True)

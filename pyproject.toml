@@ -54,6 +54,7 @@ known-first-party = ["fl_api", "fl_worker", "fl_domain", "fl_engines", "fl_agent
 # Spikes are throwaway measurement scripts: keep correctness rules, relax style.
 "spikes/**" = ["T20", "S", "E501", "ASYNC", "RUF012", "DTZ"]
 "scripts/**" = ["T20", "S603", "S607", "S608", "S310"]
+"scripts/e2e_p*.py" = ["E501"]
 "**/migrations/**" = ["N999"]
 "packages/library/src/fl_library/cli.py" = ["T20"]
 # Router errors read as states ("PauseRequired", "CassetteMiss"), not as error classes.

@@ -17,6 +17,7 @@ Stored as YAML in the repo (`library/catalog/`), loaded into Postgres on deploy,
 | `commodity_class` | li_ion_cell, pcba, molded_enclosure, die_cast_rotor, fan_blade, fasteners, packaging_carton, consumable_solder |
 | `archetype` | power_bank, ceiling_fan (BoM skeleton, typical routing, compliance refs, variant deltas) |
 | `mtm_element` | reach, grasp, place, insert_snug, screw_start, label_apply, inspect_visual |
+| `material` (2026.11.2) | pc_abs, aluminium_die_cast, electrical_steel, copper, nickel, paperboard … (density g/cm³, indicative ₹/kg; estimates). Commodity classes gain `make_route`, `default_material`, `cad_rarely_modelled` (ADR-026) |
 
 ### 1.2 Process entry schema
 

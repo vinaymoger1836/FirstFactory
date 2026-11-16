@@ -210,4 +210,6 @@ The EBOM is the design view; the MBOM is what purchasing, work orders and work i
 
 ### 4.9 Implementation notes (after P1)
 
+**As built in P3a (2026-11-16):** `BomLine.origin`, `BomLine.review`, `BomLine.id`, `BomLine.commodity_class`, `BomFinding`, `Bom.case`, `Bom.user_snapshot`, `Bom.rejected_suggestions`, `Bom.coverage`, `Bom.totals`, `MakeBuyDecision.confirmed`; validators "user lines unchanged" and (at approval) "no suggested line, no open finding, every make/buy confirmed". The S2 engine is `fl_engines.bom.build_bom`; the proposer is a tool loop (ADR-026); review decisions are sent as one "apply review" action and create a new version.
+
 P1 already provides the `Bom` model and validators (refs, qty > 0, cycles, complete MBOM per variant, commodity classes, make items routable or `uncatalogued`) and `Prov.source=bom_file`. The additions in §4.6–4.7 are **additive model changes** done in P3: `BomLine.origin`, `BomLine.review`, a `BomFinding` type for suggestions and questions, and the two validators in §4.5. `bom_hint` and `parts_paste` are added to `ProductTemplate` in P2 (wizard). Both need a regenerated JSON Schema and TS types, and no stored projects exist yet, so no data migration is needed.

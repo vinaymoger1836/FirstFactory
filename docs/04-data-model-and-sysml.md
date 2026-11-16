@@ -65,6 +65,8 @@ class Item(BaseModel):
 class BomLine(BaseModel):
     parent: str; child: str; qty: Prov[float]; uom: str; variant: str | None
     level: Literal["ebom","mbom"]; ebom_ref: str | None
+    id: str | None; commodity_class: str | None; reason: str | None          # P3a
+    ext_cost_inr: Range | None; ext_mass_g: float | None                     # engine numbers (P3a)
     origin: Literal["user_bom","cad","skeleton","reasoner","engine"]       # added in P3 (doc 03 §4.7)
     review: Literal["given","suggested","accepted","rejected"]             # `suggested` must be resolved before approval
 

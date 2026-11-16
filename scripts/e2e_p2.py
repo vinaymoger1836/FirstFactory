@@ -191,6 +191,45 @@ def sse_has(api: Api, kinds: set[str], timeout: float = 10) -> list[str]:
     return seen
 
 
+def review_bom(
+    api: Api, *, reject_classes: tuple[str, ...] = (), finding_choice: int = 0, wait: bool = True
+) -> dict[str, Any]:
+    """Answer a BoM review: accept every suggestion (except ``reject_classes``), take option
+    ``finding_choice`` on open findings, confirm all make/buy. Returns the new latest run."""
+    run = latest(api, "bom")
+    art = run.get("artifact") or {}
+    answers: dict[str, Any] = {}
+    for ln in art.get("ebom", []):
+        if ln["review"] != "suggested":
+            continue
+        lid = ln["id"]
+        if ln.get("variant") and lid.endswith(f"-{ln['variant']}"):
+            lid = lid[: -len(ln["variant"]) - 1]
+        answers[f"line:{lid}"] = (
+            "rejected" if ln.get("commodity_class") in reject_classes else "accepted"
+        )
+    for f in art.get("findings", []):
+        if f["status"] == "open" and f.get("options") and f["kind"] != "missing_class":
+            answers[f"finding:{f['id']}"] = f["options"][min(finding_choice, len(f["options"]) - 1)]
+    for d in art.get("make_buy_decisions", []):
+        if not d["confirmed"]:
+            answers[f"mbconfirm:{d['part_no']}"] = "yes"
+    if not answers:
+        return run
+    v = run["version"]
+    api.call("POST", "/projects/current/stages/bom/answer", {"answers": answers})
+    if wait:
+        wait_for(
+            api,
+            lambda st: (
+                (st["bom"]["version"] or 0) > v
+                and st["bom"]["status"] in ("awaiting_approval", "failed")
+            ),
+            timeout=240,
+        )
+    return latest(api, "bom")
+
+
 def glb_ok(data: bytes) -> tuple[bool, str]:
     if len(data) < 20 or data[:4] != b"glTF":
         return False, "not a GLB"
@@ -487,11 +526,19 @@ def p2_checks(
     api = apis["G1"]
     s, body = api.call("POST", "/projects/current/stages/intake/approve", {})
     record("approve S1 (G1)", s == 200, str(body)[:100])
-    st = wait_for(api, lambda st: all(x["status"] == "approved" for x in st.values()), timeout=240)
-    placeholders = sum(1 for k, x in st.items() if k != "intake" and x["placeholder"])
+    st = wait_for(api, lambda st: st["bom"]["status"] in ("awaiting_approval", "failed"), 300)
     record(
-        "all 13 stages approved; the 12 stubs are placeholders",
-        all(x["status"] == "approved" for x in st.values()) and placeholders == 12,
+        "approving S1 starts S2 BoM (real stage): waits for review",
+        st["bom"]["status"] == "awaiting_approval" and not st["bom"]["placeholder"],
+        f"bom {st['bom']['status']}",
+    )
+    review_bom(api)
+    s, body = api.call("POST", "/projects/current/stages/bom/approve", {})
+    st = wait_for(api, lambda st: all(x["status"] == "approved" for x in st.values()), timeout=240)
+    placeholders = sum(1 for k, x in st.items() if k not in ("intake", "bom") and x["placeholder"])
+    record(
+        "after BoM review and approval all 13 stages approved; the 11 stubs are placeholders",
+        all(x["status"] == "approved" for x in st.values()) and placeholders == 11,
         ", ".join(f"{k}:{x['status']}" for k, x in st.items() if x["status"] != "approved")
         or "13/13 approved",
     )
@@ -519,16 +566,22 @@ def p2_checks(
         and len(stale) == 12,
         f"S1 v{body.get('version') if isinstance(body, dict) else '?'}; stale={len(stale)}",
     )
+    bom_v = st["bom"]["version"] or 0
     s, body = api.call("POST", "/projects/current/rerun-stale", {})
-    st = wait_for(api, lambda st: all(x["status"] == "approved" for x in st.values()), timeout=240)
+    st = wait_for(
+        api,
+        lambda st: (
+            (st["bom"]["version"] or 0) > bom_v and st["bom"]["status"] == "awaiting_approval"
+        ),
+        timeout=300,
+    )
     record(
-        "re-run stale: S1 skipped (hash unchanged), stubs approved again as v2",
+        "re-run stale: S1 skipped (hash unchanged); BoM re-drafted from S1 v2, waiting for review",
         s == 200
         and st["intake"]["version"] == 2
-        and all(
-            x["status"] == "approved" and x["version"] == 2 for k, x in st.items() if k != "intake"
-        ),
-        ", ".join(f"{k}:v{x['version']}" for k, x in list(st.items())[:4]),
+        and st["intake"]["status"] == "approved"
+        and st["bom"]["status"] == "awaiting_approval",
+        f"intake v{st['intake']['version']}, bom v{st['bom']['version']} {st['bom']['status']}",
     )
     run = latest(api)
     old = run["artifact"]["product"]["variants"][0]["params"]["n_screws"]["value"]

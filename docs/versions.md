@@ -13,6 +13,8 @@ WeasyPrint's system libraries) unless noted.
 
 Last updated: 2026-11-16 (P2). The `exclude-newer` date was not moved in P1 or P2; every P2 dependency resolved within it.
 
+Catalog: **2026.11.2** (P3a, ADR-026: materials, `make_route`, `default_material`, `cad_rarely_modelled`; "sleeve" packaging alias). Projects created before stay pinned to 2026.11.1.
+
 ## Toolchain
 
 | Tool | Version | Where |
