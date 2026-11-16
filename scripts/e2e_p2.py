@@ -194,6 +194,22 @@ def sse_has(api: Api, kinds: set[str], timeout: float = 10) -> list[str]:
 def review_bom(
     api: Api, *, reject_classes: tuple[str, ...] = (), finding_choice: int = 0, wait: bool = True
 ) -> dict[str, Any]:
+    """Review until nothing blocks approval (accepted lines can bring new make/buy items,
+    e.g. sub-assemblies, which the next version asks about). At most 3 rounds."""
+    run = latest(api, "bom")
+    for _ in range(3):
+        before = run.get("version")
+        run = _review_once(
+            api, reject_classes=reject_classes, finding_choice=finding_choice, wait=wait
+        )
+        if run.get("version") == before:
+            break
+    return run
+
+
+def _review_once(
+    api: Api, *, reject_classes: tuple[str, ...] = (), finding_choice: int = 0, wait: bool = True
+) -> dict[str, Any]:
     """Answer a BoM review: accept every suggestion (except ``reject_classes``), take option
     ``finding_choice`` on open findings, confirm all make/buy. Returns the new latest run."""
     run = latest(api, "bom")

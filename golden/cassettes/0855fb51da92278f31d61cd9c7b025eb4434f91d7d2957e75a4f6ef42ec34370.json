@@ -3,7 +3,7 @@
   "role": "extractor",
   "model": "groq/openai/gpt-oss-20b",
   "schema": "DocExtraction",
-  "recorded_at": "2026-11-16T11:58:48+00:00",
+  "recorded_at": "2026-11-16T12:09:20+00:00",
   "request": {
     "messages": [
       {
@@ -17,14 +17,14 @@
     ]
   },
   "response": {
-    "content": "{\"params\":[{\"name\":\"cells_per_pack\",\"value\":2,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Cells 2 x 21700 Li-ion\",\"page\":1},{\"name\":\"capacity_mah\",\"value\":9000,\"unit\":\"mAh\",\"variant\":\"PB10K\",\"evidence\":\"Rated capacity 9,000 mAh\",\"page\":1},{\"name\":\"charge_current_ma\",\"value\":5000,\"unit\":\"mA\",\"variant\":\"PB10K\",\"evidence\":\"Charge current 5000 mA\",\"page\":1},{\"name\":\"n_ports\",\"value\":3,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Output ports 3 (2 x USB-A, 1 x USB-C)\",\"page\":1},{\"name\":\"n_leds\",\"value\":4,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Indicator LEDs 4\",\"page\":1},{\"name\":\"n_screws\",\"value\":4,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Enclosure PC/ABS, 4 screws\",\"page\":1}],\"other_specs\":[{\"name\":\"Weight\",\"value\":\"210\",\"unit\":\"g\",\"page\":1},{\"name\":\"Enclosure\",\"value\":\"PC/ABS\",\"unit\":null,\"page\":1},{\"name\":\"Model\",\"value\":\"PB10K\",\"unit\":null,\"page\":1}]}",
+    "content": "{\"params\":[{\"name\":\"cells_per_pack\",\"value\":2,\"unit\":null,\"variant\":\"PB10K\",\"evidence\":\"Cells 2 x 21700 Li-ion\",\"page\":1},{\"name\":\"capacity_mah\",\"value\":9000,\"unit\":\"mAh\",\"variant\":\"PB10K\",\"evidence\":\"Rated capacity 9,000 mAh\",\"page\":1},{\"name\":\"charge_current_ma\",\"value\":5000,\"unit\":\"mA\",\"variant\":\"PB10K\",\"evidence\":\"Charge current 5000 mA\",\"page\":1},{\"name\":\"n_ports\",\"value\":3,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Output ports 3 (2 x USB-A, 1 x USB-C)\",\"page\":1},{\"name\":\"n_leds\",\"value\":4,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Indicator LEDs 4\",\"page\":1},{\"name\":\"n_screws\",\"value\":4,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Enclosure PC/ABS, 4 screws\",\"page\":1}],\"other_specs\":[{\"name\":\"Model\",\"value\":\"PB10K\",\"unit\":null,\"page\":1},{\"name\":\"Weight\",\"value\":\"210\",\"unit\":\"g\",\"page\":1},{\"name\":\"Enclosure\",\"value\":\"PC/ABS\",\"unit\":null,\"page\":1},{\"name\":\"Battery type\",\"value\":\"21700 Li-ion\",\"unit\":null,\"page\":1},{\"name\":\"BMS\",\"value\":\"built-in\",\"unit\":null,\"page\":1},{\"name\":\"Charge board\",\"value\":\"built-in\",\"unit\":null,\"page\":1}]}",
     "message": {
       "role": "assistant",
-      "content": "{\"params\":[{\"name\":\"cells_per_pack\",\"value\":2,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Cells 2 x 21700 Li-ion\",\"page\":1},{\"name\":\"capacity_mah\",\"value\":9000,\"unit\":\"mAh\",\"variant\":\"PB10K\",\"evidence\":\"Rated capacity 9,000 mAh\",\"page\":1},{\"name\":\"charge_current_ma\",\"value\":5000,\"unit\":\"mA\",\"variant\":\"PB10K\",\"evidence\":\"Charge current 5000 mA\",\"page\":1},{\"name\":\"n_ports\",\"value\":3,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Output ports 3 (2 x USB-A, 1 x USB-C)\",\"page\":1},{\"name\":\"n_leds\",\"value\":4,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Indicator LEDs 4\",\"page\":1},{\"name\":\"n_screws\",\"value\":4,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Enclosure PC/ABS, 4 screws\",\"page\":1}],\"other_specs\":[{\"name\":\"Weight\",\"value\":\"210\",\"unit\":\"g\",\"page\":1},{\"name\":\"Enclosure\",\"value\":\"PC/ABS\",\"unit\":null,\"page\":1},{\"name\":\"Model\",\"value\":\"PB10K\",\"unit\":null,\"page\":1}]}"
+      "content": "{\"params\":[{\"name\":\"cells_per_pack\",\"value\":2,\"unit\":null,\"variant\":\"PB10K\",\"evidence\":\"Cells 2 x 21700 Li-ion\",\"page\":1},{\"name\":\"capacity_mah\",\"value\":9000,\"unit\":\"mAh\",\"variant\":\"PB10K\",\"evidence\":\"Rated capacity 9,000 mAh\",\"page\":1},{\"name\":\"charge_current_ma\",\"value\":5000,\"unit\":\"mA\",\"variant\":\"PB10K\",\"evidence\":\"Charge current 5000 mA\",\"page\":1},{\"name\":\"n_ports\",\"value\":3,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Output ports 3 (2 x USB-A, 1 x USB-C)\",\"page\":1},{\"name\":\"n_leds\",\"value\":4,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Indicator LEDs 4\",\"page\":1},{\"name\":\"n_screws\",\"value\":4,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"Enclosure PC/ABS, 4 screws\",\"page\":1}],\"other_specs\":[{\"name\":\"Model\",\"value\":\"PB10K\",\"unit\":null,\"page\":1},{\"name\":\"Weight\",\"value\":\"210\",\"unit\":\"g\",\"page\":1},{\"name\":\"Enclosure\",\"value\":\"PC/ABS\",\"unit\":null,\"page\":1},{\"name\":\"Battery type\",\"value\":\"21700 Li-ion\",\"unit\":null,\"page\":1},{\"name\":\"BMS\",\"value\":\"built-in\",\"unit\":null,\"page\":1},{\"name\":\"Charge board\",\"value\":\"built-in\",\"unit\":null,\"page\":1}]}"
     }
   },
   "usage": {
     "prompt_tokens": 900,
-    "completion_tokens": 1850
+    "completion_tokens": 1415
   }
 }

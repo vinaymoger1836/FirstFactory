@@ -1,0 +1,30 @@
+{
+  "key": "3f531394cf4d0c37b42d68ea9787373d122cf7ba492d53c3a44733f108ee6456",
+  "role": "writer",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "SummaryOut",
+  "recorded_at": "2026-11-16T12:15:23+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"summary\":{\"title\":\"Summary\",\"type\":\"string\"},\"highlights\":{\"items\":{\"type\":\"string\"},\"maxItems\":5,\"title\":\"Highlights\",\"type\":\"array\"}},\"required\":[\"summary\"],\"title\":\"SummaryOut\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Write a short summary of this bill of materials for a first-time factory founder: what it contains, what still needs their decision. Plain words; no numbers that are not in the facts. Highlights: up to 5 short items.\n\nFACTS:\nCase: drafted from CAD and the product type (no BoM file)\nProposer: AI (reasoner)\nLines: 25; suggestions waiting: 22; open questions: 2; make/buy decisions to confirm: 7\nFinding: CAD shows 'shell' (1 ×), not in the BoM. Add it?\nFinding: CAD shows 'usb_c' (1 ×), not in the BoM. Add it?\nTotal PB10K: 680 INR (catalog estimates)\nTotal PB20K: 1180 INR (catalog estimates)"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"summary\":\"The draft bill of materials, created from the CAD model by an AI reasoner, lists 25 line items but many details are still pending. It does not include the shell and USB‑C parts shown in the CAD, which need to be added. There are 22 suggested items awaiting review, two open questions, and seven make‑or‑buy decisions that must be confirmed. Catalog cost estimates are 680 INR for PB10K and 1,180 INR for PB20K.\",\"highlights\":[\"25 line items drafted from CAD, no BoM file yet\",\"Shell and USB‑C components appear in CAD but are missing from the BoM\",\"22 suggestions waiting for approval\",\"2 open questions remain\",\"7 make/buy decisions still to be confirmed\"]}",
+    "message": {
+      "role": "assistant",
+      "content": "{\"summary\":\"The draft bill of materials, created from the CAD model by an AI reasoner, lists 25 line items but many details are still pending. It does not include the shell and USB‑C parts shown in the CAD, which need to be added. There are 22 suggested items awaiting review, two open questions, and seven make‑or‑buy decisions that must be confirmed. Catalog cost estimates are 680 INR for PB10K and 1,180 INR for PB20K.\",\"highlights\":[\"25 line items drafted from CAD, no BoM file yet\",\"Shell and USB‑C components appear in CAD but are missing from the BoM\",\"22 suggestions waiting for approval\",\"2 open questions remain\",\"7 make/buy decisions still to be confirmed\"]}"
+    }
+  },
+  "usage": {
+    "prompt_tokens": 428,
+    "completion_tokens": 561
+  }
+}

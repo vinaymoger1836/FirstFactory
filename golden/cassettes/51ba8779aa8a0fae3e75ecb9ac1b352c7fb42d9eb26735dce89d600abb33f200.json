@@ -3,7 +3,7 @@
   "role": "writer",
   "model": "groq/openai/gpt-oss-120b",
   "schema": "SummaryOut",
-  "recorded_at": "2026-11-16T11:59:20+00:00",
+  "recorded_at": "2026-11-16T12:09:57+00:00",
   "request": {
     "messages": [
       {

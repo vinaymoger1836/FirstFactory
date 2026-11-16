@@ -1,0 +1,30 @@
+{
+  "key": "11103dba019ceb27fc15cb421a32312826d6582f88954ca54ca0aa056536e8e8",
+  "role": "writer",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "SummaryOut",
+  "recorded_at": "2026-11-16T12:09:46+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"summary\":{\"description\":\"Two to four plain sentences for the user.\",\"title\":\"Summary\",\"type\":\"string\"},\"highlights\":{\"items\":{\"type\":\"string\"},\"maxItems\":5,\"title\":\"Highlights\",\"type\":\"array\"}},\"required\":[\"summary\"],\"title\":\"SummaryOut\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Write a short summary for a first-time factory founder of what intake found about their product. Plain words, no numbers that are not in the facts, no advice beyond the open questions. Highlights: up to 5 short items.\n\nFACTS:\nProduct: Power bank (golden G1) (electronics)\nProduct type: power_bank (from user)\nVariant PB10K: 10 parameters (6 from datasheet, 4 from library)\nVariant PB20K: 10 parameters (7 from library, 3 from llm)\nParts found in files: 25; assembly trees: 1\nOpen questions: 1\nQuestion: Sources disagree on capacity mah for PB10K. Which value is right?"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"summary\":\"The intake identified the golden G1 power bank as an electronics product with two variants, PB10K and PB20K, each defined by ten parameters drawn from datasheets, libraries, and an LLM. The file review uncovered twenty‑five parts organized into a single assembly tree. One open question remains about the correct capacity in mAh for the PB10K variant.\",\"highlights\":[\"Golden G1 power bank identified\",\"Two variants PB10K and PB20K each have ten parameters\",\"Parameters sourced from datasheet, library, and LLM\",\"Twenty‑five parts found in files\",\"Capacity mAh for PB10K is disputed\"]}",
+    "message": {
+      "role": "assistant",
+      "content": "{\"summary\":\"The intake identified the golden G1 power bank as an electronics product with two variants, PB10K and PB20K, each defined by ten parameters drawn from datasheets, libraries, and an LLM. The file review uncovered twenty‑five parts organized into a single assembly tree. One open question remains about the correct capacity in mAh for the PB10K variant.\",\"highlights\":[\"Golden G1 power bank identified\",\"Two variants PB10K and PB20K each have ten parameters\",\"Parameters sourced from datasheet, library, and LLM\",\"Twenty‑five parts found in files\",\"Capacity mAh for PB10K is disputed\"]}"
+    }
+  },
+  "usage": {
+    "prompt_tokens": 430,
+    "completion_tokens": 527
+  }
+}

@@ -3,7 +3,7 @@
 Candidate values for one field come from several sources. The engine:
 
 1. ranks them by source priority ``user > cad > datasheet > bom_file > vision > llm >
-   library`` (then by confidence);
+   library`` (then by confidence); unsupported values (confidence < 0.35) rank last;
 2. converts units to the winner's unit with pint;
 3. treats numeric values within 5 % of the winner as agreeing;
 4. raises a choice **question** when another candidate with confidence ≥ 0.5 disagrees
@@ -83,7 +83,15 @@ class MergeResult:
     conflicts: list[Conflict] = field(default_factory=list)
 
 
+UNSUPPORTED_BELOW = 0.35
+
+
 def _rank(c: Candidate) -> tuple[int, float]:
+    """Source priority, then confidence. A value below ``UNSUPPORTED_BELOW`` (e.g. a model
+    value whose evidence quote was not found) ranks after every supported source, so it
+    never overrides a catalog default."""
+    if c.confidence < UNSUPPORTED_BELOW and c.source != "user":
+        return (len(SOURCE_PRIORITY), -c.confidence)
     return (SOURCE_PRIORITY.index(c.source), -c.confidence)
 
 

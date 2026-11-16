@@ -3,7 +3,7 @@
   "role": "extractor",
   "model": "groq/openai/gpt-oss-20b",
   "schema": "TextExtraction",
-  "recorded_at": "2026-11-16T12:03:31+00:00",
+  "recorded_at": "2026-11-16T12:13:26+00:00",
   "request": {
     "messages": [
       {
@@ -17,14 +17,14 @@
     ]
   },
   "response": {
-    "content": "{\"archetype_guess\":\"ceiling_fan\",\"keywords\":[\"BLDC\",\"ceiling\",\"fan\",\"golden\",\"G2\",\"1200mm\",\"900mm\",\"remote\",\"controller\",\"blades\"],\"params\":[{\"name\":\"sweep_mm\",\"value\":1200,\"unit\":\"mm\",\"variant\":\"F1200\",\"evidence\":\"1200 mm and 900 mm sweeps\",\"page\":null},{\"name\":\"turns_per_coil\",\"value\":80,\"unit\":\"unit\",\"variant\":\"F1200\",\"evidence\":\"80 turns per coil\",\"page\":null},{\"name\":\"sweep_mm\",\"value\":900,\"unit\":\"mm\",\"variant\":\"F900\",\"evidence\":\"1200 mm and 900 mm sweeps\",\"page\":null},{\"name\":\"turns_per_coil\",\"value\":70,\"unit\":\"unit\",\"variant\":\"F900\",\"evidence\":\"70 turns per coil\",\"page\":null}]}",
+    "content": "{\"archetype_guess\":\"ceiling_fan\",\"keywords\":[\"BLDC\",\"ceiling\",\"fan\",\"golden\",\"G2\",\"remote\",\"controller\",\"PCBA\",\"die-cast\",\"rotor\"],\"params\":[{\"name\":\"sweep_mm\",\"value\":1200,\"unit\":\"mm\",\"variant\":\"F1200\",\"evidence\":\"1200 mm\"},{\"name\":\"turns_per_coil\",\"value\":80,\"unit\":\"unit\",\"variant\":\"F1200\",\"evidence\":\"80 turns per coil\"},{\"name\":\"sweep_mm\",\"value\":900,\"unit\":\"mm\",\"variant\":\"F900\",\"evidence\":\"900 mm\"},{\"name\":\"turns_per_coil\",\"value\":70,\"unit\":\"unit\",\"variant\":\"F900\",\"evidence\":\"70 turns per coil\"}]}",
     "message": {
       "role": "assistant",
-      "content": "{\"archetype_guess\":\"ceiling_fan\",\"keywords\":[\"BLDC\",\"ceiling\",\"fan\",\"golden\",\"G2\",\"1200mm\",\"900mm\",\"remote\",\"controller\",\"blades\"],\"params\":[{\"name\":\"sweep_mm\",\"value\":1200,\"unit\":\"mm\",\"variant\":\"F1200\",\"evidence\":\"1200 mm and 900 mm sweeps\",\"page\":null},{\"name\":\"turns_per_coil\",\"value\":80,\"unit\":\"unit\",\"variant\":\"F1200\",\"evidence\":\"80 turns per coil\",\"page\":null},{\"name\":\"sweep_mm\",\"value\":900,\"unit\":\"mm\",\"variant\":\"F900\",\"evidence\":\"1200 mm and 900 mm sweeps\",\"page\":null},{\"name\":\"turns_per_coil\",\"value\":70,\"unit\":\"unit\",\"variant\":\"F900\",\"evidence\":\"70 turns per coil\",\"page\":null}]}"
+      "content": "{\"archetype_guess\":\"ceiling_fan\",\"keywords\":[\"BLDC\",\"ceiling\",\"fan\",\"golden\",\"G2\",\"remote\",\"controller\",\"PCBA\",\"die-cast\",\"rotor\"],\"params\":[{\"name\":\"sweep_mm\",\"value\":1200,\"unit\":\"mm\",\"variant\":\"F1200\",\"evidence\":\"1200 mm\"},{\"name\":\"turns_per_coil\",\"value\":80,\"unit\":\"unit\",\"variant\":\"F1200\",\"evidence\":\"80 turns per coil\"},{\"name\":\"sweep_mm\",\"value\":900,\"unit\":\"mm\",\"variant\":\"F900\",\"evidence\":\"900 mm\"},{\"name\":\"turns_per_coil\",\"value\":70,\"unit\":\"unit\",\"variant\":\"F900\",\"evidence\":\"70 turns per coil\"}]}"
     }
   },
   "usage": {
     "prompt_tokens": 866,
-    "completion_tokens": 1873
+    "completion_tokens": 1078
   }
 }

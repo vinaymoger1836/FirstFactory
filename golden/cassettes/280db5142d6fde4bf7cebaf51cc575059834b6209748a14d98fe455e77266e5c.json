@@ -3,7 +3,7 @@
   "role": "reasoner",
   "model": "groq/openai/gpt-oss-120b",
   "schema": "tools:ProposerDraft",
-  "recorded_at": "2026-11-16T12:04:16+00:00",
+  "recorded_at": "2026-11-16T12:14:37+00:00",
   "request": {
     "messages": [
       {
@@ -23,11 +23,11 @@
       "content": "",
       "tool_calls": [
         {
-          "id": "fc_6b556da7-1343-438c-86e1-f98a2161011c",
+          "id": "fc_2bca1d65-2d52-4e16-8c00-de94cd58b416",
           "type": "function",
           "function": {
-            "name": "submit_draft",
-            "arguments": "{\"cad_links\":[{\"cad_part\":\"shell\",\"ref\":\"enclosure_top\"},{\"cad_part\":\"shell\",\"ref\":\"enclosure_bottom\"},{\"cad_part\":\"pcba\",\"ref\":\"pcba\"},{\"cad_part\":\"cell\",\"ref\":\"cells\"}],\"classify\":[],\"extra_lines\":[{\"class\":\"electronic_components\",\"kind\":\"part\",\"name\":\"USB‑C connector\",\"qty\":{\"PB10K\":1,\"PB20K\":1},\"ref\":\"usb_c_connector\",\"uom\":\"unit\"}],\"materials\":[{\"material\":\"pc_abs\",\"ref\":\"enclosure_top\"},{\"material\":\"pc_abs\",\"ref\":\"enclosure_bottom\"},{\"material\":\"fr4_pcba\",\"ref\":\"pcba\"},{\"material\":\"li_ion_cylindrical\",\"ref\":\"cells\"}],\"notes\":[\"All skeleton lines are retained as the product description does not exclude any listed component.\"],\"skeleton\":[{\"keep\":true,\"ref\":\"cells\"},{\"keep\":true,\"ref\":\"nickel\"},{\"keep\":true,\"ref\":\"fish_paper\"},{\"keep\":true,\"ref\":\"kapton\"},{\"keep\":true,\"ref\":\"foam\"},{\"keep\":true,\"ref\":\"pcba\"},{\"keep\":true,\"ref\":\"solder\"},{\"keep\":true,\"ref\":\"flux\"},{\"keep\":true,\"ref\":\"enclosure_top\"},{\"keep\":true,\"ref\":\"enclosure_bottom\"},{\"keep\":true,\"ref\":\"light_pipe\"},{\"keep\":true,\"ref\":\"button\"},{\"keep\":true,\"ref\":\"screws\"},{\"keep\":true,\"ref\":\"adhesive\"},{\"keep\":true,\"ref\":\"rating_label\"},{\"keep\":true,\"ref\":\"qr_label\"},{\"keep\":true,\"ref\":\"manual\"},{\"keep\":true,\"ref\":\"unit_box\"},{\"keep\":true,\"ref\":\"shipper\"}]}"
+            "name": "bom_skeleton",
+            "arguments": "{}"
           }
         }
       ]
@@ -35,6 +35,6 @@
   },
   "usage": {
     "prompt_tokens": 2272,
-    "completion_tokens": 1493
+    "completion_tokens": 1043
   }
 }

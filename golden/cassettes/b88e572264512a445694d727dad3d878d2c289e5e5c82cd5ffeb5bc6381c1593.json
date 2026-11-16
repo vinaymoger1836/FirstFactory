@@ -3,7 +3,7 @@
   "role": "extractor",
   "model": "groq/openai/gpt-oss-20b",
   "schema": "TextExtraction",
-  "recorded_at": "2026-11-16T12:04:03+00:00",
+  "recorded_at": "2026-11-16T12:14:13+00:00",
   "request": {
     "messages": [
       {
@@ -17,14 +17,14 @@
     ]
   },
   "response": {
-    "content": "{\"archetype_guess\":\"power_bank\",\"keywords\":[\"power bank\",\"golden G1\",\"21700 cells\",\"USB-C\",\"USB-A\",\"BMS\",\"PCBA\",\"enclosure\"],\"params\":[{\"name\":\"cells_per_pack\",\"value\":2,\"unit\":null,\"variant\":\"PB10K\",\"evidence\":\"2 × 21700 cells\",\"page\":null},{\"name\":\"capacity_mah\",\"value\":10000,\"unit\":\"mAh\",\"variant\":\"PB10K\",\"evidence\":\"Power bank 10,000 mAh\",\"page\":null},{\"name\":\"n_screws\",\"value\":4,\"unit\":null,\"variant\":\"PB10K\",\"evidence\":\"4 screws\",\"page\":null},{\"name\":\"cells_per_pack\",\"value\":4,\"unit\":null,\"variant\":\"PB20K\",\"evidence\":\"4 × 21700 cells\",\"page\":null},{\"name\":\"capacity_mah\",\"value\":20000,\"unit\":\"mAh\",\"variant\":\"PB20K\",\"evidence\":\"Power bank 20,000 mAh\",\"page\":null},{\"name\":\"n_screws\",\"value\":6,\"unit\":null,\"variant\":\"PB20K\",\"evidence\":\"6 screws\",\"page\":null}]}",
+    "content": "{\"archetype_guess\":\"power_bank\",\"keywords\":[\"power bank\",\"golden G1\",\"21700 cells\",\"USB-C\",\"USB-A\",\"BMS\",\"PCBA\",\"enclosure\",\"screws\"],\"params\":[{\"name\":\"cells_per_pack\",\"value\":2,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"2 × 21700 cells\",\"page\":null},{\"name\":\"n_screws\",\"value\":4,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"4 screws\",\"page\":null},{\"name\":\"capacity_mah\",\"value\":10000,\"unit\":\"mAh\",\"variant\":\"PB10K\",\"evidence\":\"Power bank 10,000 mAh\",\"page\":null},{\"name\":\"cells_per_pack\",\"value\":4,\"unit\":\"unit\",\"variant\":\"PB20K\",\"evidence\":\"4 × 21700 cells\",\"page\":null},{\"name\":\"n_screws\",\"value\":6,\"unit\":\"unit\",\"variant\":\"PB20K\",\"evidence\":\"6 screws\",\"page\":null},{\"name\":\"capacity_mah\",\"value\":20000,\"unit\":\"mAh\",\"variant\":\"PB20K\",\"evidence\":\"Power bank 20,000 mAh\",\"page\":null}]}",
     "message": {
       "role": "assistant",
-      "content": "{\"archetype_guess\":\"power_bank\",\"keywords\":[\"power bank\",\"golden G1\",\"21700 cells\",\"USB-C\",\"USB-A\",\"BMS\",\"PCBA\",\"enclosure\"],\"params\":[{\"name\":\"cells_per_pack\",\"value\":2,\"unit\":null,\"variant\":\"PB10K\",\"evidence\":\"2 × 21700 cells\",\"page\":null},{\"name\":\"capacity_mah\",\"value\":10000,\"unit\":\"mAh\",\"variant\":\"PB10K\",\"evidence\":\"Power bank 10,000 mAh\",\"page\":null},{\"name\":\"n_screws\",\"value\":4,\"unit\":null,\"variant\":\"PB10K\",\"evidence\":\"4 screws\",\"page\":null},{\"name\":\"cells_per_pack\",\"value\":4,\"unit\":null,\"variant\":\"PB20K\",\"evidence\":\"4 × 21700 cells\",\"page\":null},{\"name\":\"capacity_mah\",\"value\":20000,\"unit\":\"mAh\",\"variant\":\"PB20K\",\"evidence\":\"Power bank 20,000 mAh\",\"page\":null},{\"name\":\"n_screws\",\"value\":6,\"unit\":null,\"variant\":\"PB20K\",\"evidence\":\"6 screws\",\"page\":null}]}"
+      "content": "{\"archetype_guess\":\"power_bank\",\"keywords\":[\"power bank\",\"golden G1\",\"21700 cells\",\"USB-C\",\"USB-A\",\"BMS\",\"PCBA\",\"enclosure\",\"screws\"],\"params\":[{\"name\":\"cells_per_pack\",\"value\":2,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"2 × 21700 cells\",\"page\":null},{\"name\":\"n_screws\",\"value\":4,\"unit\":\"unit\",\"variant\":\"PB10K\",\"evidence\":\"4 screws\",\"page\":null},{\"name\":\"capacity_mah\",\"value\":10000,\"unit\":\"mAh\",\"variant\":\"PB10K\",\"evidence\":\"Power bank 10,000 mAh\",\"page\":null},{\"name\":\"cells_per_pack\",\"value\":4,\"unit\":\"unit\",\"variant\":\"PB20K\",\"evidence\":\"4 × 21700 cells\",\"page\":null},{\"name\":\"n_screws\",\"value\":6,\"unit\":\"unit\",\"variant\":\"PB20K\",\"evidence\":\"6 screws\",\"page\":null},{\"name\":\"capacity_mah\",\"value\":20000,\"unit\":\"mAh\",\"variant\":\"PB20K\",\"evidence\":\"Power bank 20,000 mAh\",\"page\":null}]}"
     }
   },
   "usage": {
     "prompt_tokens": 862,
-    "completion_tokens": 1128
+    "completion_tokens": 1081
   }
 }

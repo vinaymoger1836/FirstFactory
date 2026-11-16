@@ -1,0 +1,30 @@
+{
+  "key": "2dd8c34f9a0e4b5b30052a72c80e192cc1d6f63fc7aa584808617aa98f6f4b7d",
+  "role": "writer",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "SummaryOut",
+  "recorded_at": "2026-11-16T12:13:32+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"summary\":{\"description\":\"Two to four plain sentences for the user.\",\"title\":\"Summary\",\"type\":\"string\"},\"highlights\":{\"items\":{\"type\":\"string\"},\"maxItems\":5,\"title\":\"Highlights\",\"type\":\"array\"}},\"required\":[\"summary\"],\"title\":\"SummaryOut\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Write a short summary for a first-time factory founder of what intake found about their product. Plain words, no numbers that are not in the facts, no advice beyond the open questions. Highlights: up to 5 short items.\n\nFACTS:\nProduct: BLDC ceiling fan (golden G2) (mechanical)\nProduct type: ceiling_fan (from user)\nVariant F1200: 12 parameters (10 from library, 2 from llm)\nVariant F900: 12 parameters (10 from library, 2 from llm)\nParts found in files: 5; assembly trees: 1\nOpen questions: 0"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"summary\":\"The intake identified a BLDC ceiling fan called golden G2, classified as a ceiling_fan. Two variants, F1200 and F900, were found, each with twelve parameters derived from the library and the language model. The files contain five parts and a single assembly tree. No open questions remain.\",\"highlights\":[\"BLDC ceiling fan (golden G2) identified\",\"Variants F1200 and F900 each have twelve parameters\",\"Five parts located in files\",\"One assembly tree defined\",\"No open questions remain\"]}",
+    "message": {
+      "role": "assistant",
+      "content": "{\"summary\":\"The intake identified a BLDC ceiling fan called golden G2, classified as a ceiling_fan. Two variants, F1200 and F900, were found, each with twelve parameters derived from the library and the language model. The files contain five parts and a single assembly tree. No open questions remain.\",\"highlights\":[\"BLDC ceiling fan (golden G2) identified\",\"Variants F1200 and F900 each have twelve parameters\",\"Five parts located in files\",\"One assembly tree defined\",\"No open questions remain\"]}"
+    }
+  },
+  "usage": {
+    "prompt_tokens": 415,
+    "completion_tokens": 507
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "key": "694136627cd6f6d5cd3adce3268d794955ba82dfdbd06e5725b07dc6543a37e5",
+  "role": "writer",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "SummaryOut",
+  "recorded_at": "2026-11-16T12:12:32+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"summary\":{\"title\":\"Summary\",\"type\":\"string\"},\"highlights\":{\"items\":{\"type\":\"string\"},\"maxItems\":5,\"title\":\"Highlights\",\"type\":\"array\"}},\"required\":[\"summary\"],\"title\":\"SummaryOut\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Write a short summary of this bill of materials for a first-time factory founder: what it contains, what still needs their decision. Plain words; no numbers that are not in the facts. Highlights: up to 5 short items.\n\nFACTS:\nCase: drafted from CAD and the product type (no BoM file)\nProposer: AI (reasoner)\nLines: 27; suggestions waiting: 0; open questions: 0; make/buy decisions to confirm: 0\nTotal PB10K: 753 INR (catalog estimates)\nTotal PB20K: 1255 INR (catalog estimates)"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"summary\":\"The bill of materials is based on a CAD draft and defines the product type, containing 27 line items. All suggestions, open questions, and make/buy decisions have already been resolved, so no further decisions are pending. Cost estimates from the catalog are 753 INR for PB10K and 1255 INR for PB20K.\",\"highlights\":[\"Based on CAD draft\",\"27 line items\",\"No pending decisions\",\"Catalog cost for PB10K: 753 INR\",\"Catalog cost for PB20K: 1255 INR\"]}",
+    "message": {
+      "role": "assistant",
+      "content": "{\"summary\":\"The bill of materials is based on a CAD draft and defines the product type, containing 27 line items. All suggestions, open questions, and make/buy decisions have already been resolved, so no further decisions are pending. Cost estimates from the catalog are 753 INR for PB10K and 1255 INR for PB20K.\",\"highlights\":[\"Based on CAD draft\",\"27 line items\",\"No pending decisions\",\"Catalog cost for PB10K: 753 INR\",\"Catalog cost for PB20K: 1255 INR\"]}"
+    }
+  },
+  "usage": {
+    "prompt_tokens": 387,
+    "completion_tokens": 467
+  }
+}

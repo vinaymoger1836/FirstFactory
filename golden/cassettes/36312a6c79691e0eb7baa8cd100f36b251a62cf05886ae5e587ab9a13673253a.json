@@ -1,0 +1,30 @@
+{
+  "key": "36312a6c79691e0eb7baa8cd100f36b251a62cf05886ae5e587ab9a13673253a",
+  "role": "writer",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "SummaryOut",
+  "recorded_at": "2026-11-16T12:14:09+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"summary\":{\"title\":\"Summary\",\"type\":\"string\"},\"highlights\":{\"items\":{\"type\":\"string\"},\"maxItems\":5,\"title\":\"Highlights\",\"type\":\"array\"}},\"required\":[\"summary\"],\"title\":\"SummaryOut\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Write a short summary of this bill of materials for a first-time factory founder: what it contains, what still needs their decision. Plain words; no numbers that are not in the facts. Highlights: up to 5 short items.\n\nFACTS:\nCase: drafted from CAD and the product type (no BoM file)\nProposer: AI (reasoner)\nLines: 21; suggestions waiting: 0; open questions: 0; make/buy decisions to confirm: 0\nTotal F1200: 573 INR (catalog estimates)\nTotal F900: 496 INR (catalog estimates)"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"summary\":\"The bill of materials is a CAD‑derived list with twenty‑one line items, showing catalog‑based cost estimates for the F1200 and F900 categories, and it has no pending suggestions, open questions, or make‑or‑buy decisions to resolve.\",\"highlights\":[\"Drafted directly from CAD\",\"Twenty‑one line items\",\"Cost estimates for F1200 and F900\",\"No pending suggestions or questions\",\"No make‑or‑buy decisions required\"]}",
+    "message": {
+      "role": "assistant",
+      "content": "{\"summary\":\"The bill of materials is a CAD‑derived list with twenty‑one line items, showing catalog‑based cost estimates for the F1200 and F900 categories, and it has no pending suggestions, open questions, or make‑or‑buy decisions to resolve.\",\"highlights\":[\"Drafted directly from CAD\",\"Twenty‑one line items\",\"Cost estimates for F1200 and F900\",\"No pending suggestions or questions\",\"No make‑or‑buy decisions required\"]}"
+    }
+  },
+  "usage": {
+    "prompt_tokens": 385,
+    "completion_tokens": 514
+  }
+}

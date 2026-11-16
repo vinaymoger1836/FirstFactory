@@ -3,7 +3,7 @@
   "role": "writer",
   "model": "groq/openai/gpt-oss-120b",
   "schema": "SummaryOut",
-  "recorded_at": "2026-11-16T12:03:55+00:00",
+  "recorded_at": "2026-11-16T12:11:05+00:00",
   "request": {
     "messages": [
       {
@@ -17,14 +17,14 @@
     ]
   },
   "response": {
-    "content": "{\"summary\":\"The bill of materials includes the case and components identified by the rules engine, covering 24 lines with catalog price estimates for PB10K and PB20K. All suggested items are already listed, and there are no pending suggestions, open questions, or make‑or‑buy decisions.\",\"highlights\":[\"Case built from BoM file\",\"24 component lines\",\"Catalog price for PB10K: 753 INR\",\"Catalog price for PB20K: 1255 INR\",\"No pending decisions\"]}",
+    "content": "{\"summary\":\"The bill of materials includes the components listed in the BoM file, with 24 lines and catalog price estimates of 753 INR for PB10K and 1255 INR for PB20K. The rules engine generated the proposal, and there are no pending suggestions, open questions, or make/buy decisions to confirm.\",\"highlights\":[\"24 component lines\",\"Catalog price: 753 INR for PB10K\",\"Catalog price: 1255 INR for PB20K\",\"No pending suggestions or questions\",\"All make/buy decisions already confirmed\"]}",
     "message": {
       "role": "assistant",
-      "content": "{\"summary\":\"The bill of materials includes the case and components identified by the rules engine, covering 24 lines with catalog price estimates for PB10K and PB20K. All suggested items are already listed, and there are no pending suggestions, open questions, or make‑or‑buy decisions.\",\"highlights\":[\"Case built from BoM file\",\"24 component lines\",\"Catalog price for PB10K: 753 INR\",\"Catalog price for PB20K: 1255 INR\",\"No pending decisions\"]}"
+      "content": "{\"summary\":\"The bill of materials includes the components listed in the BoM file, with 24 lines and catalog price estimates of 753 INR for PB10K and 1255 INR for PB20K. The rules engine generated the proposal, and there are no pending suggestions, open questions, or make/buy decisions to confirm.\",\"highlights\":[\"24 component lines\",\"Catalog price: 753 INR for PB10K\",\"Catalog price: 1255 INR for PB20K\",\"No pending suggestions or questions\",\"All make/buy decisions already confirmed\"]}"
     }
   },
   "usage": {
     "prompt_tokens": 383,
-    "completion_tokens": 419
+    "completion_tokens": 471
   }
 }

@@ -258,6 +258,11 @@ def p3_checks(base: str, psql: Callable[[str], str], record: Record, mode: str) 
                 s == 422 and "user_changed" in json.dumps(body),
                 str(body)[:140],
             )
+            wait_for(
+                api,
+                lambda st: all(x["status"] == "approved" for k, x in st.items() if k != "intake"),
+                240,
+            )
             # downstream: editing the approved BoM (a recorded user edit) marks downstream stale
             s, body = api.call(
                 "POST",

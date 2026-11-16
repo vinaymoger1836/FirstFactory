@@ -1,0 +1,30 @@
+{
+  "key": "29719aa7fb90a6850bcdc20ca06783f9cadfda25628f64ddd80d77f93af5f111",
+  "role": "writer",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "SummaryOut",
+  "recorded_at": "2026-11-16T12:14:02+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"summary\":{\"title\":\"Summary\",\"type\":\"string\"},\"highlights\":{\"items\":{\"type\":\"string\"},\"maxItems\":5,\"title\":\"Highlights\",\"type\":\"array\"}},\"required\":[\"summary\"],\"title\":\"SummaryOut\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Write a short summary of this bill of materials for a first-time factory founder: what it contains, what still needs their decision. Plain words; no numbers that are not in the facts. Highlights: up to 5 short items.\n\nFACTS:\nCase: drafted from CAD and the product type (no BoM file)\nProposer: AI (reasoner)\nLines: 21; suggestions waiting: 16; open questions: 0; make/buy decisions to confirm: 3"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"summary\":\"The bill of materials is a CAD‑derived draft that lists the product type but does not include a formal BoM file. It currently has twenty‑one lines, with sixteen suggested items awaiting approval and no open questions. The founder still needs to confirm three make‑or‑buy decisions.\",\"highlights\":[\"Draft created from CAD\",\"No formal BoM file\",\"Sixteen suggestions pending\",\"Three make/buy decisions to confirm\"]}",
+    "message": {
+      "role": "assistant",
+      "content": "{\"summary\":\"The bill of materials is a CAD‑derived draft that lists the product type but does not include a formal BoM file. It currently has twenty‑one lines, with sixteen suggested items awaiting approval and no open questions. The founder still needs to confirm three make‑or‑buy decisions.\",\"highlights\":[\"Draft created from CAD\",\"No formal BoM file\",\"Sixteen suggestions pending\",\"Three make/buy decisions to confirm\"]}"
+    }
+  },
+  "usage": {
+    "prompt_tokens": 361,
+    "completion_tokens": 431
+  }
+}

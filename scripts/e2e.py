@@ -93,6 +93,7 @@ def env_value(key: str, default: str) -> str:
 
 
 def record(name: str, ok: bool, detail: str = "") -> bool:
+    ok = bool(ok)
     results.append({"check": name, "ok": ok, "detail": detail})
     mark = "PASS" if ok else "FAIL"
     print(f"  [{mark}] {name}" + (f" — {detail}" if detail else ""), flush=True)
