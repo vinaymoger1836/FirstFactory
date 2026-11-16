@@ -10,12 +10,15 @@ from fl_domain.base import Code, DomainModel, LocalId
 from fl_domain.prov import Source
 
 __all__ = [
+    "STAGE_DEPS",
     "STAGE_ORDER",
     "Assumption",
     "CatalogRef",
     "PriceRange",
     "Range",
     "StageKey",
+    "downstream_closure",
+    "upstream_closure",
 ]
 
 StageKey = Literal[
@@ -49,6 +52,70 @@ STAGE_ORDER: tuple[StageKey, ...] = (
     "reports",
     "vendors",
 )
+
+# Direct dependencies of each stage (docs/02 §1). The stage graph is a DAG; the parent
+# LangGraph graph and stale propagation are both built from this map.
+STAGE_DEPS: dict[StageKey, tuple[StageKey, ...]] = {
+    "intake": (),
+    "bom": ("intake",),
+    "routing": ("bom",),
+    "quality": ("routing",),
+    "capacity": ("routing", "quality"),
+    "inventory": ("bom", "capacity"),
+    "workorders_shifts": ("routing", "capacity"),
+    "utilities": ("capacity", "inventory", "workorders_shifts"),
+    "layout": ("quality", "capacity", "inventory", "workorders_shifts", "utilities"),
+    "simulation": ("capacity", "workorders_shifts", "layout"),
+    "finance": (
+        "bom",
+        "capacity",
+        "inventory",
+        "workorders_shifts",
+        "utilities",
+        "layout",
+        "vendors",
+    ),
+    "reports": (
+        "intake",
+        "bom",
+        "routing",
+        "quality",
+        "capacity",
+        "inventory",
+        "workorders_shifts",
+        "utilities",
+        "layout",
+        "simulation",
+        "finance",
+        "vendors",
+    ),
+    "vendors": ("bom",),
+}
+
+
+def downstream_closure(stage: StageKey) -> tuple[StageKey, ...]:
+    """Every stage that depends on ``stage`` directly or transitively, in STAGE_ORDER."""
+    found: set[StageKey] = set()
+    frontier: list[StageKey] = [stage]
+    while frontier:
+        cur = frontier.pop()
+        for s, deps in STAGE_DEPS.items():
+            if cur in deps and s not in found:
+                found.add(s)
+                frontier.append(s)
+    return tuple(s for s in STAGE_ORDER if s in found)
+
+
+def upstream_closure(stage: StageKey) -> tuple[StageKey, ...]:
+    """Every stage ``stage`` depends on, directly or transitively, in STAGE_ORDER."""
+    found: set[StageKey] = set()
+    frontier: list[StageKey] = [stage]
+    while frontier:
+        for d in STAGE_DEPS[frontier.pop()]:
+            if d not in found:
+                found.add(d)
+                frontier.append(d)
+    return tuple(s for s in STAGE_ORDER if s in found)
 
 
 class CatalogRef(DomainModel):

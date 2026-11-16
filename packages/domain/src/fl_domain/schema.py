@@ -36,7 +36,7 @@ from fl_domain.library.catalog import (
 from fl_domain.library.pack import Pack, PackValue
 from fl_domain.project import ChangeSet, Project, Question, StageRun
 
-__all__ = ["SCHEMA_ID", "build_schema", "top_level_models"]
+__all__ = ["SCHEMA_ID", "build_model_schema", "build_schema", "top_level_models"]
 
 SCHEMA_ID = "https://factory-layout.local/schema/domain.json"
 Mode = Literal["validation", "serialization"]
@@ -138,18 +138,50 @@ def build_schema(mode: Mode = "serialization") -> dict[str, Any]:
     }
 
 
+def build_model_schema(name: str, mode: Mode = "validation") -> dict[str, Any]:
+    """Schema of one top-level model with only the definitions it reaches (wizard input)."""
+    full = build_schema(mode)
+    defs: dict[str, Any] = full["$defs"]
+    root_ref = full["properties"][name]["$ref"].rsplit("/", 1)[-1]
+    keep: set[str] = set()
+
+    def walk(node: Any) -> None:
+        if isinstance(node, dict):
+            ref = node.get("$ref")
+            if isinstance(ref, str) and ref.startswith("#/$defs/"):
+                key = ref.rsplit("/", 1)[-1]
+                if key not in keep:
+                    keep.add(key)
+                    walk(defs[key])
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk({"$ref": f"#/$defs/{root_ref}"})
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": f"{SCHEMA_ID}#{name}",
+        "$ref": f"#/$defs/{root_ref}",
+        "$defs": {k: defs[k] for k in sorted(keep)},
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", type=Path, help="Write to this file instead of stdout.")
     ap.add_argument("--mode", choices=["validation", "serialization"], default="serialization")
+    ap.add_argument("--model", help="Only this top-level model (e.g. ProductTemplate).")
     args = ap.parse_args(argv)
-    text = json.dumps(build_schema(args.mode), indent=2, sort_keys=True, ensure_ascii=False)
+    schema = build_model_schema(args.model, args.mode) if args.model else build_schema(args.mode)
+    text = json.dumps(schema, indent=2, sort_keys=True, ensure_ascii=False)
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(text + "\n", encoding="utf-8")
         sys.stderr.write(f"fl_domain.schema: wrote {args.out}\n")
     else:
-        sys.stdout.write(text + "\n")
+        sys.stdout.buffer.write((text + "\n").encode("utf-8"))
     return 0
 
 

@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from fl_domain.base import DomainModel, LocalId
+from fl_domain.base import DomainModel, Issue, LocalId
 from fl_domain.common import Assumption, StageKey
 
 __all__ = [
@@ -16,13 +16,22 @@ __all__ = [
     "ChangeSet",
     "Project",
     "Question",
+    "QuestionKind",
     "StageRun",
     "StageStatus",
 ]
 
 StageStatus = Literal[
-    "pending", "running", "awaiting_approval", "approved", "rejected", "stale", "failed"
+    "pending",
+    "running",
+    "awaiting_approval",
+    "approved",
+    "rejected",
+    "stale",
+    "failed",
+    "paused",  # token budget or provider quota exhausted; resumable (docs/02 §7, P2)
 ]
+QuestionKind = Literal["choice", "number", "text", "file"]
 
 
 class Project(DomainModel):
@@ -42,8 +51,10 @@ class Question(DomainModel):
 
     id: LocalId
     stage: StageKey
+    kind: QuestionKind = "choice"
     text: str
     path: str | None = None
+    unit: str | None = None
     options: list[str] = Field(default_factory=list)
     candidates: list[dict[str, Any]] = Field(
         default_factory=list, description="Conflicting values with their sources."
@@ -68,12 +79,24 @@ class StageRun(DomainModel):
     summary: str = ""
     assumptions: list[Assumption] = Field(default_factory=list)
     questions: list[Question] = Field(default_factory=list)
+    issues: list[Issue] = Field(
+        default_factory=list, description="Validator findings (errors block approval)."
+    )
+    notices: list[str] = Field(
+        default_factory=list, description="Plain-language notices (e.g. photo intake skipped)."
+    )
+    placeholder: bool = Field(
+        default=False, description="Stage not built yet; run written by a stub (P2)."
+    )
+    tokens_used: int = Field(default=0, ge=0)
+    token_budget: int = Field(default=0, ge=0)
     created_at: datetime
 
 
 class ChangeOp(DomainModel):
     """One edit inside a change set: JSON-pointer path, old and new value."""
 
+    op: Literal["replace", "add", "remove"] = "replace"
     path: str
     old: Any = None
     new: Any = None
