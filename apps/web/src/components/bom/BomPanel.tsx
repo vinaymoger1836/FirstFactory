@@ -426,7 +426,11 @@ function Review({
                             <code>{r.line.child}</code>
                           </button>
                           <div>{item?.name}</div>
-                          {r.line.reason && <div className="small muted">{r.line.reason}</div>}
+                          {r.line.reason && (
+                            <div className="small muted bom-reason" title={r.line.reason}>
+                              {r.line.reason}
+                            </div>
+                          )}
                         </td>
                         <td className="small">{r.line.commodity_class ?? "—"}</td>
                         {bom.variants.map((v) => (

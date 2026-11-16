@@ -4,7 +4,7 @@ Generated at e2e time into ``golden/samples/out/`` (git-ignored; owner's rule 1)
 
     step  → pb10k.step (5 named parts, as in P0 spike a), fan1200.step   [cad-worker image]
     pdf   → pb10k-datasheet.pdf (states 9,000 mAh: conflicts with the wizard's 10,000)  [worker image]
-    host  → pb-bom.csv (from golden/power_bank/bom.yaml), pb-photo.png    [host: uv run]
+    host  → pb-bom.csv, fan-bom.csv (golden BoMs) and *-bom-partial.csv (G8 b), pb-photo.png [host]
 
 Usage: python golden/samples/make_samples.py {step|pdf|host} OUT_DIR
 """
@@ -81,27 +81,37 @@ def make_host(out: Path) -> None:
     import yaml
     from PIL import Image, ImageDraw
 
-    bom = yaml.safe_load((HERE.parent / "power_bank" / "bom.yaml").read_text(encoding="utf-8"))
-    items = {i["part_no"]: i for i in bom["items"]}
-    variants = ["PB10K", "PB20K"]
-    qty: dict[str, dict[str, float]] = {}
-    uom: dict[str, str] = {}
-    for line in bom["mbom"]:
-        child = line["child"]
-        if items[child]["kind"] in ("assembly", "product"):
-            continue
-        for v in variants:
-            if line.get("variant") in (None, v):
-                qty.setdefault(child, {}).setdefault(v, 0.0)
-                qty[child][v] += float(line["qty"])
-        uom[child] = line.get("uom", "pcs")
-    with (out / "pb-bom.csv").open("w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        w.writerow(["Part No", "Description", "Qty PB10K", "Qty PB20K", "UoM"])
-        for pn in sorted(qty):
-            w.writerow(
-                [pn, items[pn]["name"], *(f"{qty[pn].get(v, 0):g}" for v in variants), uom[pn]]
-            )
+    # G8 BoM files: the golden BoM, and a "partial" one without the label, user-manual,
+    # carton and solder-consumable lines (docs/14 §4 G8 b).
+    removed = {"labels", "user_manual", "packaging_carton", "consumable_solder"}
+    for case, prefix, variants in (
+        ("power_bank", "pb", ["PB10K", "PB20K"]),
+        ("ceiling_fan", "fan", ["F1200", "F900"]),
+    ):
+        bom = yaml.safe_load((HERE.parent / case / "bom.yaml").read_text(encoding="utf-8"))
+        items = {i["part_no"]: i for i in bom["items"]}
+        qty: dict[str, dict[str, float]] = {}
+        uom: dict[str, str] = {}
+        for line in bom["mbom"]:
+            child = line["child"]
+            if items[child]["kind"] in ("assembly", "product"):
+                continue
+            for v in variants:
+                if line.get("variant") in (None, v):
+                    qty.setdefault(child, {}).setdefault(v, 0.0)
+                    qty[child][v] += float(line["qty"])
+            uom[child] = line.get("uom", "pcs")
+        for suffix, keep in (("", lambda _pn: True),
+                             ("-partial", lambda pn: items[pn].get("commodity_class") not in removed)):
+            with (out / f"{prefix}-bom{suffix}.csv").open("w", newline="", encoding="utf-8") as f:
+                w = csv.writer(f)
+                w.writerow(["Part No", "Description", *(f"Qty {v}" for v in variants), "UoM"])
+                for pn in sorted(qty):
+                    if keep(pn):
+                        w.writerow(
+                            [pn, items[pn]["name"], *(f"{qty[pn].get(v, 0):g}" for v in variants),
+                             uom[pn]]
+                        )
 
     # A schematic "photo": a dark power bank with four LEDs and two ports.
     im = Image.new("RGB", (640, 400), (236, 238, 242))

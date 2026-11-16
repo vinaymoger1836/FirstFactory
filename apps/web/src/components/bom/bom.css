@@ -142,13 +142,16 @@
 .review-bom__grid {
   display: grid;
   gap: var(--space-4);
-  grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
-@media (max-width: 1000px) {
+@media (min-width: 1500px) {
   .review-bom__grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
   }
+}
+.review-bom__grid .glb__canvas {
+  height: 16rem;
 }
 .review-bom__grid .glb {
   position: sticky;
@@ -199,6 +202,17 @@
 /* Table */
 .bom-table td {
   vertical-align: middle;
+}
+.bom-table td:nth-child(2) {
+  min-width: 13rem;
+}
+.bom-reason {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 22rem;
 }
 .bom-table tr[data-review="suggested"] {
   background: color-mix(in srgb, var(--c-warning-soft) 55%, transparent);
