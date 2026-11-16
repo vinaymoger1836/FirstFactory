@@ -25,9 +25,6 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command, interrupt
 from pydantic import BaseModel
 
-from fl_domain.base import Issue
-from fl_domain.common import StageKey
-from fl_domain.library.catalog import Catalog
 from fl_agents.lifecycle import (
     approve_run,
     assumptions_for,
@@ -38,6 +35,9 @@ from fl_agents.llm.errors import LlmError, PauseRequired
 from fl_agents.llm.router import CallCtx, Role
 from fl_agents.pipeline.runtime import Runtime, runtime
 from fl_agents.store.repo import Row
+from fl_domain.base import Issue
+from fl_domain.common import StageKey
+from fl_domain.library.catalog import Catalog
 
 __all__ = [
     "MAX_REPAIRS",
@@ -133,7 +133,10 @@ class StageCtx:
 
     async def emit(self, kind: str, payload: dict[str, Any]) -> None:
         await self.rt.store.emit(
-            self.project_id, kind, {"stage": self.stage, **payload}, stage=self.stage,
+            self.project_id,
+            kind,
+            {"stage": self.stage, **payload},
+            stage=self.stage,
             run_id=self.run_id,
         )
 
@@ -176,7 +179,8 @@ async def _ctx(spec: StageSpec, state: StageState) -> StageCtx:
     rt = runtime()
     project = await rt.store.project(UUID(state["project_id"]))
     run = await rt.store.run(UUID(str(state["run_id"])))
-    assert project is not None and run is not None
+    assert project is not None
+    assert run is not None
     return StageCtx(rt=rt, stage=spec.key, project=project, run=run)
 
 
@@ -207,10 +211,7 @@ async def _fail(ctx: StageCtx, issues: list[Issue]) -> Command[Any]:
     return Command(goto=END)
 
 
-R = TypeVar("R")
-
-
-async def _pausable(
+async def _pausable[R](
     ctx: StageCtx, node: str, fn: Callable[[], Awaitable[R]]
 ) -> tuple[R | None, Command[Any] | None]:
     """Run a hook; on budget/quota exhaustion pause, interrupt, and retry the node."""
@@ -273,7 +274,10 @@ def build_stage_graph(spec: StageSpec) -> CompiledStateGraph[Any, Any, Any, Any]
         latest = await rt.store.latest_run(pid, stage)
         if ok and ok["inputs_hash"] == h and (latest is None or latest["status"] != "stale"):
             await rt.store.emit(
-                pid, "skipped", {"stage": stage, "version": ok["version"]}, stage=stage,
+                pid,
+                "skipped",
+                {"stage": stage, "version": ok["version"]},
+                stage=stage,
                 run_id=ok["id"],
             )
             return Command(goto=END, update={"run_id": str(ok["id"])})
@@ -340,7 +344,9 @@ def build_stage_graph(spec: StageSpec) -> CompiledStateGraph[Any, Any, Any, Any]
         data = ctx.work.get("_draft") or {}
         normalised, issues = await validate_artifact_dict(ctx.rt.store, ctx.project, stage, data)
         errors = [i for i in issues if i.severity == "error"]
-        await ctx.rt.store.update_run(ctx.run_id, issues=[i.model_dump(mode="json") for i in issues])
+        await ctx.rt.store.update_run(
+            ctx.run_id, issues=[i.model_dump(mode="json") for i in issues]
+        )
         if normalised is not None and not errors:
             await ctx.save_work({"_valid": normalised})
             return Command(goto="compute")
@@ -370,7 +376,9 @@ def build_stage_graph(spec: StageSpec) -> CompiledStateGraph[Any, Any, Any, Any]
         except Exception as e:  # engine errors fail the stage with the message shown
             log.exception("compute failed for %s", stage)
             return await _fail(ctx, [Issue(code="compute", message=str(e))])
-        normalised, issues = await validate_artifact_dict(ctx.rt.store, ctx.project, stage, artifact)
+        normalised, issues = await validate_artifact_dict(
+            ctx.rt.store, ctx.project, stage, artifact
+        )
         errors = [i for i in issues if i.severity == "error"]
         if normalised is None or errors:
             return await _fail(ctx, errors or issues)

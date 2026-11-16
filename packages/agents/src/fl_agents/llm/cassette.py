@@ -78,6 +78,17 @@ class CassetteStore:
         data: dict[str, Any] = json.loads(p.read_text(encoding="utf-8"))
         return data
 
+    def _marker(self, role: str) -> Path:
+        return self.dir / f"_unavailable_{role}"
+
+    def mark_unavailable(self, role: str) -> None:
+        """Recording found no key for ``role``: replay must skip it the same way."""
+        self.dir.mkdir(parents=True, exist_ok=True)
+        self._marker(role).write_text("no key configured during recording", encoding="utf-8")
+
+    def is_unavailable(self, role: str) -> bool:
+        return self._marker(role).is_file()
+
     def put(
         self,
         key: str,

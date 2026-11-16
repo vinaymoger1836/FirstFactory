@@ -13,9 +13,9 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from fl_domain.common import STAGE_DEPS, STAGE_ORDER, StageKey
 from fl_agents.pipeline.stage import StageSpec, build_stage_graph, keep_first
 from fl_agents.pipeline.stubs import StubSpec
+from fl_domain.common import STAGE_DEPS, STAGE_ORDER, StageKey
 
 __all__ = ["PipelineState", "build_pipeline", "stage_specs"]
 

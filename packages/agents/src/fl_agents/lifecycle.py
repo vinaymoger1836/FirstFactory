@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+from fl_agents.store.repo import Row, Store
 from fl_domain.artifacts import ARTIFACT_MODELS
 from fl_domain.base import Issue
 from fl_domain.common import STAGE_DEPS, STAGE_ORDER, Assumption, StageKey, downstream_closure
@@ -21,10 +22,9 @@ from fl_domain.pipeline import (
     inputs_hash,
     pointer_get,
 )
-from fl_domain.prov import LOW_CONFIDENCE
 from fl_domain.project import ChangeOp
+from fl_domain.prov import LOW_CONFIDENCE
 from fl_domain.validators import ValidationContext, validate_json
-from fl_agents.store.repo import Row, Store
 
 __all__ = [
     "EditError",
@@ -302,7 +302,9 @@ async def edit_values(
         raise EditError(f"{stage} v{base_version} not found")
     if not edits:
         raise EditError("no edits given")
-    ops = [_user_value_op(base["artifact"] or {}, e["path"], e["value"], e.get("note")) for e in edits]
+    ops = [
+        _user_value_op(base["artifact"] or {}, e["path"], e["value"], e.get("note")) for e in edits
+    ]
     cs_id = await store.next_change_set_id(project["id"])
     row, changes = await _new_version_from_ops(
         store, project, base, ops, approve=approve, origin="user", reason=reason

@@ -13,6 +13,7 @@ from pathlib import Path
 
 from redis.asyncio import Redis
 
+from fl_worker import files as _files  # noqa: F401  (registers cad_extract, pdf_extract)
 from fl_worker.queue import QUEUE_CAD, QUEUE_ENGINES, app, ensure_schema
 
 log = logging.getLogger("fl_worker")

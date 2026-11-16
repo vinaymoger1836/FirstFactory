@@ -20,9 +20,7 @@ STAGES = (
     "'intake','bom','routing','quality','capacity','inventory','workorders_shifts',"
     "'utilities','layout','simulation','finance','reports','vendors'"
 )
-STATUSES = (
-    "'pending','running','awaiting_approval','approved','rejected','stale','failed','paused'"
-)
+STATUSES = "'pending','running','awaiting_approval','approved','rejected','stale','failed','paused'"
 
 
 def upgrade() -> None:

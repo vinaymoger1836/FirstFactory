@@ -42,7 +42,9 @@ def with_app_name(url: str, name: str) -> str:
     """Add ``application_name`` to a libpq URL (P0 watch item: one name per service)."""
     parts = urlsplit(url)
     sep = "&" if parts.query else ""
-    return urlunsplit(parts._replace(query=parts.query + sep + urlencode({"application_name": name})))
+    return urlunsplit(
+        parts._replace(query=parts.query + sep + urlencode({"application_name": name}))
+    )
 
 
 def _make_app(app_name: str) -> procrastinate.App:

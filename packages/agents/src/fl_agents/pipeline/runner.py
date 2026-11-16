@@ -12,6 +12,7 @@ import logging
 from typing import Any
 from uuid import UUID
 
+from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
@@ -42,7 +43,7 @@ async def checkpointer() -> AsyncPostgresSaver:
             kwargs={"autocommit": True, "prepare_threshold": 0, "row_factory": dict_row},
         )
         await _pool.open()
-    return AsyncPostgresSaver(_pool)  # type: ignore[arg-type]
+    return AsyncPostgresSaver(_pool)
 
 
 async def setup_checkpointer() -> None:
@@ -58,13 +59,13 @@ async def pipeline_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     return _graph
 
 
-def _config(thread_id: str) -> dict[str, Any]:
+def _config(thread_id: str) -> RunnableConfig:
     return {"configurable": {"thread_id": thread_id}, "recursion_limit": RECURSION_LIMIT}
 
 
 async def pending_interrupts(thread_id: str) -> list[dict[str, Any]]:
     graph = await pipeline_graph()
-    state = await graph.aget_state(_config(thread_id))  # type: ignore[arg-type]
+    state = await graph.aget_state(_config(thread_id))
     return [{"id": i.id, **(i.value or {})} for i in state.interrupts]
 
 
@@ -78,21 +79,25 @@ async def advance(project_id: str, thread_id: str, resume: dict[str, Any] | None
     graph = await pipeline_graph()
     cfg = _config(thread_id)
     if resume is None:
-        await graph.ainvoke({"project_id": project_id, "thread_id": thread_id}, cfg)  # type: ignore[arg-type]
+        await graph.ainvoke({"project_id": project_id, "thread_id": thread_id}, cfg)
     else:
         stage = resume.get("stage")
         targets = [i for i in await pending_interrupts(thread_id) if i.get("stage") == stage]
         if not targets:
             log.warning("no pending interrupt for stage %s in %s", stage, thread_id)
             await rt.store.emit(
-                UUID(project_id), "warning",
-                {"stage": stage, "message": "Nothing is waiting for this action."}, stage=stage,
+                UUID(project_id),
+                "warning",
+                {"stage": stage, "message": "Nothing is waiting for this action."},
+                stage=stage,
             )
             return "no-interrupt"
-        await graph.ainvoke(Command(resume={targets[0]["id"]: resume}), cfg)  # type: ignore[arg-type]
-    state = await graph.aget_state(cfg)  # type: ignore[arg-type]
+        await graph.ainvoke(Command(resume={targets[0]["id"]: resume}), cfg)
+    state = await graph.aget_state(cfg)
     if not state.next:
         await rt.store.set_thread_status(thread_id, "done")
-        await rt.store.emit(UUID(project_id), "pipeline", {"status": "done", "thread_id": thread_id})
+        await rt.store.emit(
+            UUID(project_id), "pipeline", {"status": "done", "thread_id": thread_id}
+        )
         return "done"
     return "waiting"

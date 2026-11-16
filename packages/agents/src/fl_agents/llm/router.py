@@ -17,6 +17,7 @@ No provider SDK is called directly (CLAUDE.md rule 7); model names come from set
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import random
@@ -142,7 +143,7 @@ def _estimate(messages: list[dict[str, Any]], out_tokens: int) -> int:
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.IGNORECASE)
 
 
-def _parse(role: str, content: str, out: type[T]) -> T:
+def _parse[M: BaseModel](role: str, content: str, out: type[M]) -> M:
     text = _FENCE.sub("", content or "").strip()
     try:
         return out.model_validate_json(text)
@@ -160,10 +161,8 @@ def _retry_after(exc: Exception) -> float | None:
         headers.update(h)
     resp = getattr(exc, "response", None)
     if resp is not None and getattr(resp, "headers", None) is not None:
-        try:
+        with contextlib.suppress(TypeError, ValueError):
             headers.update(dict(resp.headers))
-        except (TypeError, ValueError):
-            pass
     for k, v in headers.items():
         if k.lower() == "retry-after":
             try:
@@ -185,10 +184,14 @@ class Router:
         return self.settings.llm_mode
 
     def available(self, role: str) -> bool:
-        """Whether a role can answer at all (replay: always; live: needs a provider key)."""
+        """Whether a role can answer at all (live/record: needs a provider key; replay:
+        whatever was available when the cassettes were recorded)."""
         if self.mode == "replay":
-            return True
-        return bool(self.settings.provider_key(self.settings.role_model(role)))
+            return not self.cassettes.is_unavailable(role)
+        ok = bool(self.settings.provider_key(self.settings.role_model(role)))
+        if not ok and self.mode == "record":
+            self.cassettes.mark_unavailable(role)
+        return ok
 
     def _bucket(self, role: str) -> TokenBucket:
         if role not in self._buckets:
@@ -256,8 +259,9 @@ class Router:
         if self.mode == "replay":
             rec = self.cassettes.get(key)
             if rec is None:
-                await self._log(ctx, role=role, model="replay", status="error", key=key,
-                                error="cassette miss")
+                await self._log(
+                    ctx, role=role, model="replay", status="error", key=key, error="cassette miss"
+                )
                 raise CassetteMiss(key, role)
             usage = rec.get("usage", {})
             await self._log(
@@ -271,7 +275,9 @@ class Router:
             )
             return _parse(role, str(rec["response"]["content"]), out)
 
-        content, model = await self._call_with_fallback(role, full, out, ctx, key, est, temperature)
+        content, _model = await self._call_with_fallback(
+            role, full, out, ctx, key, est, temperature
+        )
         return _parse(role, content, out)
 
     async def _call_with_fallback(
@@ -294,7 +300,13 @@ class Router:
                 continue
             try:
                 return await self._call_role(
-                    current, messages, out, ctx, key, est, temperature,
+                    current,
+                    messages,
+                    out,
+                    ctx,
+                    key,
+                    est,
+                    temperature,
                     fallback_from=role if current != role else None,
                 )
             except QuotaExhausted as e:
@@ -320,6 +332,7 @@ class Router:
         fallback_from: str | None,
     ) -> tuple[str, str]:
         import litellm  # heavy import, deferred until a live call is needed
+        from litellm import exceptions as lx
 
         model = self.settings.role_model(role)
         mode = _RESPONSE_MODE.get(role, "json_object")
@@ -349,24 +362,49 @@ class Router:
                     timeout=self.settings.llm_timeout_s,
                     drop_params=True,
                 )
-            except litellm.RateLimitError as e:
+            except lx.RateLimitError as e:
                 retry_after = _retry_after(e)
-                await self._log(ctx, role=role, model=model, status="rate_limited", key=key,
-                                fallback_from=fallback_from, error=str(e))
+                await self._log(
+                    ctx,
+                    role=role,
+                    model=model,
+                    status="rate_limited",
+                    key=key,
+                    fallback_from=fallback_from,
+                    error=str(e),
+                )
                 delay = retry_after if retry_after is not None else 2.0 * 2**attempt
                 delay = min(delay, 60.0) * (1 + random.random() * 0.2)  # noqa: S311
                 log.warning("429 from %s (%s); retry in %.1fs", model, role, delay)
                 await asyncio.sleep(delay)
                 continue
-            except (litellm.APIConnectionError, litellm.Timeout, litellm.InternalServerError,
-                    litellm.ServiceUnavailableError) as e:
-                await self._log(ctx, role=role, model=model, status="error", key=key,
-                                fallback_from=fallback_from, error=str(e))
+            except (
+                lx.APIConnectionError,
+                lx.Timeout,
+                lx.InternalServerError,
+                lx.ServiceUnavailableError,
+            ) as e:
+                await self._log(
+                    ctx,
+                    role=role,
+                    model=model,
+                    status="error",
+                    key=key,
+                    fallback_from=fallback_from,
+                    error=str(e),
+                )
                 await asyncio.sleep(1.0 * 2**attempt)
                 continue
-            except litellm.APIError as e:
-                await self._log(ctx, role=role, model=model, status="error", key=key,
-                                fallback_from=fallback_from, error=str(e))
+            except lx.APIError as e:
+                await self._log(
+                    ctx,
+                    role=role,
+                    model=model,
+                    status="error",
+                    key=key,
+                    fallback_from=fallback_from,
+                    error=str(e),
+                )
                 raise LlmUnavailable(f"{role} ({model}) failed: {e}") from e
             latency = int((time.monotonic() - t0) * 1000)
             content = resp.choices[0].message.content or ""

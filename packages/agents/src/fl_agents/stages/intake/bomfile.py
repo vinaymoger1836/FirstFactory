@@ -30,12 +30,31 @@ MAX_COLS = 60
 # header first, then "contains" for the longer forms.
 SYNONYMS: dict[str, tuple[str, ...]] = {
     "part_no": (
-        "part no", "part number", "partno", "part", "pn", "p n", "item no", "item number",
-        "item code", "code", "sku", "mpn", "part id", "id",
+        "part no",
+        "part number",
+        "partno",
+        "part",
+        "pn",
+        "p n",
+        "item no",
+        "item number",
+        "item code",
+        "code",
+        "sku",
+        "mpn",
+        "part id",
+        "id",
     ),
     "name": (
-        "name", "part name", "description", "desc", "item", "item name", "component",
-        "component name", "title",
+        "name",
+        "part name",
+        "description",
+        "desc",
+        "item",
+        "item name",
+        "component",
+        "component name",
+        "title",
     ),
     "qty": ("qty", "quantity", "qty per", "qty per unit", "quantity per", "count", "nos", "no off"),
     "uom": ("uom", "unit", "units", "unit of measure", "um"),
@@ -50,7 +69,7 @@ def _norm(h: str) -> str:
 def read_table(path: Path, filename: str) -> tuple[list[str], list[list[str]]]:
     """Headers and string rows of the first sheet (CSV or XLSX), capped in size."""
     if filename.lower().endswith((".xlsx", ".xlsm")):
-        from openpyxl import load_workbook  # noqa: PLC0415 (only for spreadsheets)
+        from openpyxl import load_workbook
 
         wb = load_workbook(path, read_only=True, data_only=True)
         try:
@@ -71,7 +90,9 @@ def read_table(path: Path, filename: str) -> tuple[list[str], list[list[str]]]:
             dialect = csv.excel
         rows = [
             [c.strip() for c in r[:MAX_COLS]]
-            for _, r in zip(range(MAX_ROWS + 1), csv.reader(io.StringIO(text), dialect))
+            for _, r in zip(
+                range(MAX_ROWS + 1), csv.reader(io.StringIO(text), dialect), strict=False
+            )
         ]
     rows = [r for r in rows if any(c for c in r)]
     if not rows:

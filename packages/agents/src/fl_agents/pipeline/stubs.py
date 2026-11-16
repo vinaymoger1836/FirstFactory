@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from fl_domain.common import StageKey
 from fl_agents.pipeline.stage import StageCtx, StageSpec, Summary
+from fl_domain.common import StageKey
 
 __all__ = ["BUILT_IN", "StubSpec"]
 

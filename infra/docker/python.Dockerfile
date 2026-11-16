@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.7
-# One Dockerfile, three targets: api, worker, cad-worker. Build context = repo root.
+# One Dockerfile, three targets: api (also runs the `agents` service), worker, cad-worker.
+# Build context = repo root.
 # Multi-arch: linux/amd64 and linux/arm64 (Oracle Ampere A1).
 
 ARG PYTHON_IMAGE=python:3.12-slim-bookworm
@@ -16,7 +17,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_PYTHON_DOWNLOADS=never \
     UV_PROJECT_ENVIRONMENT=/app/.venv \
     PATH=/app/.venv/bin:$PATH
-RUN useradd --system --uid 10001 --create-home --home-dir /home/app app
+RUN useradd --system --uid 10001 --create-home --home-dir /home/app app  && mkdir -p /data/uploads /data/derived /app/cassettes  && chown -R app:app /data /app/cassettes
 WORKDIR /app
 
 # ── dependency builder (shared) ────────────────────────────────────
@@ -55,7 +56,7 @@ COPY apps/worker apps/worker
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --package fl-worker --extra cad --no-editable
 
-# ── api ────────────────────────────────────────────────────────────
+# ── api (and agents: same image, `fl-agents worker`, see docker-compose.yml) ──
 FROM base AS api
 COPY --from=api-build /app/.venv /app/.venv
 COPY apps/api/alembic.ini /app/alembic.ini

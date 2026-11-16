@@ -13,10 +13,6 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
-from fl_domain.artifacts.product_spec import ProductTemplate
-from fl_domain.common import StageKey
-from fl_domain.library.catalog import ArchetypeEntry
-from fl_engines.intake import Candidate, classify_archetype, merge_candidates
 from fl_agents.llm.errors import LlmUnavailable
 from fl_agents.pipeline.stage import StageCtx, StageSpec, Summary
 from fl_agents.stages.intake import prompts
@@ -28,6 +24,10 @@ from fl_agents.stages.intake.processors import (
     product_text,
 )
 from fl_agents.stages.intake.schemas import SummaryOut
+from fl_domain.artifacts.product_spec import ProductTemplate
+from fl_domain.common import StageKey
+from fl_domain.library.catalog import ArchetypeEntry
+from fl_engines.intake import Candidate, classify_archetype, merge_candidates
 
 __all__ = ["IntakeSpec", "question_id"]
 
@@ -39,17 +39,31 @@ def question_id(path: str) -> str:
     return "Q-" + hashlib.sha256(path.encode()).hexdigest()[:8]
 
 
-def _prov(value: Any, source: str, confidence: float, ref: str | None = None,
-          note: str | None = None, unit: str | None = None) -> dict[str, Any]:
-    return {"value": value, "unit": unit, "source": source, "confidence": confidence,
-            "ref": ref, "note": note}
+def _prov(
+    value: Any,
+    source: str,
+    confidence: float,
+    ref: str | None = None,
+    note: str | None = None,
+    unit: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "value": value,
+        "unit": unit,
+        "source": source,
+        "confidence": confidence,
+        "ref": ref,
+        "note": note,
+    }
 
 
 def _fmt(v: Any, unit: str | None) -> str:
     if isinstance(v, float) and v.is_integer():
         v = int(v)
-    return f"{v:,} {unit}".strip() if isinstance(v, int | float) and unit not in (None, "unit") else (
-        f"{v:,}" if isinstance(v, int | float) else str(v)
+    return (
+        f"{v:,} {unit}".strip()
+        if isinstance(v, int | float) and unit not in (None, "unit")
+        else (f"{v:,}" if isinstance(v, int | float) else str(v))
     )
 
 
@@ -65,10 +79,13 @@ def _nearest_example(entry: ArchetypeEntry, code: str, known: dict[str, float]) 
         shared = [k for k in known if k in ex.params]
         if not shared:
             return float("inf")
-        return sum(
-            abs(known[k] - ex.params[k]) / max(abs(known[k]), abs(ex.params[k]), 1e-9)
-            for k in shared
-        ) / len(shared)
+        return float(
+            sum(
+                abs(known[k] - ex.params[k]) / max(abs(known[k]), abs(ex.params[k]), 1e-9)
+                for k in shared
+            )
+            / len(shared)
+        )
 
     return min(entry.example_variants, key=distance)
 
@@ -146,7 +163,9 @@ class IntakeSpec(StageSpec):
 
         # Candidates: sources, then the user's answers.
         cands = [
-            Candidate(**c) for r in results for c in r.candidates
+            Candidate(**c)
+            for r in results
+            for c in r.candidates
             if c["path"].split(":")[-1] in units
         ]
         answers: dict[str, Any] = ctx.work.get("answers", {})
@@ -218,11 +237,17 @@ class IntakeSpec(StageSpec):
                 {
                     "code": v.code,
                     "name": v.name,
-                    "mix_pct": _prov(v.mix_pct, "user", 1.0, f"template:product/variants/{i}/mix_pct",
-                                     unit="%"),
+                    "mix_pct": _prov(
+                        v.mix_pct, "user", 1.0, f"template:product/variants/{i}/mix_pct", unit="%"
+                    ),
                     "selling_price_inr": (
-                        _prov(v.selling_price_inr, "user", 1.0,
-                              f"template:product/variants/{i}/selling_price_inr", unit="INR")
+                        _prov(
+                            v.selling_price_inr,
+                            "user",
+                            1.0,
+                            f"template:product/variants/{i}/selling_price_inr",
+                            unit="INR",
+                        )
                         if v.selling_price_inr is not None
                         else None
                     ),
@@ -239,31 +264,47 @@ class IntakeSpec(StageSpec):
             extensions.update(r.extensions)
         for ns, values in t.extensions.items():
             extensions.setdefault(ns, {}).update(
-                {k: _prov(val, "user", 1.0, f"template:extensions/{ns}/{k}") for k, val in values.items()}
+                {
+                    k: _prov(val, "user", 1.0, f"template:extensions/{ns}/{k}")
+                    for k, val in values.items()
+                }
             )
         spec: dict[str, Any] = {
             "template_version": 1,
             "product": {
                 "name": t.product.name,
                 "category": t.product.category,
-                "archetype": _prov(cls.archetype, cls.source, cls.confidence, "rules:archetype",
-                                   cls.note),
-                "description": _prov(t.product.description, "user", 1.0,
-                                     "template:product/description"),
+                "archetype": _prov(
+                    cls.archetype, cls.source, cls.confidence, "rules:archetype", cls.note
+                ),
+                "description": _prov(
+                    t.product.description, "user", 1.0, "template:product/description"
+                ),
                 "variants": variants,
                 "demand": {
                     "annual_volume": (
-                        _prov(demand.annual_volume, "user", 1.0,
-                              "template:product/demand/annual_volume")
+                        _prov(
+                            demand.annual_volume,
+                            "user",
+                            1.0,
+                            "template:product/demand/annual_volume",
+                        )
                         if demand.annual_volume is not None
                         else None
                     ),
-                    "ramp_plan": [r.model_dump() for r in demand.ramp_plan] if demand.ramp_plan else None,
+                    "ramp_plan": [r.model_dump() for r in demand.ramp_plan]
+                    if demand.ramp_plan
+                    else None,
                 },
                 "targets": {
                     "unit_cost_inr": (
-                        _prov(targets.unit_cost_inr, "user", 1.0,
-                              "template:product/targets/unit_cost_inr", unit="INR")
+                        _prov(
+                            targets.unit_cost_inr,
+                            "user",
+                            1.0,
+                            "template:product/targets/unit_cost_inr",
+                            unit="INR",
+                        )
                         if targets.unit_cost_inr is not None
                         else None
                     ),
@@ -346,8 +387,9 @@ class IntakeSpec(StageSpec):
                     spec["product"]["demand"]["annual_volume"] = _prov(
                         int(val), "user", 1.0, f"answer:{q['id']}", "Answered by the user"
                     )
-        await ctx.save_work({"_questions": questions, "_notices": notices,
-                             "_archetype_scores": cls.scores})
+        await ctx.save_work(
+            {"_questions": questions, "_notices": notices, "_archetype_scores": cls.scores}
+        )
         return spec
 
     # ── summarise ─────────────────────────────────────────────────────
@@ -360,8 +402,9 @@ class IntakeSpec(StageSpec):
         text = _fallback_summary(artifact, questions)
         if ctx.rt.router.available("writer"):
             try:
-                out = await ctx.llm("writer", prompts.summary_messages(facts), SummaryOut,
-                                    out_tokens=400)
+                out = await ctx.llm(
+                    "writer", prompts.summary_messages(facts), SummaryOut, out_tokens=400
+                )
                 text = out.summary.strip()
                 if out.highlights:
                     text += "\n" + "\n".join(f"• {h.strip()}" for h in out.highlights[:5])
@@ -377,8 +420,12 @@ def _answer_value(q: dict[str, Any], ans: Any) -> Any:
         cands = q.get("candidates") or []
         if isinstance(ans, str) and ans in opts and len(cands) == len(opts):
             return cands[opts.index(ans)]["value"]
-        if isinstance(ans, int) and not isinstance(ans, bool) and 0 <= ans < len(cands) and \
-                not any(c["value"] == ans for c in cands):
+        if (
+            isinstance(ans, int)
+            and not isinstance(ans, bool)
+            and 0 <= ans < len(cands)
+            and not any(c["value"] == ans for c in cands)
+        ):
             return cands[ans]["value"]
     if isinstance(ans, int | float) and not isinstance(ans, bool):
         return float(ans)
@@ -403,7 +450,9 @@ def _facts(spec: dict[str, Any], questions: list[dict[str, Any]], notices: list[
         src = ", ".join(f"{n} from {s}" for s, n in sorted(by_src.items()))
         lines.append(f"Variant {v['code']}: {len(v['params'])} parameters ({src})")
     st = spec["structure"]
-    lines.append(f"Parts found in files: {len(st['parts'])}; assembly trees: {len(st['assemblies'])}")
+    lines.append(
+        f"Parts found in files: {len(st['parts'])}; assembly trees: {len(st['assemblies'])}"
+    )
     open_q = [q for q in questions if q.get("answer") in (None, "")]
     lines.append(f"Open questions: {len(open_q)}")
     lines += [f"Question: {q['text']}" for q in open_q[:5]]

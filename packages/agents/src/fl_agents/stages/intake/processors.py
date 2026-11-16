@@ -14,8 +14,6 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 from uuid import UUID
 
-from fl_domain.artifacts.product_spec import BomColumnMap, ProductTemplate
-from fl_domain.library.catalog import ArchetypeEntry, ParamSpec
 from fl_agents.llm.errors import LlmUnavailable
 from fl_agents.pipeline.stage import StageCtx
 from fl_agents.queue import defer_cad_extract, defer_pdf_extract
@@ -27,6 +25,8 @@ from fl_agents.stages.intake.schemas import (
     TextExtraction,
     VisionExtraction,
 )
+from fl_domain.artifacts.product_spec import BomColumnMap, ProductTemplate
+from fl_domain.library.catalog import ArchetypeEntry, ParamSpec
 
 __all__ = [
     "SourceResult",
@@ -132,7 +132,8 @@ def _param_candidates(
                     "source": source,
                     "confidence": good_conf if ok else bad_conf,
                     "ref": ref,
-                    "note": f'"{p.evidence[:160]}"' + ("" if ok else " (quote not found in source)"),
+                    "note": f'"{p.evidence[:160]}"'
+                    + ("" if ok else " (quote not found in source)"),
                 }
             )
     return out
@@ -250,7 +251,9 @@ def _cad_result(aid: str, meta: dict[str, Any], kind: str) -> SourceResult:
                 "source": "cad",
                 "confidence": conf,
                 "ref": f"attachment:{aid}",
-                "note": f"volume {p.get('volume_mm3', 0):.0f} mm³, area {p.get('area_mm2', 0):.0f} mm²",
+                "note": (
+                    f"volume {p.get('volume_mm3', 0):.0f} mm³, area {p.get('area_mm2', 0):.0f} mm²"
+                ),
             }
         res.parts.append(rec)
         res.terms.append(str(p.get("name") or ""))
@@ -258,7 +261,9 @@ def _cad_result(aid: str, meta: dict[str, Any], kind: str) -> SourceResult:
     if tree:
         res.assemblies.append(tree)
     if kind == "stl":
-        res.notices.append(f"{aid}: an STL is a single mesh; no assembly or part names (low confidence).")
+        res.notices.append(
+            f"{aid}: an STL is a single mesh; no assembly or part names (low confidence)."
+        )
     return res
 
 
@@ -304,7 +309,9 @@ async def process_attachment(
             return res
         params = allowed_params(archetypes, t.product.category, t.product.archetype)
         variants = [(v.code, v.name) for v in t.product.variants]
-        out = await ctx.llm("extractor", prompts.doc_messages(pages, variants, params), DocExtraction)
+        out = await ctx.llm(
+            "extractor", prompts.doc_messages(pages, variants, params), DocExtraction
+        )
         full = "\n".join(txt for _, txt in pages)
         res.candidates = _param_candidates(
             out.params,
@@ -340,14 +347,14 @@ async def process_attachment(
         path = ctx.rt.settings.uploads_dir / att["path"]
         data_url = f"data:{att['mime']};base64," + base64.b64encode(path.read_bytes()).decode()
         try:
-            out = await ctx.llm(
+            vout = await ctx.llm(
                 "vision", prompts.vision_messages(data_url, t.product.name), VisionExtraction
             )
         except LlmUnavailable as e:
             res.notices.append(f"{att['filename']}: photo intake skipped ({e}).")
             return res
-        res.terms = [*out.components, *out.features]
-        res.llm_guess = out.archetype_guess
+        res.terms = [*vout.components, *vout.features]
+        res.llm_guess = vout.archetype_guess
         ext = {
             name: {
                 "value": "; ".join(vals)[:500],
@@ -358,9 +365,9 @@ async def process_attachment(
                 "note": "Seen in the photo; low confidence",
             }
             for name, vals in (
-                ("components", out.components),
-                ("features", out.features),
-                ("size_cues", out.size_cues),
+                ("components", vout.components),
+                ("features", vout.features),
+                ("size_cues", vout.size_cues),
             )
             if vals
         }

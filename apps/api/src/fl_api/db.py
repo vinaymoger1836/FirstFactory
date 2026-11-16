@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+from fl_agents.store import Store
 from fl_api.settings import get_settings
 
 
@@ -43,7 +44,11 @@ def engine() -> AsyncEngine:
     global _engine, _sessionmaker
     if _engine is None:
         _engine = create_async_engine(
-            get_settings().database_url, pool_size=5, max_overflow=5, pool_pre_ping=True
+            get_settings().database_url,
+            pool_size=5,
+            max_overflow=5,
+            pool_pre_ping=True,
+            connect_args={"server_settings": {"application_name": "fl-api"}},
         )
         _sessionmaker = async_sessionmaker(_engine, expire_on_commit=False)
     return _engine
@@ -54,6 +59,17 @@ async def session() -> AsyncIterator[AsyncSession]:
     assert _sessionmaker is not None
     async with _sessionmaker() as s:
         yield s
+
+
+_store: Store | None = None
+
+
+def store() -> Store:
+    """Pipeline repository (fl_agents) on the API's engine."""
+    global _store
+    if _store is None:
+        _store = Store(engine())
+    return _store
 
 
 async def dispose() -> None:

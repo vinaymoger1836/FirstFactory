@@ -136,8 +136,10 @@ def classify_archetype(
         scores[a.code] = round(score, 2)
     ranked = sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))
     generic = f"generic_{category}"
-    if ranked and ranked[0][1] >= MIN_SCORE and (
-        len(ranked) == 1 or ranked[0][1] >= 1.5 * ranked[1][1]
+    if (
+        ranked
+        and ranked[0][1] >= MIN_SCORE
+        and (len(ranked) == 1 or ranked[0][1] >= 1.5 * ranked[1][1])
     ):
         best, score = ranked[0]
         conf = min(0.9, 0.5 + score / 40)

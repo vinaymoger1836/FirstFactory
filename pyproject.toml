@@ -56,6 +56,9 @@ known-first-party = ["fl_api", "fl_worker", "fl_domain", "fl_engines", "fl_agent
 "scripts/**" = ["T20", "S603", "S607"]
 "**/migrations/**" = ["N999"]
 "packages/library/src/fl_library/cli.py" = ["T20"]
+# Router errors read as states ("PauseRequired", "CassetteMiss"), not as error classes.
+"packages/agents/src/fl_agents/llm/errors.py" = ["N818"]
+"golden/samples/*.py" = ["E501", "T20"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -74,5 +77,5 @@ exclude = ["spikes/", "build/", "apps/web/"]
 
 # Strict where the numbers live (CLAUDE.md conventions)
 [[tool.mypy.overrides]]
-module = ["fl_domain.*", "fl_engines.*", "fl_library.*"]
+module = ["fl_domain.*", "fl_engines.*", "fl_library.*", "fl_agents.*"]
 strict = true

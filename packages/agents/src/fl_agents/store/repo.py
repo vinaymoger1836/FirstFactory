@@ -16,11 +16,11 @@ from pydantic import TypeAdapter
 from sqlalchemy import and_, func, insert, select, text, update
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
+from fl_agents.store import tables as t
 from fl_domain.common import STAGE_ORDER, StageKey
 from fl_domain.library.catalog import Catalog, CatalogEntry, CatalogManifest
 from fl_domain.pipeline import check_transition
 from fl_domain.project import StageRun, StageStatus
-from fl_agents.store import tables as t
 
 __all__ = ["Row", "Store", "make_engine", "to_stage_run"]
 
@@ -431,14 +431,15 @@ class Store:
             await c.execute(
                 update(t.pipeline_thread)
                 .where(
-                    and_(t.pipeline_thread.c.project_id == pid, t.pipeline_thread.c.status == "active")
+                    and_(
+                        t.pipeline_thread.c.project_id == pid,
+                        t.pipeline_thread.c.status == "active",
+                    )
                 )
                 .values(status="superseded")
             )
             n = (
-                await c.execute(
-                    select(func.count()).where(t.pipeline_thread.c.project_id == pid)
-                )
+                await c.execute(select(func.count()).where(t.pipeline_thread.c.project_id == pid))
             ).scalar_one()
             tid = f"{pid}:{int(n) + 1}"
             await c.execute(
@@ -463,7 +464,10 @@ class Store:
                 await c.execute(
                     select(t.pipeline_thread)
                     .where(
-                        and_(t.pipeline_thread.c.project_id == pid, t.pipeline_thread.c.status == "active")
+                        and_(
+                            t.pipeline_thread.c.project_id == pid,
+                            t.pipeline_thread.c.status == "active",
+                        )
                     )
                     .order_by(t.pipeline_thread.c.created_at.desc())
                     .limit(1)
@@ -484,7 +488,10 @@ class Store:
             await c.execute(
                 update(t.pipeline_thread)
                 .where(
-                    and_(t.pipeline_thread.c.project_id == pid, t.pipeline_thread.c.status == "active")
+                    and_(
+                        t.pipeline_thread.c.project_id == pid,
+                        t.pipeline_thread.c.status == "active",
+                    )
                 )
                 .values(status="superseded")
             )

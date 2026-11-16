@@ -70,7 +70,9 @@ class Settings(BaseSettings):
             "vision": 250000,
         }
     )
-    stage_budgets: dict[str, int] = Field(default_factory=lambda: dict(DEFAULT_STAGE_BUDGETS))
+    stage_budgets: dict[str, int] = Field(
+        default_factory=lambda: {str(k): v for k, v in DEFAULT_STAGE_BUDGETS.items()}
+    )
 
     # Pipeline worker
     pipeline_concurrency: int = 2  # docs/02 §3: at most 2 pipelines executing at once
@@ -85,11 +87,13 @@ class Settings(BaseSettings):
         }[role]
 
     def provider_key(self, model: str) -> str:
+        """The provider key for a model, or "" if unset or still a .env.example placeholder."""
+        key = ""
         if model.startswith("groq/"):
-            return self.groq_api_key.get_secret_value()
-        if model.startswith("gemini/"):
-            return self.gemini_api_key.get_secret_value()
-        return ""
+            key = self.groq_api_key.get_secret_value()
+        elif model.startswith("gemini/"):
+            key = self.gemini_api_key.get_secret_value()
+        return "" if not key or "placeholder" in key.lower() else key
 
     def budget_for(self, stage: str, overrides: dict[str, int] | None = None) -> int:
         if overrides and stage in overrides:

@@ -35,11 +35,13 @@ services:
     build: { <<: *build, target: api }
     # Schema migrations, then catalog + data-pack validation and versioned load (docs/10 §1.4,
     # §2.3). Any validation error fails this step, so the stack does not start on a bad library.
-    command: ["sh", "-c", "alembic upgrade head && fl-library load"]
+    # Then LangGraph's checkpoint tables (fl-agents setup, P2).
+    command: ["sh", "-c", "alembic upgrade head && fl-library load && fl-agents setup"]
     environment: &api-env
       APP_ENV: ${APP_ENV:-local}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
+      QUEUE_DATABASE_URL: ${QUEUE_DATABASE_URL:?set QUEUE_DATABASE_URL in .env}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       PUBLIC_WEB_ORIGIN: ${PUBLIC_WEB_ORIGIN:-http://localhost:5173}
     depends_on:
@@ -51,17 +53,49 @@ services:
     <<: *hardening
     image: ${IMAGE_PREFIX:-factory}-api:${IMAGE_TAG:-local}
     build: { <<: *build, target: api }
-    environment:
+    environment: &llm-env
       <<: *api-env
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      LLM_ROLE_REASONER: ${LLM_ROLE_REASONER:-groq/openai/gpt-oss-120b}
+      LLM_ROLE_EXTRACTOR: ${LLM_ROLE_EXTRACTOR:-groq/llama-3.1-8b-instant}
+      LLM_ROLE_WRITER: ${LLM_ROLE_WRITER:-groq/openai/gpt-oss-120b}
+      LLM_ROLE_VISION: ${LLM_ROLE_VISION:-gemini/gemini-2.5-flash}
+      # live | record | replay (cassettes, docs/14 §4). The e2e override sets replay.
+      LLM_MODE: ${LLM_MODE:-live}
     depends_on:
       migrate: { condition: service_completed_successfully }
       redis: { condition: service_healthy }
     # edge: reachable by Caddy and has egress for LLM/web calls; backend: DB + Redis.
     networks: [edge, backend]
-    mem_limit: 1536m
+    volumes:
+      - uploads:/data/uploads
+      - derived:/data/derived:ro
+    mem_limit: 1024m
+
+  # LangGraph pipeline runner (ADR-024): procrastinate queue `pipeline`, 2 concurrent
+  # projects (docs/02 §3). Same image as the api; needs egress for the LLM providers.
+  agents:
+    <<: *hardening
+    image: ${IMAGE_PREFIX:-factory}-api:${IMAGE_TAG:-local}
+    build: { <<: *build, target: api }
+    command: ["fl-agents", "worker"]
+    environment:
+      <<: *llm-env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys,time; sys.exit(0 if time.time()-float(open('/tmp/fl-heartbeat').read())<30 else 1)"]
+      interval: 10s
+      timeout: 3s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    networks: [edge, backend]
+    volumes:
+      - uploads:/data/uploads:ro
+    mem_limit: 1024m
 
   worker:
     <<: *hardening
@@ -75,6 +109,8 @@ services:
       migrate: { condition: service_completed_successfully }
       redis: { condition: service_healthy }
     networks: [backend]          # internal network: no internet egress
+    volumes:
+      - uploads:/data/uploads:ro   # PDFs are parsed here (docs/11 §2)
     mem_limit: 3g
     cpus: 1.0
 
@@ -92,6 +128,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp:size=512m,mode=1777
+    volumes:
+      - uploads:/data/uploads:ro
+      - derived:/data/derived      # GLB output only
     depends_on:
       migrate: { condition: service_completed_successfully }
       redis: { condition: service_healthy }
@@ -141,3 +180,5 @@ networks:
 volumes:
   pgdata: {}
   caddy_data: {}
+  uploads: {}     # user files (docs/11 §2); deleted with the project in P9's retention job
+  derived: {}     # files made from uploads (GLB previews)
