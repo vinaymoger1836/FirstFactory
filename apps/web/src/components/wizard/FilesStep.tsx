@@ -174,7 +174,7 @@ export function FilesStep({
             </button>
           </p>
           <p className="muted small">
-            STEP/STP or STL (up to 50 MB), photos JPG/PNG/WEBP (10 MB), PDF datasheets, BoM as CSV or XLSX.
+            STEP/STP or STL (up to 100 MB), photos JPG/PNG/WEBP (10 MB), PDF datasheets, BoM as CSV or XLSX.
             At most 20 files. 3D files are read in a sandbox; only extracted text goes to the AI models.
           </p>
           <input

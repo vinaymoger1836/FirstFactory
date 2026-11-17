@@ -43,7 +43,7 @@
 | Rate limits | Per IP: 3 new projects/day, 20 stage runs/day; per project: 1 concurrent run. Global: max 2 concurrent pipelines; queue with position shown. |
 | Global LLM budget | Daily token budget per model role, below provider limits; when reached, new runs queue until reset. Shown on a status banner. |
 | Bring-your-own key | Optional Groq API key per project (stored encrypted, deleted with the project) to bypass the shared budget. |
-| Uploads | Allowed types only (STEP/STP, STL, JPG/PNG/WEBP, PDF, CSV/XLSX); size limits (CAD 50 MB, images 10 MB each, max 20 files); magic-byte sniffing; images re-encoded; PDFs parsed in the worker; CAD parsed in `cad-worker` with no network, read-only FS except temp, CPU/memory/time limits. |
+| Uploads | Allowed types only (STEP/STP, STL, JPG/PNG/WEBP, PDF, CSV/XLSX); size limits (CAD 100 MB, images 10 MB each, max 20 files); magic-byte sniffing; images re-encoded; PDFs parsed in the worker; CAD parsed in `cad-worker` with no network, read-only FS except temp, CPU/memory/time limits. |
 | Admin | `/admin` behind Cloudflare Access (email OTP, allowlisted emails) + API passcode header; admin actions audited. |
 | Secrets | `.env` on the VM (root-only), never in the repo; Groq/Gemini/Tavily keys; Cloudflare origin certificate. |
 | Retention | Projects expire **30 days** after last activity; a daily job deletes rows and files. Banner shows the expiry date; "Export project (ZIP)" always available. |

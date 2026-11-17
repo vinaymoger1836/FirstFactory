@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     uploads_dir: Path = Path("/data/uploads")
     derived_dir: Path = Path("/data/derived")
     max_files_per_project: int = 20
-    max_cad_mb: int = 50
+    max_cad_mb: int = 100
     max_image_mb: int = 10
     max_pdf_mb: int = 20
     max_table_mb: int = 10

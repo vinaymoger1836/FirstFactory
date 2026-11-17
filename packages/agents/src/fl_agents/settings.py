@@ -78,7 +78,7 @@ class Settings(BaseSettings):
 
     # Pipeline worker
     pipeline_concurrency: int = 2  # docs/02 §3: at most 2 pipelines executing at once
-    file_job_timeout_s: float = 120.0
+    file_job_timeout_s: float = 240.0  # must exceed the worker's CAD time limit (180 s)
 
     def role_model(self, role: str) -> str:
         return {

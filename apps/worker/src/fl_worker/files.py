@@ -24,7 +24,8 @@ log = logging.getLogger(__name__)
 
 UPLOADS = Path(os.environ.get("UPLOADS_DIR", "/data/uploads"))
 DERIVED = Path(os.environ.get("DERIVED_DIR", "/data/derived"))
-CAD_TIMEOUT_S = 60
+# Big STEP files take longer to read; override with CAD_TIMEOUT_S if the VM is slow.
+CAD_TIMEOUT_S = int(os.environ.get("CAD_TIMEOUT_S", "180"))
 # CAD: memory is capped by the container (2 GB cgroup limit). An address-space rlimit is not
 # used because OCP reserves far more virtual memory than it touches.
 CAD_MEM_BYTES = 0
