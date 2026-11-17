@@ -100,7 +100,7 @@ Steps: 1 Product → 2 Variants & volume → 3 Files and parts → 4 Site → 5 
 | Pasted parts table | `extractor` role | Candidate lines without part numbers | Medium |
 | Wizard text | `extractor` role | Structured fields | Medium |
 
-STEP files are processed in a separate container with CPU/memory/time limits (60 s, 2 GB) because OCP is heavy and files are untrusted.
+STEP files are processed in a separate container with CPU/memory/time limits (180 s, 2 GB; was 60 s until P3a, raised with the 100 MB upload limit) because OCP is heavy and files are untrusted.
 
 ### 3.2 Merge rules
 
