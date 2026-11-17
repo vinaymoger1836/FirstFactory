@@ -238,7 +238,9 @@ def validate_bom(bom: Bom, ctx: ValidationContext) -> list[Issue]:
         for v in it.variants:
             if v not in variants:
                 out.append(_err("bom.variant", f"item {it.part_no} lists unknown variant {v}"))
-    out += _completeness(bom, draft=any(ln.review == "suggested" for ln in bom.ebom))
+    # A draft may be incomplete (lines still suggested, CAD questions open, or nothing
+    # matched yet): warnings here; ``bom_approval_issues`` makes them errors at approval.
+    out += _completeness(bom, draft=True)
     out += _check_units(bom)
     if ctx.catalog is not None:
         commodity = ctx.catalog.codes("commodity_class")

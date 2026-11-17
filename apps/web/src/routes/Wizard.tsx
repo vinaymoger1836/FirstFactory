@@ -222,10 +222,16 @@ export function Wizard() {
     if (!creating.current) {
       creating.current = post<ProjectCreated>("/projects", {
         name: template.product.name.trim() || "Untitled project",
-      }).then((p) => {
-        setToken(p.token);
-        return p.token;
-      });
+      })
+        .then((p) => {
+          setToken(p.token);
+          return p.token;
+        })
+        .catch((e: unknown) => {
+          // Let the next attempt try again (e.g. the API was down) instead of reusing the failure.
+          creating.current = null;
+          throw e;
+        });
     }
     return creating.current;
   }

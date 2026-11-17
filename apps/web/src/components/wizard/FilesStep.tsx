@@ -52,11 +52,19 @@ export function FilesStep({
   const uid = useId();
 
   async function upload(list: FileList | File[]) {
+    // Copy first: the input is cleared right after this call starts, which empties a live FileList.
+    const picked = Array.from(list);
     setError(null);
-    const token = await ensureProject();
+    let token: string;
+    try {
+      token = await ensureProject();
+    } catch {
+      setError("Could not create the project. Is the API running?");
+      return;
+    }
     let atts = [...template.attachments];
     let current = [...files];
-    for (const file of Array.from(list)) {
+    for (const file of picked) {
       setBusy(`Uploading ${file.name}…`);
       try {
         const fd = new FormData();

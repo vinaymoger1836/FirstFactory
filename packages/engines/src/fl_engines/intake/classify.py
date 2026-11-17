@@ -123,7 +123,10 @@ def classify_archetype(
             note="Chosen in the wizard",
             scores={},
         )
-    pool = [a for a in archetypes if a.category == category and not a.code.startswith("generic_")]
+    # Score every known archetype; the chosen category is preferred, but a clear match in
+    # the other category still wins (the wizard's category defaults to electronics).
+    pool = [a for a in archetypes if not a.code.startswith("generic_")]
+    in_cat = {a.code for a in pool if a.category == category}
     corpus = _words(" ".join(texts)) + _words(" ".join(cad_names)) + _words(" ".join(vision_terms))
     joined = " ".join(" ".join(texts + cad_names + vision_terms).lower().split())
     scores: dict[str, float] = {}
@@ -134,21 +137,37 @@ def classify_archetype(
         # Multi-word aliases ("ceiling fan") as phrases.
         score += sum(3.0 for alias in a.aliases if " " in alias and alias.lower() in joined)
         scores[a.code] = round(score, 2)
-    ranked = sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))
     generic = f"generic_{category}"
-    if (
-        ranked
-        and ranked[0][1] >= MIN_SCORE
-        and (len(ranked) == 1 or ranked[0][1] >= 1.5 * ranked[1][1])
-    ):
-        best, score = ranked[0]
+
+    def decisive(cands: dict[str, float]) -> tuple[str, float] | None:
+        ranked = sorted(cands.items(), key=lambda kv: (-kv[1], kv[0]))
+        if (
+            ranked
+            and ranked[0][1] >= MIN_SCORE
+            and (len(ranked) == 1 or ranked[0][1] >= 1.5 * ranked[1][1])
+        ):
+            return ranked[0]
+        return None
+
+    hit = decisive({k: v for k, v in scores.items() if k in in_cat})
+    other = None if hit else decisive(scores)
+    pick = hit or other
+    if pick is not None:
+        best, score = pick
         conf = min(0.9, 0.5 + score / 40)
+        cross = hit is None
         return Classification(
             archetype=best,
             source="library",
-            confidence=round(conf, 2),
+            confidence=round(conf - (0.1 if cross else 0.0), 2),
             note=f"Keyword match against the catalog archetype (score {score:g})",
             scores=scores,
+            notice=(
+                f"Matched '{best}', which the catalog files under a different category than "
+                f"'{category}'. Change the product type in the template if this is wrong."
+                if cross
+                else None
+            ),
         )
     if llm_guess and llm_guess in codes and not llm_guess.startswith("generic_"):
         entry = next(a for a in archetypes if a.code == llm_guess)

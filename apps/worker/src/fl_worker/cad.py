@@ -52,18 +52,89 @@ def _scale_glb(path: Path) -> list[float]:
     return [round(float(x), 5) for x in scene.extents]
 
 
+_ENTITY = re.compile(r"#(\d+)\s*=\s*([A-Z_0-9]+)\s*\((.*?)\)\s*;(?=\s*(?:#\d+\s*=|ENDSEC))", re.S)
+_STR = re.compile(r"'((?:[^']|'')*)'")
+_REF = re.compile(r"#(\d+)")
+# Instance names some CAD tools write instead of part names (SolidWorks: NAUO1, NAUO2, …).
+_GENERIC_INSTANCE = re.compile(r"^(NAUO\d*|SOLID\d*|NONE)?$", re.I)
+
+
+def _instance_part_names(src: Path) -> dict[str, str]:
+    """Map assembly-instance names (NEXT_ASSEMBLY_USAGE_OCCURRENCE ids such as ``NAUO3``)
+    to the PRODUCT name of the part they place. Plain text parse of the STEP data section."""
+    text = src.read_text(encoding="latin-1", errors="replace")
+    products: dict[str, str] = {}
+    formation: dict[str, str] = {}
+    definition: dict[str, str] = {}
+    nauo: list[tuple[str, str]] = []
+    for eid, kind, args in _ENTITY.findall(text):
+        if kind == "PRODUCT":
+            s = _STR.findall(args)
+            if s:
+                products[eid] = s[0].replace("''", "'").strip()
+        elif kind.startswith("PRODUCT_DEFINITION_FORMATION"):
+            refs = _REF.findall(args)
+            if refs:
+                formation[eid] = refs[0]
+        elif kind == "PRODUCT_DEFINITION":
+            refs = _REF.findall(args)
+            if refs:
+                definition[eid] = refs[0]
+        elif kind == "NEXT_ASSEMBLY_USAGE_OCCURRENCE":
+            s, refs = _STR.findall(args), _REF.findall(args)
+            if s and len(refs) >= 2:
+                nauo.append((s[0], refs[1]))  # (instance id, related product definition)
+    out: dict[str, str] = {}
+    for inst, pd in nauo:
+        name = products.get(formation.get(definition.get(pd, ""), ""), "")
+        if inst and name:
+            out[inst] = name
+    return out
+
+
 def extract_step(src: Path, glb: Path) -> dict[str, Any]:
     import cadquery as cq
 
-    assy = cq.Assembly.importStep(str(src))
+    try:
+        assy = cq.Assembly.importStep(str(src))
+    except ValueError:
+        # A plain part or a flat list of solids: no assembly structure in the file.
+        assy = None
     leaves: list[dict[str, Any]] = []
     counter = {"n": 0}
+    try:
+        part_names = _instance_part_names(src)
+    except (OSError, ValueError):
+        part_names = {}
+    used: set[str] = set()
+    base_of: dict[str, str] = {}
+
+    def better_name(a: Any) -> str:
+        """The part's own name when the tool wrote a generic instance id, kept unique so
+        the GLB node names still map one-to-one onto tree nodes."""
+        name = str(a.name or "")
+        if _GENERIC_INSTANCE.match(name) and name in part_names:
+            base = part_names[name][:190]
+            cand, k = base, 1
+            while cand in used:
+                k += 1
+                cand = f"{base}_{k}"
+            if base and not _GENERIC_INSTANCE.match(base):
+                try:
+                    a.name = cand  # also names the GLB node
+                except AttributeError:
+                    return name
+                base_of[cand] = base
+                return cand
+        return name
 
     def walk(a: Any) -> dict[str, Any]:
         counter["n"] += 1
+        name = better_name(a) or f"node {counter['n']}"
+        used.add(name)
         node: dict[str, Any] = {
             "id": f"N{counter['n']:03d}",
-            "name": str(a.name or f"node {counter['n']}")[:200],
+            "name": name[:200],
             "children": [],
             "part_no": None,
         }
@@ -72,13 +143,24 @@ def extract_step(src: Path, glb: Path) -> dict[str, Any]:
             solids = shape.Solids() if hasattr(shape, "Solids") else []
             if solids:
                 info = _solid_info(shape)
-                leaves.append({"name": node["name"], **info, "solids": len(solids)})
+                leaves.append(
+                    {
+                        "name": node["name"],
+                        "base": base_of.get(node["name"]),
+                        **info,
+                        "solids": len(solids),
+                    }
+                )
                 node["leaf"] = len(leaves) - 1
         for child in a.children:
             node["children"].append(walk(child))
         return node
 
-    tree = walk(assy)
+    if assy is not None:
+        tree = walk(assy)
+    else:
+        counter["n"] += 1
+        tree = {"id": "N001", "name": src.stem[:200] or "model", "children": [], "part_no": None}
     if not leaves:  # plain STEP without assembly structure
         shape = cq.importers.importStep(str(src))
         for i, solid in enumerate(shape.solids().vals(), start=1):
@@ -98,7 +180,9 @@ def extract_step(src: Path, glb: Path) -> dict[str, Any]:
     groups: dict[tuple[Any, ...], dict[str, Any]] = {}
     leaf_part: dict[int, int] = {}
     for i, leaf in enumerate(leaves):
-        base = _SUFFIX.sub("", leaf["name"]) or leaf["name"]
+        # The STEP part name when known (instances of one part share it), else the
+        # instance name without its counter (cell_1, cell_2 → cell).
+        base = leaf.pop("base", None) or _SUFFIX.sub("", leaf["name"]) or leaf["name"]
         sig = (base.lower(), tuple(sorted(leaf["bbox_mm"])), round(leaf["volume_mm3"]))
         if sig not in groups:
             groups[sig] = {**leaf, "name": base, "count": 0, "instances": []}
@@ -106,6 +190,13 @@ def extract_step(src: Path, glb: Path) -> dict[str, Any]:
         groups[sig]["instances"].append(leaf["name"])
         leaf_part[i] = list(groups).index(sig)
     parts = list(groups.values())
+    # Different parts that share a base name (Part1, Part2 → "Part") keep their own names.
+    by_name: dict[str, int] = {}
+    for p in parts:
+        by_name[p["name"].lower()] = by_name.get(p["name"].lower(), 0) + 1
+    for p in parts:
+        if by_name[p["name"].lower()] > 1:
+            p["name"] = p["instances"][0]
 
     def link(node: dict[str, Any]) -> dict[str, Any]:
         leaf = node.pop("leaf", None)

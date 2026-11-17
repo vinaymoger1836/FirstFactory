@@ -61,7 +61,9 @@ export function BomPanel({
 }) {
   // Older versions may lack fields added later (coverage, totals …): fill safe defaults.
   const raw = run.artifact as unknown as Partial<Bom>;
-  const bom = {
+  const bom = useMemo(
+    () =>
+      ({
     ...raw,
     coverage: raw.coverage ?? [],
     findings: raw.findings ?? [],
@@ -72,9 +74,42 @@ export function BomPanel({
     items: raw.items ?? [],
     variants: raw.variants ?? [],
     proposer: raw.proposer ?? "",
-  } as Bom;
+  }) as Bom,
+    [raw],
+  );
   const [tab, setTab] = useState<TabKey>("review");
   const [pending, setPending] = useState<Answers>({});
+  const [focus, setFocus] = useState<string | null>(null);
+  const rows = useMemo(() => rowsOf(bom), [bom]);
+  const cad = files.find((f) => f.has_glb);
+  // GLB node names carry the CAD solid name; map each to the BoM line that lists it.
+  const solidLine = useMemo(() => {
+    const m = new Map<string, BomRow>();
+    rows.forEach((r) => (r.item?.cad_refs ?? []).forEach((sd) => m.set(sd, r)));
+    return m;
+  }, [rows]);
+  const colorFor = useCallback(
+    (solid: string) => {
+      const r = solidLine.get(solid);
+      if (focus && r && r.id === focus) return cssVar("--c-accent");
+      if (!r) return cssVar("--c-danger");
+      const st = pending[`line:${r.id}`] ?? r.line.review;
+      return st === "suggested" ? cssVar("--c-warning") : st === "rejected" ? cssVar("--c-text-muted") : cssVar("--c-success");
+    },
+    [solidLine, focus, pending],
+  );
+  function pick(solid: string | null) {
+    const r = solid ? solidLine.get(solid) : undefined;
+    setFocus(r ? r.id : null);
+    if (!r) return;
+    // The line lives on the Review tab; show it there.
+    setTab("review");
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        document.querySelector(`[data-row="${CSS.escape(r.id)}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" }),
+      ),
+    );
+  }
   const tabs: { key: TabKey; label: string }[] = [
     { key: "agent", label: "Agent run" },
     { key: "review", label: "Review" },
@@ -134,13 +169,34 @@ export function BomPanel({
           </button>
         ))}
       </div>
-      <div role="tabpanel" id={`${uid}-panel-${tab}`} aria-labelledby={`${uid}-tab-${tab}`} className="tabs__panel" key={tab}>
-        {tab === "agent" && <AgentRun run={run} token={token} step={step} />}
-        {tab === "review" && (
-          <Review bom={bom} token={token} files={files} canReview={canReview} pending={pending} set={set} />
+      <div className="bom__body" data-split={cad && tab !== "agent" ? "true" : undefined}>
+        {cad && tab !== "agent" && (
+          <div className="bom__viewer">
+            <Suspense fallback={<p role="status">Loading 3D viewer…</p>}>
+              <GlbViewer
+                token={token}
+                attachmentId={cad.id}
+                label={cad.filename}
+                colorFor={colorFor}
+                onPick={pick}
+                caption={
+                  <span className="legend">
+                    <i data-k="ok" /> given or accepted <i data-k="warn" /> suggested <i data-k="bad" /> not in the BoM{" "}
+                    <i data-k="sel" /> selected
+                  </span>
+                }
+              />
+            </Suspense>
+          </div>
         )}
-        {tab === "mbom" && <MbomMakeBuy bom={bom} canReview={canReview} pending={pending} set={set} />}
-        {tab === "export" && <Export bom={bom} run={run} token={token} />}
+        <div role="tabpanel" id={`${uid}-panel-${tab}`} aria-labelledby={`${uid}-tab-${tab}`} className="tabs__panel" key={tab}>
+          {tab === "agent" && <AgentRun run={run} token={token} step={step} />}
+          {tab === "review" && (
+            <Review bom={bom} token={token} canReview={canReview} pending={pending} set={set} focus={focus} setFocus={setFocus} />
+          )}
+          {tab === "mbom" && <MbomMakeBuy bom={bom} canReview={canReview} pending={pending} set={set} />}
+          {tab === "export" && <Export bom={bom} run={run} token={token} />}
+        </div>
       </div>
       {canReview && (
         <div className="bom__apply" role="region" aria-label="Pending review decisions">
@@ -236,26 +292,26 @@ function AgentRun({ run, token, step }: { run: RunOut; token: string; step: stri
 function Review({
   bom,
   token,
-  files,
   canReview,
   pending,
   set,
+  focus,
+  setFocus,
 }: {
   bom: Bom;
   token: string;
-  files: AttachmentOut[];
   canReview: boolean;
   pending: Answers;
   set: (k: string, v: string | null) => void;
+  focus: string | null;
+  setFocus: (id: string | null) => void;
 }) {
   const rows = useMemo(() => rowsOf(bom), [bom]);
   const [origin, setOrigin] = useState("all");
   const [review, setReview] = useState("all");
   const [sel, setSel] = useState<Set<string>>(new Set());
-  const [focus, setFocus] = useState<string | null>(null);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [materials, setMaterials] = useState<{ code: string; name: string }[]>([]);
-  const tableRef = useRef<HTMLTableElement>(null);
   const uid = useId();
 
   useEffect(() => {
@@ -270,30 +326,6 @@ function Review({
     .filter((r) => review === "all" || r.line.review === review)
     .sort((a, b) => a.line.qty.confidence - b.line.qty.confidence || a.id.localeCompare(b.id));
   const suggested = rows.filter((r) => r.line.review === "suggested");
-  const cad = files.find((f) => f.has_glb);
-  const solidLine = useMemo(() => {
-    const m = new Map<string, BomRow>();
-    rows.forEach((r) => (r.item?.cad_refs ?? []).forEach((s) => m.set(s, r)));
-    return m;
-  }, [rows]);
-
-  const colorFor = useCallback(
-    (solid: string) => {
-      const r = solidLine.get(solid);
-      if (focus && r && r.id === focus) return cssVar("--c-accent");
-      if (!r) return cssVar("--c-danger");
-      const st = decided(r) ?? r.line.review;
-      return st === "suggested" ? cssVar("--c-warning") : st === "rejected" ? cssVar("--c-text-muted") : cssVar("--c-success");
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [solidLine, focus, pending],
-  );
-
-  function pick(solid: string | null) {
-    const r = solid ? solidLine.get(solid) : undefined;
-    setFocus(r ? r.id : null);
-    if (r) requestAnimationFrame(() => tableRef.current?.querySelector(`[data-row="${CSS.escape(r.id)}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" }));
-  }
 
   function bulk(v: "accepted" | "rejected", ids: string[]) {
     ids.forEach((id) => set(`line:${id}`, v));
@@ -305,24 +337,7 @@ function Review({
       <Coverage bom={bom} canReview={canReview} pending={pending} set={set} />
       <Findings findings={bom.findings} canReview={canReview} pending={pending} set={set} />
 
-      <div className={cad ? "review-bom__grid" : undefined}>
-        {cad && (
-          <Suspense fallback={<p role="status">Loading 3D viewer…</p>}>
-            <GlbViewer
-              token={token}
-              attachmentId={cad.id}
-              label={cad.filename}
-              colorFor={colorFor}
-              onPick={pick}
-              caption={
-                <span className="legend">
-                  <i data-k="ok" /> given or accepted <i data-k="warn" /> suggested <i data-k="bad" /> not in the BoM{" "}
-                  <i data-k="sel" /> selected
-                </span>
-              }
-            />
-          </Suspense>
-        )}
+      <div>
         <div>
           <div className="bom-tools" role="group" aria-label="Filter and bulk actions">
             <label>
@@ -367,7 +382,7 @@ function Review({
             )}
           </div>
           <div className="table-scroll">
-            <table className="table bom-table" ref={tableRef}>
+            <table className="table bom-table">
               <caption className="visually-hidden">EBOM lines. Low confidence first.</caption>
               <thead>
                 <tr>

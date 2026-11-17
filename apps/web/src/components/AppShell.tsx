@@ -9,6 +9,8 @@ export function AppShell() {
   const mainRef = useRef<HTMLElement>(null);
   const prevPath = useRef(location.pathname);
   const [announcement, setAnnouncement] = useState("");
+  // Project and stage screens hold tables and a 3D view: use the whole window width.
+  const wide = location.pathname.startsWith("/p/") ? "true" : undefined;
 
   // On client-side navigation, move focus to the new page and announce its title.
   // (Compares paths rather than a "first render" flag, which StrictMode's double effects defeat.)
@@ -29,7 +31,7 @@ export function AppShell() {
         Skip to main content
       </a>
       <header className="site-header">
-        <div className="site-header__inner">
+        <div className="site-header__inner" data-wide={wide}>
           <Link to="/" className="brand" aria-label="Factory Planner, home">
             <BrandMark className="brand__mark" />
             <span>Factory Planner</span>
@@ -38,12 +40,12 @@ export function AppShell() {
           <ThemeSwitch />
         </div>
       </header>
-      <main id="main" ref={mainRef} className="site-main" tabIndex={-1}>
+      <main id="main" ref={mainRef} className="site-main" data-wide={wide} tabIndex={-1}>
         <div className="page" key={location.pathname}>
           <Outlet />
         </div>
       </main>
-      <footer className="site-footer">
+      <footer className="site-footer" data-wide={wide}>
         Planning estimates only, not engineering certification, legal or financial advice.
       </footer>
       <div className="visually-hidden" aria-live="polite" aria-atomic="true">

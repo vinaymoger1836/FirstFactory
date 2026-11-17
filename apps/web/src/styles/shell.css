@@ -153,6 +153,14 @@
   border-top: 1px solid var(--c-border);
 }
 
+/* Wide pages (project and stage screens): the full window, with a modest gutter. */
+.site-header__inner[data-wide="true"],
+.site-main[data-wide="true"],
+.site-footer[data-wide="true"] {
+  max-width: none;
+  padding-inline: var(--space-5);
+}
+
 /* ── Small screens: disclosure menu ───────────────────────── */
 @media (max-width: 760px) {
   .menu-toggle {

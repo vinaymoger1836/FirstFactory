@@ -138,24 +138,31 @@
   opacity: 0.7;
 }
 
-/* Review grid: 3D next to the table on wide screens */
-.review-bom__grid {
+/* 3D viewer beside the tab content (Review, MBOM, Export) on wide screens */
+.bom__body {
   display: grid;
   gap: var(--space-4);
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
-@media (min-width: 1500px) {
-  .review-bom__grid {
-    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+.bom__viewer .glb__canvas {
+  height: 18rem;
+}
+@media (min-width: 1100px) {
+  .bom__body[data-split="true"] {
+    grid-template-columns: minmax(22rem, 34%) minmax(0, 1fr);
+  }
+  .bom__viewer {
+    position: sticky;
+    /* clear of the sticky header and the Approve bar; the Apply bar sits below */
+    top: calc(var(--header-h) + 5rem);
+  }
+  .bom__viewer .glb__canvas {
+    height: min(34rem, calc(100vh - var(--header-h) - 17rem));
+    min-height: 16rem;
   }
 }
-.review-bom__grid .glb__canvas {
-  height: 16rem;
-}
-.review-bom__grid .glb {
-  position: sticky;
-  top: calc(var(--header-h) + var(--space-3));
+.bom__viewer .glb {
   margin: 0;
 }
 .legend {
