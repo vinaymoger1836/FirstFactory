@@ -185,3 +185,79 @@ entries:
       as_of: "2026-11"
       confidence: 0.3
       note: Placeholder archetype; intake marks products classified here with a notice (docs/03 §3.2).
+
+  # 2026.11.4: automatic flat-bread (roti) maker. A functional decomposition taken from public
+  # patents (US 8,820,221 unit list; dispensing, kneading and no-flip cooking patents) and press;
+  # it is not a teardown. Quantities marked "confirm" must be replaced from the user's BoM.
+  - code: roti_maker
+    name: Automatic roti maker (dosing, kneading, press and heat)
+    category: mechanical
+    description: Countertop appliance that doses flour, water and oil, kneads one dough ball, presses it flat between two heated platens and cooks it. Bought controller PCBA and power supply; in-house assembly.
+    aliases: [roti maker, rotimatic, roti machine, chapati maker, automatic roti maker, flatbread maker, flat bread machine]
+    parameters:
+      - {name: rated_power_w, unit: W, description: Rated input power}
+      - {name: mains_v, unit: V, description: Nominal mains voltage of the variant}
+      - {name: n_containers, unit: unit, description: "Ingredient containers (flour, water and oil)"}
+      - {name: n_platens, unit: unit, description: Heated platens (upper and lower)}
+      - {name: n_motors, unit: unit, description: Drive motors in total (confirm from the BoM)}
+      - {name: n_sensors, unit: unit, description: Sensors in total (confirm from the BoM)}
+      - {name: units_per_carton, unit: unit, description: Machines per shipper carton}
+    example_variants:
+      - code: RM-120V
+        name: Roti maker 110-120 V
+        params: {rated_power_w: 1800, mains_v: 120, n_containers: 3, n_platens: 2, n_motors: 10, n_sensors: 15, units_per_carton: 1}
+      - code: RM-230V
+        name: Roti maker 220-240 V
+        params: {rated_power_w: 1600, mains_v: 230, n_containers: 3, n_platens: 2, n_motors: 10, n_sensors: 15, units_per_carton: 1}
+    bom_skeleton:
+      - {ref: dispensing, name: Storage and dispensing unit, kind: assembly, qty_expr: "1", uom: unit, make_or_buy: make, subassembly: dispensing}
+      - {ref: containers, name: Ingredient containers, commodity: food_contact_container, kind: part, qty_expr: n_containers, uom: unit, make_or_buy: buy, subassembly: dispensing, parent: dispensing}
+      - {ref: flour_motor, name: Flour dispenser geared motor, commodity: electric_motor, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: dispensing, parent: dispensing}
+      - {ref: flour_gears, name: Flour dispenser gears and wheel, commodity: gears, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: dispensing, parent: dispensing, note: "confirm: patent lists blade, compartmental wheel, packer, knocker and gear box"}
+      - {ref: water_pump, name: Water dosing pump, commodity: water_pump, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: dispensing, parent: dispensing, note: "confirm: pump or valve"}
+      - {ref: oil_valve, name: Oil dosing valve, commodity: solenoid_valve, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: dispensing, parent: dispensing, note: "confirm: pump or valve"}
+      - {ref: liquid_tubing, name: Liquid tubing, commodity: tubing_hoses, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: dispensing, parent: dispensing}
+      - {ref: level_sensors, name: Container level sensors, commodity: sensors, kind: part, qty_expr: n_containers, uom: unit, make_or_buy: buy, subassembly: dispensing, parent: dispensing}
+      - {ref: kneading, name: Mixing and kneading unit, kind: assembly, qty_expr: "1", uom: unit, make_or_buy: make, subassembly: kneading}
+      - {ref: kneading_cup, name: Kneading cup and base, commodity: food_contact_container, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: kneading, parent: kneading}
+      - {ref: kneading_motor, name: Kneading motor, commodity: electric_motor, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: kneading, parent: kneading}
+      - {ref: transfer, name: Vertical and horizontal transfer units, kind: assembly, qty_expr: "1", uom: unit, make_or_buy: make, subassembly: transfer}
+      - {ref: transfer_motors, name: Transfer motors, commodity: electric_motor, kind: part, qty_expr: "2", uom: unit, make_or_buy: buy, subassembly: transfer, parent: transfer}
+      - {ref: transfer_motion, name: Transfer guides and drives, commodity: linear_motion, kind: part, qty_expr: "2", uom: unit, make_or_buy: buy, subassembly: transfer, parent: transfer, note: "confirm: belts, lead screws or rails"}
+      - {ref: press_heat, name: Pressing and heating unit, kind: assembly, qty_expr: "1", uom: unit, make_or_buy: make, subassembly: press and heat}
+      - {ref: press_motor, name: Press motor, commodity: electric_motor, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: press and heat, parent: press_heat}
+      - {ref: press_linkage, name: Press cam and linkage, commodity: machined_parts, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: press and heat, parent: press_heat, note: confirm}
+      - {ref: platens, name: Heated platens, commodity: heated_platen, kind: part, qty_expr: n_platens, uom: unit, make_or_buy: buy, subassembly: press and heat, parent: press_heat}
+      - {ref: platen_insulation, name: Platen insulation, commodity: thermal_insulation, kind: part, qty_expr: n_platens, uom: unit, make_or_buy: buy, subassembly: press and heat, parent: press_heat}
+      - {ref: temp_sensors, name: Platen temperature sensors, commodity: sensors, kind: part, qty_expr: n_platens, uom: unit, make_or_buy: buy, subassembly: press and heat, parent: press_heat}
+      - {ref: thermal_cutouts, name: Platen thermal cutouts, commodity: thermal_protector, kind: part, qty_expr: n_platens, uom: unit, make_or_buy: buy, subassembly: press and heat, parent: press_heat}
+      - {ref: position_sensors, name: Position and other sensors, commodity: sensors, kind: part, qty_expr: "n_sensors - n_platens - n_containers", uom: unit, make_or_buy: buy, subassembly: press and heat, parent: press_heat, note: "confirm: sensor count is from a press review"}
+      - {ref: extra_motors, name: Additional actuator motors, commodity: electric_motor, kind: part, qty_expr: "n_motors - 5", uom: unit, make_or_buy: buy, subassembly: final assembly, note: "confirm: motor count is from a press review"}
+      - {ref: controller, name: Controller PCBA, commodity: pcba, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: control}
+      - {ref: display, name: Display and control panel, commodity: display_module, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: control}
+      - {ref: wireless, name: Wireless module, commodity: wireless_module, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: control, note: "confirm: app connectivity is mentioned in reviews"}
+      - {ref: psu, name: Power supply, commodity: power_supply_unit, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: control}
+      - {ref: harness, name: Wiring harness, commodity: wiring_harness, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: control}
+      - {ref: mains_cord, name: Mains cord and plug, commodity: power_cord, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: housing, name: Moulded housing, commodity: molded_enclosure, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: chassis, name: Chassis and frame, commodity: sheet_metal_parts, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: seals, name: Seals and gaskets, commodity: seals_gaskets, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: fasteners, name: Fasteners (kit), commodity: fasteners, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly, note: "confirm: replace with the counted quantity"}
+      - {ref: rating_label, name: Rating label, commodity: labels, kind: part, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: final assembly}
+      - {ref: accessories, name: Accessory kit (brushes and tools), commodity: accessory_kit, kind: packaging, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: packing}
+      - {ref: manual, name: User manual, commodity: user_manual, kind: packaging, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: packing}
+      - {ref: carton, name: Shipper carton, commodity: packaging_carton, kind: packaging, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: packing}
+    # typical_routing is empty on purpose: dispenser and platen assembly, calibration and the
+    # baking test have no sourced times yet (processes and machine classes come with the first
+    # real BoM and time study).
+    typical_routing: []
+    compliance_pack_keys: []
+    variant_deltas: >
+      The 110-120 V and 220-240 V variants differ in the heated platens (watts and voltage), the
+      power supply, thermal cutouts and the mains cord; the mechanics, controller and packaging
+      are common.
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.3
+      note: Functional decomposition from patents and press, not a teardown. Motor and sensor counts are from one review and unverified.

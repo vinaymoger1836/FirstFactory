@@ -145,3 +145,32 @@ entries:
     category: metal
     density_g_cm3: 7.85
     provenance: *est
+
+  # 2026.11.4: handbook densities, typical for the grade family; no price.
+  - code: acetal_pom
+    name: Acetal / POM (gear and bearing grade)
+    aliases: [acetal, pom, delrin, polyoxymethylene]
+    category: polymer
+    density_g_cm3: 1.41
+    provenance: *est
+
+  - code: nylon_pa66
+    name: Nylon 66 (PA66, unfilled)
+    aliases: [nylon, pa66, polyamide 66, polyamide]
+    category: polymer
+    density_g_cm3: 1.14
+    provenance: *est
+
+  - code: silicone_rubber
+    name: Silicone rubber (food grade, general purpose)
+    aliases: [silicone, silicone rubber, vmq]
+    category: polymer
+    density_g_cm3: 1.2
+    provenance: *est
+
+  - code: ptfe
+    name: PTFE (non-stick coating or solid)
+    aliases: [ptfe, teflon, non-stick coating, nonstick]
+    category: polymer
+    density_g_cm3: 2.2
+    provenance: *est

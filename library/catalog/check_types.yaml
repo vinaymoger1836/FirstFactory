@@ -198,3 +198,57 @@ entries:
     time_s: 3
     sampling: 100pct
     provenance: *est
+
+  # 2026.11.4: checks for a dosing, kneading, press-and-heat appliance. Times are estimates.
+  - code: dosing_accuracy
+    name: Dosing accuracy (flour, water, oil per dough ball)
+    layers: [ipqc, eol]
+    method: Dispense into a container on a scale for the set number of cycles; compare the mean and spread with the target mass.
+    measures: [dispensed mass per cycle, spread]
+    time_s: 120
+    sampling: sampled_pct
+    provenance: *est
+
+  - code: platen_temp_profile
+    name: Platen temperature profile
+    layers: [ipqc, lab]
+    method: Heat to the set point and log platen surface temperature at fixed points; check time to temperature and the profile against the design.
+    measures: [surface temperature, time to temperature, temperature spread]
+    time_s: 600
+    sampling: sampled_pct
+    provenance: *est
+
+  - code: leak_test
+    name: Water circuit leak test
+    layers: [ipqc, eol]
+    method: Run the liquid circuit at working pressure for the set time and inspect joints for leaks.
+    measures: [leaks, pressure hold]
+    time_s: 45
+    sampling: 100pct
+    provenance: *est
+
+  - code: earth_continuity
+    name: Earth continuity
+    layers: [eol]
+    method: Measure resistance between the earth pin and accessible metal parts at the set current.
+    measures: [earth resistance]
+    time_s: 5
+    sampling: 100pct
+    provenance: *est
+
+  - code: power_per_unit
+    name: Power and energy per cycle
+    layers: [eol, lab]
+    method: Measure input power at steady state and energy for one product cycle; compare with the rating label.
+    measures: [input power, energy per cycle]
+    time_s: 90
+    sampling: sampled_pct
+    provenance: *est
+
+  - code: food_contact_material
+    name: Food-contact material certificate check
+    layers: [iqc]
+    method: Check the supplier's food-contact declaration or test report for each part that touches food or its ingredients.
+    measures: [certificate present, grade matches the drawing]
+    sampling: periodic
+    provenance: *est

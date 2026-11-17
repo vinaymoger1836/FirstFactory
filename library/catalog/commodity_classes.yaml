@@ -558,3 +558,233 @@ entries:
       - {code: rated_voltage_v, name: Rated voltage, kind: number, unit: V}
       - {code: rated_current_a, name: Rated current, kind: number, unit: A}
     provenance: *est2
+
+  # ── 2026.11.4: parts of a roti-maker style appliance (dosing, kneading, press and heat,
+  # control). No unit_price_inr on any of them (no sourced price); lead times are estimates.
+
+  - code: water_pump
+    name: Water and liquid dosing pumps
+    aliases: [pump, water pump, dosing pump, peristaltic pump, diaphragm pump]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 10, base: 25, high: 45}
+    pack_qty: 20
+    iqc_checks: [visual_inspection]
+    default_aql: 1.0
+    spec_fields:
+      - {code: pump_type, name: Pump type, kind: choice, choices: [peristaltic, diaphragm, gear, piston]}
+      - {code: flow_ml_min, name: Flow rate, kind: number, unit: ml/min}
+      - {code: voltage_v, name: Rated voltage, kind: number, unit: V}
+      - {code: food_contact, name: Food-contact wetted parts, kind: choice, choices: ["yes", "no"]}
+    provenance: *est2
+
+  - code: solenoid_valve
+    name: Solenoid valves
+    aliases: [solenoid valve, valve, dosing valve]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 10, base: 25, high: 45}
+    pack_qty: 50
+    iqc_checks: [visual_inspection]
+    default_aql: 1.0
+    spec_fields:
+      - {code: voltage_v, name: Coil voltage, kind: number, unit: V}
+      - {code: orifice_mm, name: Orifice diameter, kind: number, unit: mm, required: false}
+      - {code: food_contact, name: Food-contact wetted parts, kind: choice, choices: ["yes", "no"]}
+    provenance: *est2
+
+  - code: heated_platen
+    name: Heated platens and heating plates
+    aliases: [platen, heating plate, hot plate, press plate, griddle plate]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 15, base: 35, high: 60}
+    pack_qty: 10
+    iqc_checks: [dimensional_check, visual_inspection, insulation_resistance, hipot]
+    default_aql: 0.65
+    default_material: aluminium_die_cast
+    spec_fields:
+      - {code: power_w, name: Rated power, kind: number, unit: W}
+      - {code: voltage_v, name: Rated voltage, kind: number, unit: V}
+      - {code: length_mm, name: Plate length, kind: number, unit: mm}
+      - {code: width_mm, name: Plate width, kind: number, unit: mm}
+      - {code: base_material, name: Base material and grade, kind: text}
+      - {code: surface, name: Surface or non-stick coating, kind: text, required: false}
+      - {code: max_temp_c, name: Max working temperature, kind: number, unit: degC, required: false}
+    provenance: *est2
+
+  - code: sensors
+    name: Sensors (temperature, position, level, current)
+    aliases: [sensor, temperature sensor, ntc, thermistor, thermocouple, optical sensor, hall sensor, level sensor, limit sensor]
+    uom: unit
+    storage_class: esd
+    lead_time_days: {low: 7, base: 20, high: 45}
+    pack_qty: 100
+    iqc_checks: [visual_inspection]
+    default_aql: 0.65
+    cad_rarely_modelled: true
+    spec_fields:
+      - {code: sensor_type, name: Sensor type, kind: choice, choices: [temperature, optical, hall, level, current, load_cell, other]}
+      - {code: range_output, name: Range and output (e.g. 0-300 degC or NTC 100k), kind: text}
+      - {code: supply_v, name: Supply voltage, kind: number, unit: V, required: false}
+    provenance: *est2
+
+  - code: display_module
+    name: Displays, touch panels and indicators
+    aliases: [display, touch panel, lcd, oled, led indicator, control panel]
+    uom: unit
+    storage_class: esd
+    lead_time_days: {low: 10, base: 25, high: 45}
+    pack_qty: 50
+    iqc_checks: [visual_inspection]
+    default_aql: 0.65
+    spec_fields:
+      - {code: display_type, name: Display type, kind: choice, choices: [lcd, oled, tft, led, touch_membrane]}
+      - {code: size_or_format, name: Size or format, kind: text}
+      - {code: supply_v, name: Supply voltage, kind: number, unit: V, required: false}
+    provenance: *est2
+
+  - code: wireless_module
+    name: Wireless modules (wifi, Bluetooth)
+    aliases: [wifi module, bluetooth module, wireless module, wi-fi]
+    uom: unit
+    storage_class: esd
+    lead_time_days: {low: 10, base: 30, high: 60}
+    pack_qty: 200
+    iqc_checks: [visual_inspection]
+    default_aql: 0.65
+    cad_rarely_modelled: true
+    spec_fields:
+      - {code: radio, name: Radio, kind: choice, choices: [wifi, bluetooth, wifi_bluetooth, other]}
+      - {code: module_part, name: Module family or certification ID, kind: text, required: false}
+    provenance: *est2
+
+  - code: power_supply_unit
+    name: Power supplies and converters (AC-DC)
+    aliases: [power supply, psu, smps, adapter, transformer]
+    uom: unit
+    storage_class: esd
+    lead_time_days: {low: 10, base: 30, high: 60}
+    pack_qty: 50
+    iqc_checks: [visual_inspection, hipot]
+    default_aql: 0.65
+    spec_fields:
+      - {code: input_v_min, name: Input voltage min, kind: number, unit: V}
+      - {code: input_v_max, name: Input voltage max, kind: number, unit: V}
+      - {code: output_v, name: Output voltage, kind: number, unit: V}
+      - {code: output_a, name: Output current, kind: number, unit: A}
+    provenance: *est2
+
+  - code: power_cord
+    name: Mains cords, plugs and inlets
+    aliases: [power cord, mains cord, plug, cable assembly, ac inlet]
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 7, base: 20, high: 40}
+    pack_qty: 100
+    iqc_checks: [visual_inspection, hipot]
+    default_aql: 0.65
+    spec_fields:
+      - {code: plug_standard, name: Plug standard, kind: choice, choices: [IN_type_D, IN_type_C, US_type_A, US_type_B, UK_type_G, EU_type_F, AU_type_I, other]}
+      - {code: length_m, name: Cord length, kind: number, unit: m}
+      - {code: rated_current_a, name: Rated current, kind: number, unit: A}
+      - {code: conductor_mm2, name: Conductor size, kind: number, unit: mm2, required: false}
+    provenance: *est2
+
+  - code: thermal_protector
+    name: Thermal cutouts and fuses
+    aliases: [thermal fuse, thermal cutout, thermostat cutout, fuse, thermal protector]
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 7, base: 20, high: 40}
+    pack_qty: 200
+    iqc_checks: [visual_inspection]
+    default_aql: 0.65
+    cad_rarely_modelled: true
+    spec_fields:
+      - {code: protector_type, name: Device type, kind: choice, choices: [thermal_fuse, bimetal_cutout, ptc, mains_fuse]}
+      - {code: trip_temp_c, name: Trip temperature, kind: number, unit: degC, required: false}
+      - {code: rated_current_a, name: Rated current, kind: number, unit: A}
+      - {code: rated_voltage_v, name: Rated voltage, kind: number, unit: V}
+    provenance: *est2
+
+  - code: tubing_hoses
+    name: Tubing and hoses (food-grade)
+    aliases: [tubing, hose, silicone tube, pipe]
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 5, base: 15, high: 30}
+    pack_qty: 100
+    iqc_checks: [visual_inspection, dimensional_check]
+    default_aql: 1.5
+    default_material: silicone_rubber
+    spec_fields:
+      - {code: inner_dia_mm, name: Inside diameter, kind: number, unit: mm}
+      - {code: length_mm, name: Length, kind: number, unit: mm}
+      - {code: material, name: Material (e.g. silicone or PVC), kind: text}
+      - {code: food_contact, name: Food-contact grade, kind: choice, choices: ["yes", "no"]}
+    provenance: *est2
+
+  - code: thermal_insulation
+    name: Thermal insulation (mica, ceramic fibre, foam)
+    aliases: [mica sheet, ceramic fibre, heat shield, thermal pad]
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 7, base: 20, high: 40}
+    pack_qty: 100
+    iqc_checks: [visual_inspection, dimensional_check]
+    default_aql: 1.5
+    cad_rarely_modelled: true
+    spec_fields:
+      - {code: material, name: Material, kind: text}
+      - {code: thickness_mm, name: Thickness, kind: number, unit: mm}
+      - {code: max_temp_c, name: Max working temperature, kind: number, unit: degC}
+    provenance: *est2
+
+  - code: linear_motion
+    name: Lead screws, linear guides and rails
+    aliases: [lead screw, linear guide, guide rail, slide, ball screw]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 10, base: 30, high: 60}
+    pack_qty: 20
+    iqc_checks: [dimensional_check]
+    default_aql: 1.0
+    default_material: mild_steel
+    spec_fields:
+      - {code: motion_type, name: Type, kind: choice, choices: [lead_screw, ball_screw, linear_rail, slide_bush]}
+      - {code: length_mm, name: Length, kind: number, unit: mm}
+      - {code: lead_or_dia_mm, name: Lead or diameter, kind: number, unit: mm}
+    provenance: *est2
+
+  - code: food_contact_container
+    name: Food-contact containers, hoppers and cups
+    aliases: [container, hopper, flour container, kneading cup, tank, jar]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 10, base: 25, high: 45}
+    pack_qty: 20
+    iqc_checks: [visual_inspection, dimensional_check]
+    default_aql: 1.0
+    default_material: polypropylene
+    make_route: [injection_mold]
+    spec_fields:
+      - {code: volume_ml, name: Volume, kind: number, unit: ml}
+      - {code: material, name: Material and grade (e.g. PP or PC food grade), kind: text}
+      - {code: food_contact_cert, name: Food-contact certification on file, kind: choice, choices: ["yes", "no", "unknown"]}
+      - {code: dishwasher_safe, name: Dishwasher safe, kind: choice, choices: ["yes", "no"], required: false}
+    provenance: *est2
+
+  - code: accessory_kit
+    name: Accessory kits (brushes, trays, tools in the box)
+    aliases: [accessories, cleaning brush, brush, tray, spatula, tool kit]
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 5, base: 15, high: 30}
+    pack_qty: 100
+    iqc_checks: [visual_inspection]
+    default_aql: 1.5
+    cad_rarely_modelled: true
+    spec_fields:
+      - {code: contents, name: Contents of the kit, kind: text}
+    provenance: *est2

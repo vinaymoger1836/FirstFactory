@@ -302,3 +302,20 @@ entries:
       - {kind: on_boundary}
       - {kind: keep_apart, target_kind: office, distance_m: 10}
     provenance: *est
+
+  - code: dust_test_bay
+    name: Food-powder test bay
+    description: Test area where machines run on flour or other powders; combustible dust control and ventilation.
+    category: quality
+    lighting_w_m2: 7
+    lux: 300
+    default_height_m: 4
+    min_aspect: 1
+    max_aspect: 3
+    floor: concrete
+    hvac: ventilation
+    hazards: [combustible_dust]
+    rules:
+      - {kind: ventilated}
+      - {kind: keep_apart, target_kind: office, distance_m: 10}
+    provenance: *est
