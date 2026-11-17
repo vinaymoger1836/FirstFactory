@@ -393,6 +393,11 @@ class BomSpec(StageSpec):
                 for c in p.get("cad_links", [])
                 if c.get("cad_part") in cad_names and c.get("skeleton_ref") in skel_refs
             },
+            cad_class={
+                c["cad_part"]: c["commodity_class"]
+                for c in p.get("cad_classes", [])
+                if c.get("cad_part") in cad_names and c.get("commodity_class") in classes
+            },
             materials={
                 m["target"]: m["material"]
                 for m in p.get("materials", [])

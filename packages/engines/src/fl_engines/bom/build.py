@@ -133,6 +133,7 @@ class Proposal:
     extra_lines: list[ExtraLine] = field(default_factory=list)
     classify: dict[str, str] = field(default_factory=dict)  # part_no → class
     cad_map: dict[str, str] = field(default_factory=dict)  # CAD part name → skeleton ref
+    cad_class: dict[str, str] = field(default_factory=dict)  # CAD part name → class code
     materials: dict[str, str] = field(default_factory=dict)  # part_no / skeleton ref → material
     questions: list[str] = field(default_factory=list)
 
@@ -487,44 +488,34 @@ def build_bom(inp: BuildInput) -> Bom:
                 )
             )
         lines = [ln for ln in lines if ln.qty]
-        # CAD parts no skeleton line explains → a question (never added silently).
+        # CAD parts no skeleton line explains → suggested lines (never added silently: the
+        # user accepts or rejects each one; rejected ones are remembered).
         for part in inp.cad:
             if part.name in cad_to_ref or f"cad:{part.name}" in inp.rejected_before:
                 continue
-            cls, _ = _cad_class(rules, part, Proposal())
-            fid = _fid("cad_unmatched", part.name)
-            ans = dec.findings.get(fid)
-            findings.append(
-                BomFinding(
-                    id=fid,
-                    kind="cad_unmatched",
-                    rank=RANK["cad_unmatched"],
-                    text=f"CAD shows '{part.name}' ({part.count} ×), not in the BoM. Add it?",
+            cls = prop.cad_class.get(part.name)
+            if cls not in classes:
+                cls, _ = _cad_class(rules, part, Proposal())
+            lines.append(
+                _Line(
+                    id=f"C-{_local_id(part.name)}",
+                    part_no=_local_id("CAD-" + part.name.upper()),
+                    name=part.name.replace("_", " "),
+                    qty={v: float(part.count) for v in inp.variants},
+                    uom="unit",
+                    origin="cad",
+                    review="suggested",
                     commodity_class=cls,
-                    options=["Add it", "Ignore"],
-                    status="answered" if ans else "open",
-                    answer=ans,
+                    qty_source="cad",
+                    qty_conf=0.9,
+                    qty_ref=part.ref,
+                    qty_note=f"{part.count} × in the CAD model",
+                    reason=f"CAD part '{part.name}'"
+                    + (f"; class '{cls}'" if cls else "; no catalog class matched"),
+                    cad_refs=list(part.instances),
+                    suggest_key=f"cad:{part.name}",
                 )
             )
-            if ans == "Add it":
-                lines.append(
-                    _Line(
-                        id=f"C-{_local_id(part.name)}",
-                        part_no=_local_id("CAD-" + part.name.upper()),
-                        name=part.name.replace("_", " "),
-                        qty={v: float(part.count) for v in inp.variants},
-                        uom="unit",
-                        origin="cad",
-                        review="accepted",
-                        commodity_class=cls,
-                        qty_source="cad",
-                        qty_conf=0.9,
-                        qty_ref=part.ref,
-                        cad_refs=list(part.instances),
-                    )
-                )
-            elif ans == "Ignore":
-                rejected_now.add(f"cad:{part.name}")
 
     # 2. Gap check and CAD cross-check (cases B/C) ─────────────────────
     case: Literal["A", "B", "C"] = "A"

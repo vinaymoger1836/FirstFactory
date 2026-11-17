@@ -5,6 +5,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = [
+    "CadClass",
     "CadLink",
     "ClassifyLine",
     "ExtraLineOut",
@@ -40,6 +41,13 @@ class CadLink(_Out):
     skeleton_ref: str = Field(default="", description="Skeleton line ref it is.")
 
 
+class CadClass(_Out):
+    cad_part: str = Field(default="", description="CAD part name exactly as listed.")
+    commodity_class: str = Field(
+        default="", description="Closest allowed class code, or empty if none fits."
+    )
+
+
 class ClassifyLine(_Out):
     part_no: str = ""
     commodity_class: str = ""
@@ -54,6 +62,7 @@ class ProposerDraft(_Out):
     skeleton: list[SkeletonDecision] = Field(default_factory=list, max_length=60)
     extra_lines: list[ExtraLineOut] = Field(default_factory=list, max_length=15)
     cad_links: list[CadLink] = Field(default_factory=list, max_length=60)
+    cad_classes: list[CadClass] = Field(default_factory=list, max_length=200)
     classify: list[ClassifyLine] = Field(default_factory=list, max_length=200)
     materials: list[MaterialPick] = Field(default_factory=list, max_length=100)
     notes: list[str] = Field(default_factory=list, max_length=5)

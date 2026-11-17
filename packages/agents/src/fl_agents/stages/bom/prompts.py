@@ -17,7 +17,9 @@ the user approves. Rules:
 
 TASK_A = """Case A: there is no BoM file. Draft the BoM from the product type's skeleton.
 - For each skeleton line decide keep=true/false (false only if the facts clearly rule it out).
-- Link CAD parts to skeleton lines where they are the same thing (cad_links); leave the rest.
+- Link CAD parts to skeleton lines where they are the same thing (cad_links).
+- For every other CAD part, give the closest allowed class code in cad_classes (use
+  catalog_search to find it; leave it empty if no class fits). Each becomes a suggested line.
 - Add extra_lines only for parts this product clearly needs that the skeleton lacks.
 - Pick a material for CAD-linked lines when the default would be wrong."""
 
