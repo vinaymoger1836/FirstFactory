@@ -138,32 +138,32 @@
   opacity: 0.7;
 }
 
-/* 3D viewer beside the tab content (Review, MBOM, Export) on wide screens */
-.bom__body {
+/* CAD preview tab: a large viewer with the selected line under it */
+.cad-tab {
   display: grid;
-  gap: var(--space-4);
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
+  gap: var(--space-3);
 }
-.bom__viewer .glb__canvas {
-  height: 18rem;
+.cad-tab .glb__canvas {
+  height: min(40rem, calc(100vh - var(--header-h) - 14rem));
+  min-height: 18rem;
 }
-@media (min-width: 1100px) {
-  .bom__body[data-split="true"] {
-    grid-template-columns: minmax(22rem, 34%) minmax(0, 1fr);
-  }
-  .bom__viewer {
-    position: sticky;
-    /* clear of the sticky header and the Approve bar; the Apply bar sits below */
-    top: calc(var(--header-h) + 5rem);
-  }
-  .bom__viewer .glb__canvas {
-    height: min(34rem, calc(100vh - var(--header-h) - 17rem));
-    min-height: 16rem;
-  }
-}
-.bom__viewer .glb {
+.cad-tab .glb {
   margin: 0;
+}
+.cad-selected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface-2);
+}
+.cad-selected__actions {
+  display: flex;
+  gap: var(--space-2);
 }
 .legend {
   display: inline-flex;
@@ -237,7 +237,8 @@
 }
 .input--mat {
   min-height: 2rem;
-  max-width: 12rem;
+  min-width: 10rem;
+  max-width: 14rem;
 }
 .linklike {
   border: 0;

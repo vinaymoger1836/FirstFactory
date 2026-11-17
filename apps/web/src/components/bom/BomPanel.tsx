@@ -11,7 +11,7 @@ import "./bom.css";
 const GlbViewer = lazy(() => import("../GlbViewer"));
 
 type Answers = Record<string, string>;
-type TabKey = "agent" | "review" | "mbom" | "export";
+type TabKey = "agent" | "review" | "cad" | "mbom" | "export";
 
 const ORIGIN_LABEL: Record<string, string> = {
   user_bom: "Your BoM",
@@ -101,18 +101,26 @@ export function BomPanel({
   function pick(solid: string | null) {
     const r = solid ? solidLine.get(solid) : undefined;
     setFocus(r ? r.id : null);
-    if (!r) return;
-    // The line lives on the Review tab; show it there.
+  }
+  /** Show a BoM line in the 3D view (from the Review table). */
+  function show3d(id: string | null) {
+    setFocus(id);
+    if (id && cad) setTab("cad");
+  }
+  /** Show a line in the table (from the 3D view). */
+  function showLine(id: string) {
+    setFocus(id);
     setTab("review");
     requestAnimationFrame(() =>
       requestAnimationFrame(() =>
-        document.querySelector(`[data-row="${CSS.escape(r.id)}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" }),
+        document.querySelector(`[data-row="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" }),
       ),
     );
   }
   const tabs: { key: TabKey; label: string }[] = [
     { key: "agent", label: "Agent run" },
     { key: "review", label: "Review" },
+    ...(cad ? [{ key: "cad" as const, label: "CAD preview" }] : []),
     { key: "mbom", label: "MBOM & make/buy" },
     { key: "export", label: "Export" },
   ];
@@ -169,9 +177,13 @@ export function BomPanel({
           </button>
         ))}
       </div>
-      <div className="bom__body" data-split={cad && tab !== "agent" ? "true" : undefined}>
-        {cad && tab !== "agent" && (
-          <div className="bom__viewer">
+      <div role="tabpanel" id={`${uid}-panel-${tab}`} aria-labelledby={`${uid}-tab-${tab}`} className="tabs__panel" key={tab}>
+        {tab === "agent" && <AgentRun run={run} token={token} step={step} />}
+        {tab === "review" && (
+          <Review bom={bom} token={token} canReview={canReview} pending={pending} set={set} focus={focus} onShow3d={cad ? show3d : undefined} setFocus={setFocus} />
+        )}
+        {tab === "cad" && cad && (
+          <div className="cad-tab">
             <Suspense fallback={<p role="status">Loading 3D viewer…</p>}>
               <GlbViewer
                 token={token}
@@ -187,16 +199,17 @@ export function BomPanel({
                 }
               />
             </Suspense>
+            <SelectedLine
+              row={rows.find((r) => r.id === focus) ?? null}
+              canReview={canReview}
+              pending={pending}
+              set={set}
+              onShowLine={showLine}
+            />
           </div>
         )}
-        <div role="tabpanel" id={`${uid}-panel-${tab}`} aria-labelledby={`${uid}-tab-${tab}`} className="tabs__panel" key={tab}>
-          {tab === "agent" && <AgentRun run={run} token={token} step={step} />}
-          {tab === "review" && (
-            <Review bom={bom} token={token} canReview={canReview} pending={pending} set={set} focus={focus} setFocus={setFocus} />
-          )}
-          {tab === "mbom" && <MbomMakeBuy bom={bom} canReview={canReview} pending={pending} set={set} />}
-          {tab === "export" && <Export bom={bom} run={run} token={token} />}
-        </div>
+        {tab === "mbom" && <MbomMakeBuy bom={bom} canReview={canReview} pending={pending} set={set} />}
+        {tab === "export" && <Export bom={bom} run={run} token={token} />}
       </div>
       {canReview && (
         <div className="bom__apply" role="region" aria-label="Pending review decisions">
@@ -297,6 +310,7 @@ function Review({
   set,
   focus,
   setFocus,
+  onShow3d,
 }: {
   bom: Bom;
   token: string;
@@ -305,6 +319,7 @@ function Review({
   set: (k: string, v: string | null) => void;
   focus: string | null;
   setFocus: (id: string | null) => void;
+  onShow3d?: (id: string | null) => void;
 }) {
   const rows = useMemo(() => rowsOf(bom), [bom]);
   const [origin, setOrigin] = useState("all");
@@ -437,8 +452,15 @@ function Review({
                           </td>
                         )}
                         <td>
-                          <button type="button" className="linklike" onClick={() => setFocus(focus === r.id ? null : r.id)} aria-pressed={focus === r.id}>
+                          <button
+                            type="button"
+                            className="linklike"
+                            onClick={() => (onShow3d ? onShow3d(r.id) : setFocus(focus === r.id ? null : r.id))}
+                            aria-pressed={onShow3d ? undefined : focus === r.id}
+                            title={onShow3d ? "Show in the CAD preview" : undefined}
+                          >
                             <code>{r.line.child}</code>
+                            {onShow3d && <span className="visually-hidden"> (show in CAD preview)</span>}
                           </button>
                           <div>{item?.name}</div>
                           {r.line.reason && (
@@ -577,6 +599,55 @@ function Review({
 
 function RowFragment({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
+}
+
+function SelectedLine({
+  row,
+  canReview,
+  pending,
+  set,
+  onShowLine,
+}: {
+  row: BomRow | null;
+  canReview: boolean;
+  pending: Answers;
+  set: (k: string, v: string | null) => void;
+  onShowLine: (id: string) => void;
+}) {
+  if (!row) {
+    return (
+      <p className="muted small" role="status">
+        Click a part in the 3D view to see its BoM line. Parts coloured red are not in the BoM yet.
+      </p>
+    );
+  }
+  const st = pending[`line:${row.id}`] ?? row.line.review;
+  return (
+    <div className="cad-selected" role="status" aria-live="polite">
+      <div>
+        <code>{row.line.child}</code> {row.item?.name}
+        <span className="muted small">
+          {" "}
+          · {row.line.commodity_class ?? "unclassified"} · qty {row.line.qty.value} {row.line.uom} · {REVIEW_LABEL[st] ?? st}
+        </span>
+      </div>
+      <div className="cad-selected__actions">
+        {canReview && st === "suggested" && (
+          <>
+            <button type="button" className="btn btn-small btn-primary" onClick={() => set(`line:${row.id}`, "accepted")}>
+              Accept
+            </button>
+            <button type="button" className="btn btn-small" onClick={() => set(`line:${row.id}`, "rejected")}>
+              Reject
+            </button>
+          </>
+        )}
+        <button type="button" className="btn btn-small btn-quiet" onClick={() => onShowLine(row.id)}>
+          Show in BoM lines
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function Coverage({

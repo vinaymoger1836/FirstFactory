@@ -119,6 +119,8 @@ export default function GlbViewer({
     // Fetch with the token header, then load from a blob URL (the token stays out of URLs).
     fetch(`${API_BASE}/projects/current/attachments/${attachmentId}/glb`, {
       headers: { "X-Project-Token": token },
+      // The URL is the same for every project (the token is a header), so never reuse a cached copy.
+      cache: "no-store",
     })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);

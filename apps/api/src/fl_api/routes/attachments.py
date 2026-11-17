@@ -326,4 +326,10 @@ async def glb(aid: str, row: CurrentRow) -> FileResponse:
     path = (get_settings().derived_dir / a["derived_path"]).resolve()
     if not path.is_relative_to(get_settings().derived_dir.resolve()) or not path.is_file():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No 3D preview for this file")
-    return FileResponse(path, media_type="model/gltf-binary", filename=f"{aid}.glb")
+    return FileResponse(
+        path,
+        media_type="model/gltf-binary",
+        filename=f"{aid}.glb",
+        # Same URL for every project (the token is a header): a shared cache must not reuse it.
+        headers={"Cache-Control": "private, no-store"},
+    )
