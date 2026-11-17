@@ -562,7 +562,7 @@ function Review({
                       </tr>
                       {calcOpen && item && (
                         <tr className="calc-row">
-                          <td colSpan={7 + bom.variants.length}>
+                          <td colSpan={7 + bom.variants.length + (canReview ? 1 : 0)}>
                             <ol className="calc">
                               {item.calc.map((c, i) => (
                                 <li key={i}>

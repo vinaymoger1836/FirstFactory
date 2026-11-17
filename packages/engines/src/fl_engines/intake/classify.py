@@ -25,6 +25,10 @@ MIN_SCORE = 2.0
 # A match in another category than the one chosen needs more than one keyword's worth of
 # evidence: "3015 24 V fan" must not become a BLDC ceiling fan because it says "fan".
 CROSS_CATEGORY_MIN_SCORE = 5.0
+# Only the type's name, code and aliases are strong evidence. Words from its standard parts list
+# ("enclosure", "cover", "cell") also appear in photos and CAD names of unrelated products, so
+# they can add to a score but never decide a type alone.
+STRONG_WEIGHT = 2.0
 _WORD = re.compile(r"[a-z0-9]+")
 _STOP = frozenset(
     {
@@ -137,8 +141,12 @@ def classify_archetype(
         kw = keyword_set(a)
         hits = {w for w in corpus if w in kw}
         score = sum(kw[w] for w in hits)
+        strong = any(kw[w] >= STRONG_WEIGHT for w in hits)
         # Multi-word aliases ("ceiling fan") as phrases.
-        score += sum(3.0 for alias in a.aliases if " " in alias and alias.lower() in joined)
+        phrases = [alias for alias in a.aliases if " " in alias and alias.lower() in joined]
+        score += 3.0 * len(phrases)
+        if not (strong or phrases):
+            score = 0.0  # only weak words matched: not evidence of this product type
         scores[a.code] = round(score, 2)
     generic = f"generic_{category}"
 
