@@ -117,13 +117,13 @@ label.field--check {
   border-radius: var(--radius-md);
   background: var(--c-surface);
   color: var(--c-text);
-  box-shadow: var(--shadow-md, 0 8px 24px rgb(0 0 0 / 0.28));
+  box-shadow: var(--shadow-2);
   font-size: var(--text-sm);
   font-weight: var(--weight-normal, 400);
   line-height: 1.45;
   text-align: left;
   white-space: normal;
-  animation: tip-in var(--dur-fast, 120ms) var(--ease-out, ease-out);
+  animation: tip-in var(--dur-fast) var(--ease-out);
 }
 .tip-bubble__example {
   color: var(--c-text-muted);

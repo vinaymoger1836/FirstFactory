@@ -22,6 +22,9 @@ from fl_domain.prov import Source
 __all__ = ["MIN_SCORE", "Classification", "classify_archetype", "keyword_set"]
 
 MIN_SCORE = 2.0
+# A match in another category than the one chosen needs more than one keyword's worth of
+# evidence: "3015 24 V fan" must not become a BLDC ceiling fan because it says "fan".
+CROSS_CATEGORY_MIN_SCORE = 5.0
 _WORD = re.compile(r"[a-z0-9]+")
 _STOP = frozenset(
     {
@@ -139,18 +142,18 @@ def classify_archetype(
         scores[a.code] = round(score, 2)
     generic = f"generic_{category}"
 
-    def decisive(cands: dict[str, float]) -> tuple[str, float] | None:
+    def decisive(cands: dict[str, float], floor: float = MIN_SCORE) -> tuple[str, float] | None:
         ranked = sorted(cands.items(), key=lambda kv: (-kv[1], kv[0]))
         if (
             ranked
-            and ranked[0][1] >= MIN_SCORE
+            and ranked[0][1] >= floor
             and (len(ranked) == 1 or ranked[0][1] >= 1.5 * ranked[1][1])
         ):
             return ranked[0]
         return None
 
     hit = decisive({k: v for k, v in scores.items() if k in in_cat})
-    other = None if hit else decisive(scores)
+    other = None if hit else decisive(scores, CROSS_CATEGORY_MIN_SCORE)
     pick = hit or other
     if pick is not None:
         best, score = pick
