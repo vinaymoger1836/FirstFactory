@@ -14,6 +14,7 @@ WeasyPrint's system libraries) unless noted.
 Last updated: 2026-11-16 (P2). The `exclude-newer` date was not moved in P1 or P2; every P2 dependency resolved within it.
 
 Catalog: **2026.11.2** (P3a, ADR-026: materials, `make_route`, `default_material`, `cad_rarely_modelled`; "sleeve" packaging alias). Projects created before stay pinned to 2026.11.1.
+Catalog draft: **2026.11.3** (ADR-027, Proposed: `spec_fields` on commodity classes, ten mechanical classes, three materials, no prices). 2026.11.2 stays the pinned version of existing projects; the P3b check-field bump becomes 2026.11.4.
 
 ## Toolchain
 

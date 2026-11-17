@@ -18,6 +18,7 @@ Stored as YAML in the repo (`library/catalog/`), loaded into Postgres on deploy,
 | `archetype` | power_bank, ceiling_fan (BoM skeleton, typical routing, compliance refs, variant deltas) |
 | `mtm_element` | reach, grasp, place, insert_snug, screw_start, label_apply, inspect_visual |
 | `material` (2026.11.2) | pc_abs, aluminium_die_cast, electrical_steel, copper, nickel, paperboard … (density g/cm³, indicative ₹/kg; estimates). Commodity classes gain `make_route`, `default_material`, `cad_rarely_modelled` (ADR-026) |
+| `commodity_class` (2026.11.3) | 39 classes. New `spec_fields` list the attributes that identify a part of the class (ADR-027, Proposed); ten general mechanical classes (motor, belt, spring, gear, hydraulic cylinder, heating element, handle, machined part, seal, switch gear) have no price on purpose. No part numbers or manufacturers are held in the catalog |
 
 ### 1.2 Process entry schema
 

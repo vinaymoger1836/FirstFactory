@@ -32,6 +32,7 @@ __all__ = [
     "ParamSpec",
     "ProcessEntry",
     "SkeletonLine",
+    "SpecField",
     "TimeModel",
     "ZoneKindEntry",
 ]
@@ -238,6 +239,29 @@ class ZoneKindEntry(_Entry):
 # ── commodity class ───────────────────────────────────────────────────
 
 
+class SpecField(DomainModel):
+    """One specification attribute a line of a commodity class should carry (ADR-027).
+
+    The catalog says *which* attributes identify a part of this class (a bearing: bore, outside
+    diameter, width, seal). Values live on the BoM line, never in the catalog.
+    """
+
+    code: Code
+    name: str = Field(min_length=2)
+    kind: Literal["number", "text", "choice"] = "number"
+    unit: str | None = Field(default=None, description="Unit for a number field, e.g. mm, V, W.")
+    choices: list[str] = Field(default_factory=list, description="Allowed values for a choice.")
+    required: bool = Field(
+        default=True, description="Needed before vendor research can search by specification."
+    )
+
+    @model_validator(mode="after")
+    def _choice_has_options(self) -> Self:
+        if self.kind == "choice" and not self.choices:
+            raise ValueError("a choice field needs choices")
+        return self
+
+
 class CommodityClassEntry(_Entry):
     kind: Literal["commodity_class"] = "commodity_class"
     uom: str
@@ -262,6 +286,10 @@ class CommodityClassEntry(_Entry):
         default=False,
         description="CAD seldom shows this class (cells, ICs, labels, packaging, consumables, "
         "fasteners): a BoM line without a CAD match is not flagged (docs/03 §4.6).",
+    )
+    spec_fields: list[SpecField] = Field(
+        default_factory=list,
+        description="Attributes that identify a part of this class (ADR-027, catalog 2026.11.3).",
     )
 
 

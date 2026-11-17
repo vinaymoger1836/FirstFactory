@@ -123,3 +123,25 @@ entries:
     density_g_cm3: 0.70
     price_inr_per_kg: {low: 45, base: 60, high: 80, as_of: "2026-11", source: catalog-estimate}
     provenance: *est
+
+  # 2026.11.3: handbook densities only; no price (vendor research supplies it).
+  - code: brass
+    name: Brass (CuZn37 / C27200 class)
+    aliases: [brass, cuzn37]
+    category: metal
+    density_g_cm3: 8.5
+    provenance: *est
+
+  - code: grey_cast_iron
+    name: Grey cast iron (EN-GJL-200 class)
+    aliases: [cast iron, grey iron, gray iron]
+    category: metal
+    density_g_cm3: 7.2
+    provenance: *est
+
+  - code: alloy_steel
+    name: Alloy steel (e.g. EN8, 42CrMo4 class)
+    aliases: [en8, 42crmo4, alloy steel, medium carbon steel]
+    category: metal
+    density_g_cm3: 7.85
+    provenance: *est

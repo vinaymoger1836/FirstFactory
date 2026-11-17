@@ -23,6 +23,12 @@ entries:
     unit_price_inr: {low: 150, base: 250, high: 400, as_of: "2026-11", source: catalog-estimate}
     default_material: li_ion_cylindrical
     cad_rarely_modelled: true
+    spec_fields:
+      - {code: format, name: Cell format, kind: choice, choices: ["18650", "21700", "26650", pouch, prismatic]}
+      - {code: capacity_mah, name: Rated capacity, kind: number, unit: mAh}
+      - {code: nominal_v, name: Nominal voltage, kind: number, unit: V}
+      - {code: max_discharge_a, name: Max continuous discharge, kind: number, unit: A, required: false}
+      - {code: chemistry, name: Chemistry (e.g. NMC or LFP), kind: text, required: false}
     provenance: *est
 
   - code: pcba
@@ -58,6 +64,11 @@ entries:
     lead_time_days: {low: 10, base: 20, high: 40}
     pack_qty: 200
     default_material: fr4_pcba
+    spec_fields:
+      - {code: length_mm, name: Length, kind: number, unit: mm}
+      - {code: width_mm, name: Width, kind: number, unit: mm}
+      - {code: layers, name: Layers, kind: number, unit: count}
+      - {code: thickness_mm, name: Thickness, kind: number, unit: mm, required: false}
     provenance: *est
 
   - code: solder_paste
@@ -82,6 +93,11 @@ entries:
     unit_price_inr: {low: 15, base: 35, high: 80, as_of: "2026-11", source: catalog-estimate}
     make_route: [injection_mold, ultrasonic_weld]
     default_material: pc_abs
+    spec_fields:
+      - {code: length_mm, name: Length, kind: number, unit: mm}
+      - {code: width_mm, name: Width, kind: number, unit: mm}
+      - {code: height_mm, name: Height, kind: number, unit: mm}
+      - {code: material, name: Resin grade, kind: text, required: false}
     provenance: *est
 
   - code: plastic_resin
@@ -161,6 +177,11 @@ entries:
     unit_price_inr: {low: 0.3, base: 0.8, high: 2.0, as_of: "2026-11", source: catalog-estimate}
     default_material: mild_steel
     cad_rarely_modelled: true
+    spec_fields:
+      - {code: standard, name: Thread and standard (e.g. M4 ISO 7380), kind: text}
+      - {code: length_mm, name: Length, kind: number, unit: mm, required: false}
+      - {code: material_grade, name: Material and grade (e.g. A2 or 8.8), kind: text, required: false}
+      - {code: finish, name: Finish, kind: text, required: false}
     provenance: *est
 
   - code: labels
@@ -239,6 +260,9 @@ entries:
     unit_price_inr: {low: 900, base: 1100, high: 1400, as_of: "2026-11", source: catalog-estimate}
     default_material: copper
     cad_rarely_modelled: true
+    spec_fields:
+      - {code: diameter_mm, name: Wire diameter, kind: number, unit: mm}
+      - {code: insulation_class, name: Insulation class, kind: choice, choices: [B, F, H], required: false}
     provenance: *est
 
   - code: stator_lamination
@@ -286,6 +310,12 @@ entries:
     iqc_checks: [dimensional_check]
     default_aql: 0.65
     default_material: mild_steel
+    spec_fields:
+      - {code: designation, name: Bearing designation (e.g. 6204-2RS), kind: text}
+      - {code: bore_mm, name: Bore, kind: number, unit: mm}
+      - {code: outer_dia_mm, name: Outside diameter, kind: number, unit: mm}
+      - {code: width_mm, name: Width, kind: number, unit: mm}
+      - {code: seal, name: Seal, kind: choice, choices: [open, shielded, sealed], required: false}
     provenance: *est
 
   - code: shaft
@@ -297,6 +327,10 @@ entries:
     iqc_checks: [dimensional_check]
     default_aql: 1.0
     default_material: mild_steel
+    spec_fields:
+      - {code: dia_mm, name: Diameter, kind: number, unit: mm}
+      - {code: length_mm, name: Length, kind: number, unit: mm}
+      - {code: material_grade, name: Material and grade, kind: text, required: false}
     provenance: *est
 
   - code: fan_blade
@@ -334,6 +368,10 @@ entries:
     iqc_checks: [visual_inspection, dimensional_check]
     default_aql: 1.5
     default_material: mild_steel
+    spec_fields:
+      - {code: thickness_mm, name: Sheet thickness, kind: number, unit: mm}
+      - {code: material_grade, name: Material and grade, kind: text}
+      - {code: finish, name: Finish, kind: text, required: false}
     provenance: *est
 
   - code: remote_control
@@ -347,3 +385,176 @@ entries:
     default_aql: 1.0
     cad_rarely_modelled: true
     provenance: *est
+
+  # ── 2026.11.3 (ADR-027, Proposed): general mechanical parts ──────────
+  # No unit_price_inr on these: there is no source for a generic price, so the BoM shows
+  # "price unknown" and vendor research (docs/09 §2) fills it in with a source URL.
+  # Lead times are estimates, labelled as such.
+  - code: electric_motor
+    name: Electric motors (AC, DC, BLDC, gear motors)
+    aliases: [motor, gear motor, induction motor, dc motor, servo motor]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 10, base: 25, high: 60}
+    pack_qty: 10
+    iqc_checks: [visual_inspection, dimensional_check]
+    default_aql: 1.0
+    default_material: electrical_steel
+    spec_fields:
+      - {code: motor_type, name: Motor type, kind: choice, choices: [ac_induction, dc_brushed, bldc, stepper, servo]}
+      - {code: power_w, name: Rated power, kind: number, unit: W}
+      - {code: voltage_v, name: Rated voltage, kind: number, unit: V}
+      - {code: speed_rpm, name: Rated speed, kind: number, unit: rpm}
+      - {code: frame, name: Frame or mounting (e.g. B3 or NEMA 23), kind: text, required: false}
+    provenance: &est2
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.3
+      note: Lead time is an estimate; no price on purpose. Vendor research supplies both.
+
+  - code: drive_belt
+    name: Drive belts and pulleys (V, timing, flat)
+    aliases: [belt, v belt, timing belt, flat belt, pulley]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 5, base: 15, high: 30}
+    pack_qty: 20
+    iqc_checks: [visual_inspection, dimensional_check]
+    default_aql: 1.5
+    spec_fields:
+      - {code: belt_type, name: Belt type, kind: choice, choices: [v_belt, timing, flat, poly_v]}
+      - {code: section, name: Section or pitch (e.g. A or GT2), kind: text}
+      - {code: length_mm, name: Length, kind: number, unit: mm}
+      - {code: width_mm, name: Width, kind: number, unit: mm, required: false}
+    provenance: *est2
+
+  - code: springs
+    name: Springs (compression, extension, torsion)
+    aliases: [spring, compression spring, extension spring, torsion spring]
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 5, base: 12, high: 25}
+    pack_qty: 200
+    iqc_checks: [dimensional_check]
+    default_aql: 1.5
+    default_material: mild_steel
+    spec_fields:
+      - {code: spring_type, name: Spring type, kind: choice, choices: [compression, extension, torsion]}
+      - {code: wire_dia_mm, name: Wire diameter, kind: number, unit: mm}
+      - {code: outer_dia_mm, name: Outside diameter, kind: number, unit: mm}
+      - {code: free_length_mm, name: Free length, kind: number, unit: mm}
+      - {code: rate_n_per_mm, name: Spring rate, kind: number, unit: N/mm, required: false}
+    provenance: *est2
+
+  - code: gears
+    name: Gears, sprockets and racks
+    aliases: [gear, spur gear, helical gear, sprocket, rack, pinion]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 10, base: 25, high: 45}
+    pack_qty: 50
+    iqc_checks: [dimensional_check]
+    default_aql: 1.0
+    default_material: mild_steel
+    spec_fields:
+      - {code: gear_type, name: Gear type, kind: choice, choices: [spur, helical, bevel, worm, sprocket, rack]}
+      - {code: module_mm, name: Module, kind: number, unit: mm}
+      - {code: teeth, name: Number of teeth, kind: number, unit: count}
+      - {code: bore_mm, name: Bore, kind: number, unit: mm, required: false}
+    provenance: *est2
+
+  - code: hydraulic_cylinder
+    name: Hydraulic and pneumatic cylinders, pistons and rods
+    aliases: [cylinder, piston, hydraulic rod, hydraulic cylinder, pneumatic cylinder, ram]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 10, base: 30, high: 60}
+    pack_qty: 5
+    iqc_checks: [dimensional_check, visual_inspection]
+    default_aql: 1.0
+    default_material: mild_steel
+    spec_fields:
+      - {code: action, name: Action, kind: choice, choices: [single_acting, double_acting]}
+      - {code: bore_mm, name: Cylinder bore, kind: number, unit: mm}
+      - {code: rod_dia_mm, name: Rod diameter, kind: number, unit: mm, required: false}
+      - {code: stroke_mm, name: Stroke, kind: number, unit: mm}
+      - {code: pressure_bar, name: Working pressure, kind: number, unit: bar}
+    provenance: *est2
+
+  - code: heating_element
+    name: Heating elements and thermostats
+    aliases: [heater, heating element, heating plate, cartridge heater, thermostat]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 7, base: 20, high: 40}
+    pack_qty: 20
+    iqc_checks: [visual_inspection, insulation_resistance, hipot]
+    default_aql: 0.65
+    spec_fields:
+      - {code: element_type, name: Element type, kind: choice, choices: [cartridge, plate, tubular, band, ptc]}
+      - {code: power_w, name: Rated power, kind: number, unit: W}
+      - {code: voltage_v, name: Rated voltage, kind: number, unit: V}
+      - {code: max_temp_c, name: Max temperature, kind: number, unit: degC, required: false}
+    provenance: *est2
+
+  - code: handles_grips
+    name: Handles, levers, knobs and grips
+    aliases: [handle, lever, knob, grip, pedal, padel]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 7, base: 15, high: 30}
+    pack_qty: 50
+    iqc_checks: [visual_inspection, dimensional_check]
+    default_aql: 1.5
+    default_material: mild_steel
+    spec_fields:
+      - {code: material_grade, name: Material and grade, kind: text}
+      - {code: finish, name: Finish or coating, kind: text, required: false}
+    provenance: *est2
+
+  - code: machined_parts
+    name: Machined and fabricated metal parts (rods, pins, plates, bodies)
+    aliases: [rod, pin, side door, machined part]
+    uom: unit
+    storage_class: general_rack
+    lead_time_days: {low: 10, base: 20, high: 40}
+    pack_qty: 20
+    iqc_checks: [dimensional_check, visual_inspection]
+    default_aql: 1.5
+    default_material: mild_steel
+    spec_fields:
+      - {code: material_grade, name: Material and grade, kind: text}
+      - {code: drawing_no, name: Drawing number and revision, kind: text, required: false}
+      - {code: finish, name: Finish or coating, kind: text, required: false}
+    provenance: *est2
+
+  - code: seals_gaskets
+    name: Seals, gaskets and rubber parts
+    aliases: [seal, gasket, o-ring, o ring, rubber, bush, grommet]
+    uom: unit
+    storage_class: small_parts_bin
+    lead_time_days: {low: 5, base: 12, high: 30}
+    pack_qty: 500
+    iqc_checks: [visual_inspection, dimensional_check]
+    default_aql: 1.5
+    spec_fields:
+      - {code: seal_type, name: Seal type, kind: choice, choices: [o_ring, gasket, lip_seal, bush, grommet]}
+      - {code: inner_dia_mm, name: Inside diameter, kind: number, unit: mm, required: false}
+      - {code: elastomer, name: Elastomer (e.g. NBR or EPDM), kind: text}
+    provenance: *est2
+
+  - code: switches_controls
+    name: Switches, contactors and control gear
+    aliases: [switch, contactor, relay, limit switch, mcb]
+    uom: unit
+    storage_class: esd
+    lead_time_days: {low: 7, base: 20, high: 45}
+    pack_qty: 50
+    iqc_checks: [visual_inspection]
+    default_aql: 0.65
+    cad_rarely_modelled: true
+    spec_fields:
+      - {code: device_type, name: Device type, kind: text}
+      - {code: rated_voltage_v, name: Rated voltage, kind: number, unit: V}
+      - {code: rated_current_a, name: Rated current, kind: number, unit: A}
+    provenance: *est2
