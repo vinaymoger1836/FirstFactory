@@ -357,20 +357,6 @@ section.card h2 {
   background: currentColor;
   transform-origin: left;
 }
-.prov__detail {
-  display: block;
-  flex-basis: 100%;
-  max-width: 36rem;
-  font-size: var(--text-xs);
-  color: var(--c-text);
-  background: var(--c-surface-2);
-  border-radius: var(--radius-sm);
-  padding: var(--space-1) var(--space-2);
-}
-.prov__detail[hidden] {
-  display: none;
-}
-
 /* Questions */
 .question {
   border: 1px solid var(--c-border);

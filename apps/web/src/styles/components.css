@@ -99,22 +99,40 @@ label.field--check {
   font-weight: var(--weight-bold);
   cursor: pointer;
 }
-.help-toggle[aria-expanded="true"] {
+.help-toggle:hover,
+.help-toggle:focus-visible {
   background: var(--c-accent-soft);
   color: var(--c-accent);
   border-color: var(--c-accent);
 }
-.help-text {
-  display: block;
-  flex-basis: 100%;
-  font-size: var(--text-sm);
-  color: var(--c-text);
-  background: var(--c-surface-2);
-  border-radius: var(--radius-sm);
+
+/* Tooltip bubble (drawn in a portal by components/Tip.tsx) */
+.tip-bubble {
+  position: fixed;
+  z-index: 100;
+  width: max-content;
+  max-width: min(24rem, calc(100vw - 1rem));
   padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  color: var(--c-text);
+  box-shadow: var(--shadow-md, 0 8px 24px rgb(0 0 0 / 0.28));
+  font-size: var(--text-sm);
+  font-weight: var(--weight-normal, 400);
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  animation: tip-in var(--dur-fast, 120ms) var(--ease-out, ease-out);
 }
-.help-text[hidden] {
-  display: none;
+.tip-bubble__example {
+  color: var(--c-text-muted);
+}
+@keyframes tip-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
 }
 
 /* Segmented radio group */

@@ -1,4 +1,5 @@
-import { useId, useState } from "react";
+import { useId } from "react";
+import { Tip } from "../Tip";
 import { getAt, humanize, pathKey, type Path, type Schema, type SchemaTools } from "../../lib/schema";
 import { defaultFor, ENUM_LABEL } from "../../lib/schemaDefaults";
 
@@ -22,33 +23,30 @@ function domId(path: Path): string {
   return `f-${pathKey(path).replace(/[^A-Za-z0-9_-]/g, "-")}`;
 }
 
-function Help({ schema, id }: { schema: Schema; id: string }) {
-  const [open, setOpen] = useState(false);
+function Help({ schema }: { schema: Schema; id?: string }) {
   const desc = typeof schema.description === "string" ? schema.description : null;
   const ex = Array.isArray(schema.examples) ? schema.examples[0] : undefined;
   if (!desc) return null;
-  return (
+  const content = (
     <>
-      <button
-        type="button"
-        className="help-toggle"
-        aria-expanded={open}
-        aria-controls={id}
-        onClick={() => setOpen((o) => !o)}
-      >
-        <span aria-hidden="true">?</span>
-        <span className="visually-hidden">{open ? "Hide help" : "Show help"}</span>
-      </button>
-      <span id={id} className="help-text" hidden={!open}>
-        {desc}
-        {ex !== undefined && (
-          <>
-            {" "}
-            <span className="muted">Example: {Array.isArray(ex) ? ex.join(" × ") : String(ex)}</span>
-          </>
-        )}
-      </span>
+      {desc}
+      {ex !== undefined && (
+        <>
+          {" "}
+          <span className="tip-bubble__example">Example: {Array.isArray(ex) ? ex.join(" × ") : String(ex)}</span>
+        </>
+      )}
     </>
+  );
+  return (
+    <Tip content={content}>
+      {(t) => (
+        <button type="button" className="help-toggle" {...t}>
+          <span aria-hidden="true">?</span>
+          <span className="visually-hidden">Help</span>
+        </button>
+      )}
+    </Tip>
   );
 }
 
