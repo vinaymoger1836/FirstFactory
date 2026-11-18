@@ -1,0 +1,42 @@
+# Team-demo edge: one origin serves the built web app (/) and the API (/api/*),
+# behind HTTP basic auth, so a single tunnel (ngrok / Cloudflare) is enough and no CORS is
+# involved. Interim stand-in for Cloudflare Access + Turnstile + rate limits (docs/11 §2, P9).
+# Used only via infra/docker-compose.demo.yml.
+{
+	admin off
+}
+
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		X-Frame-Options DENY
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	}
+
+	# Shared team login; the bcrypt hash comes from the git-ignored .env.
+	basic_auth {
+		{$DEMO_USER} {$DEMO_PASS_HASH}
+	}
+
+	handle_path /api/* {
+		reverse_proxy api:8000 {
+			# Stream SSE immediately (stage progress).
+			flush_interval -1
+		}
+	}
+
+	handle {
+		root * /srv/web
+		try_files {path} /index.html
+		file_server
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

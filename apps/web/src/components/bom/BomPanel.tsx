@@ -319,7 +319,7 @@ function Review({
   set: (k: string, v: string | null) => void;
   focus: string | null;
   setFocus: (id: string | null) => void;
-  onShow3d?: (id: string | null) => void;
+  onShow3d?: ((id: string | null) => void) | undefined;
 }) {
   const rows = useMemo(() => rowsOf(bom), [bom]);
   const [origin, setOrigin] = useState("all");

@@ -1,0 +1,14 @@
+# Team-demo override: serves the built web app + API from one password-protected origin.
+#   1. VITE_API_BASE=/api pnpm --filter ./apps/web build
+#   2. docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.demo.yml up -d --build --wait
+#   3. ngrok http 8080            (share the https URL + the demo login)
+# Needs DEMO_USER and DEMO_PASS_HASH (bcrypt, single-quoted) in the git-ignored .env.
+
+services:
+  caddy:
+    environment:
+      DEMO_USER: ${DEMO_USER:?set DEMO_USER in .env}
+      DEMO_PASS_HASH: ${DEMO_PASS_HASH:?set DEMO_PASS_HASH in .env}
+    volumes:
+      - ./caddy/Caddyfile.demo:/etc/caddy/Caddyfile:ro
+      - ../apps/web/dist:/srv/web:ro
