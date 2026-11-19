@@ -110,3 +110,12 @@ A small section of the web app at `/admin`, protected by Cloudflare Access (free
 - Diff view between versions.
 - Projects keep their pinned versions; a project owner can choose "upgrade library version", which marks affected stages stale.
 - Test bench: run the capacity and utility engines on a golden product with the draft version to see the effect before publishing.
+
+
+## 5. Catalog 2026.11.5 (P3b, ADR-028)
+
+- `check_type` gains `characteristic`, `limit`, `instrument_class`, `frequency`, `reaction` (docs/15 §3) and `supports_compliance` (data-pack keys). The loader requires them from 2026.11.5 on.
+- `archetype.typical_routing` steps gain `builds` and `consumes` (skeleton refs); archetypes gain a `quality` block (patrol checks per shift, OQC checks, lab checks) and `test_policy.check`.
+- `process` gains an optional `mtm` list (MTM elements for the time when the formula cannot be evaluated); no process uses it yet.
+- New kind `sampling_plan`: ISO 2859-1 Table I (code letters by lot size and level) and Table II-A (single sampling, normal), source URL and a verify note.
+- New kind `policy`: `operating_defaults` (working weeks, IQC lot days, quarantine lots, pallet footprint) and `vendor_research` (weights, listing-site domains, region names, limits, cache TTL).

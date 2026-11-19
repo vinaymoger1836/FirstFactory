@@ -163,3 +163,10 @@ package PowerBankFactory {
   requirement def ThroughputReq { attribute unitsPerDay : Real = 1000; }
 }
 ```
+
+## P3b additions (additive; ADR-028)
+
+- `Routing`: `proposer`, `findings` (`RoutingFinding`: gaps, defaults, estimates; `blocking` stops approval), `totals` (per variant, by manual/machine/test); `Operation`: `op_key` (`process@item`), `origin`, `note`.
+- `QualityPlan`: `checks` (`CheckRecord`, the docs/15 §3 fields), `basis` (volumes, lot days, level), `policy_impact` (both test policies), `notes`; `AqlPlan`: `full_inspection`, `table_row`; `IqcItem`: `name`, `lot_days`, `inline_checks`; `SampledCheck`: `frequency`.
+- `VendorReport`: `generated_at`, `notes`, `skipped_classes`; `VendorClass`: `name`, `cached_at`, `pages_read`, `pages_dropped`; `Vendor`: `score_parts`; `VendorEvidence`: `source_kind`.
+- Table `vendor_cache` (class | state key, payload, fetched_at, expires_at; migration 0004).

@@ -97,3 +97,14 @@ Beside the report, S12 produces the **Factory Package** (doc 15): work instructi
 | Full project export (ZIP: JSON artifacts + files + reports) | API |
 
 Exports always name artifact versions, catalog version and pack versions so a report can be reproduced.
+
+## 4. Vendor research as built in P3b (ADR-028)
+
+Stage `vendors` runs beside S3 once the BoM is approved and approves itself (leads need no decision). One bought commodity class per step, ranked by cost, at most `max_classes` (8) per run; the rest are listed as not searched.
+
+- **Query:** catalog class name + region name only, never the project name or BoM text. This is why results are shared across projects in `vendor_cache` (key class | state, 30 days; migration 0004).
+- **Fetch:** `fl_agents.web`: http(s) on ports 80/443/8080/8443, no credentials, public addresses only (checked per redirect hop, connection to the checked address, host name kept for Host and TLS), at most 3 redirects, 1 MB, 12 s, `robots.txt`, one request per second per host.
+- **Extraction:** the `extractor` role reads one page (first 5,000 characters) and proposes up to 3 vendors with a verbatim quote. The engine keeps a vendor only if the quote is in the page text and the name is within 400 characters of it; city, state, products, certifications, MOQ, price, lead time and contact URL are kept only if that text is on the page. A page that gives no such vendor counts as dropped.
+- **Score** (weights are catalog data, `policy:vendor_research`): relevance 40 (class name and aliases against products and quote), certifications 15, evidence 30 (maker's own site 1.0, listing site 0.4, other 0.7), region 15. No recency term (pages carry no reliable date). Dedupe by own-site domain or name similarity, evidence merged, at most 8 per class.
+- **Gaps, not failures:** no search key, no result, a blocked or slow page or an unreadable model answer become a gap on the class; the stage still completes. Specification fields are not on BoM lines yet (ADR-027), so classes are searched by name only.
+- **Replay:** searches and pages are recorded under `golden/web` (record modes) and replayed by the end-to-end check.
