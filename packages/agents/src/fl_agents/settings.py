@@ -13,7 +13,8 @@ from fl_domain.common import StageKey
 
 __all__ = ["DEFAULT_STAGE_BUDGETS", "Settings", "get_settings"]
 
-LlmMode = Literal["live", "record", "replay"]
+# record_missing: answer from what is recorded, record only what is not (a gap-filling pass).
+LlmMode = Literal["live", "record", "record_missing", "replay"]
 
 # Token budget per stage run (docs/02 §4). A stage that would exceed it pauses and asks
 # the user to continue (ADR-025).
@@ -58,6 +59,17 @@ class Settings(BaseSettings):
     gemini_api_key: SecretStr = SecretStr("")
     llm_timeout_s: float = 60.0
     llm_max_retries: int = 3
+
+    # Public web access for vendor research (docs/09 §2, docs/11 §3). Replay reads recorded
+    # search results and pages so the end-to-end check needs no network and no quota.
+    web_mode: LlmMode = "live"
+    web_fixture_dir: Path = Path("/app/web-fixtures")
+    tavily_api_key: SecretStr = SecretStr("")
+    web_user_agent: str = "FactoryLayoutResearchBot/0.1 (public pages only; respects robots.txt)"
+    web_timeout_s: float = 12.0
+    web_max_bytes: int = 1_000_000
+    web_min_delay_s: float = 1.0
+    vendor_cache_enabled: bool = True
     # Defaults from the P0 spike; confirm against the provider consoles (P0 §5c).
     role_rpm: dict[str, int] = Field(
         default_factory=lambda: {"reasoner": 30, "extractor": 30, "writer": 30, "vision": 10}
@@ -95,6 +107,11 @@ class Settings(BaseSettings):
             key = self.groq_api_key.get_secret_value()
         elif model.startswith("gemini/"):
             key = self.gemini_api_key.get_secret_value()
+        return "" if not key or "placeholder" in key.lower() else key
+
+    def search_key(self) -> str:
+        """The Tavily key, or "" if unset or still a .env.example placeholder."""
+        key = self.tavily_api_key.get_secret_value()
         return "" if not key or "placeholder" in key.lower() else key
 
     def tool_calls_for(self, stage: str, overrides: dict[str, int] | None = None) -> int:

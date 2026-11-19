@@ -176,9 +176,13 @@ async def answer(stage: str, body: ActionIn, row: CurrentRow) -> dict[str, Any]:
     if latest is None or latest["status"] != "awaiting_approval":
         raise HTTPException(status.HTTP_409_CONFLICT, f"{stage} is not waiting for answers")
     known = {q["id"] for q in latest["questions"] or []}
-    review_ns = ("line:", "qty:", "mb:", "mbconfirm:", "mat:", "finding:", "exclude:")
+    review_ns: dict[str, tuple[str, ...]] = {
+        "bom": ("line:", "qty:", "mb:", "mbconfirm:", "mat:", "finding:", "exclude:"),
+        "routing": ("time:", "drop:", "ack:"),
+        "quality": ("policy:", "aql:", "level:", "lotdays:"),
+    }
     unknown = [
-        q for q in body.answers if q not in known and not (key == "bom" and q.startswith(review_ns))
+        q for q in body.answers if q not in known and not q.startswith(review_ns.get(key, ("\0",)))
     ]
     if not body.answers or unknown:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"Unknown questions: {unknown}")

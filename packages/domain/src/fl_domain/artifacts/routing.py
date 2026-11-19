@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from fl_domain.base import Code, DomainModel, LocalId
+from fl_domain.base import Code, DomainModel, Issue, LocalId
 from fl_domain.common import CatalogRef
 from fl_domain.prov import Prov
 
@@ -15,9 +15,17 @@ __all__ = [
     "Operation",
     "Precedence",
     "Routing",
+    "RoutingFinding",
+    "RoutingTotals",
     "TaskType",
     "TimeMethod",
     "TimeStandard",
+    "routing_approval_issues",
+]
+
+OpOrigin = Literal["catalog", "proposal", "user"]
+FindingKind = Literal[
+    "step_skipped", "no_process", "time_missing", "default_consumption", "estimate", "note"
 ]
 
 TimeMethod = Literal["user", "catalog_formula", "mtm_table", "llm_estimate", "measured"]
@@ -63,11 +71,40 @@ class Operation(DomainModel):
     variants: list[LocalId] = Field(
         default_factory=list, description="Variants that use this op ([] = all)."
     )
+    op_key: str | None = Field(
+        default=None,
+        description="Stable key '<process>@<item>': review decisions use it, not the op number.",
+    )
+    origin: OpOrigin = "catalog"
+    note: str | None = None
 
 
 class Precedence(DomainModel):
     from_op: LocalId
     to_op: LocalId
+
+
+class RoutingFinding(DomainModel):
+    """Something the engine could not settle alone: a gap, a default or an estimate."""
+
+    id: LocalId
+    kind: FindingKind
+    text: str
+    op_key: str | None = None
+    part_no: LocalId | None = None
+    blocking: bool = Field(default=False, description="Approval waits until it is resolved.")
+    status: Literal["open", "answered", "info"] = "open"
+    options: list[str] = Field(default_factory=list)
+
+
+class RoutingTotals(DomainModel):
+    """Time per unit by kind of work, weighted by the share of units that pass each op."""
+
+    variant: LocalId
+    cycle_s: float
+    manual_s: float
+    machine_s: float
+    test_s: float
 
 
 class Routing(DomainModel):
@@ -77,6 +114,18 @@ class Routing(DomainModel):
     operations: list[Operation] = Field(min_length=1)
     precedence: list[Precedence] = Field(default_factory=list)
     catalog_version: str
+    proposer: str = Field(default="", description="'catalog typical routing', 'AI (reasoner)', ...")
+    findings: list[RoutingFinding] = Field(default_factory=list)
+    totals: list[RoutingTotals] = Field(default_factory=list)
 
     def op(self, op_no: str) -> Operation | None:
         return next((o for o in self.operations if o.op_no == op_no), None)
+
+
+def routing_approval_issues(r: Routing) -> list[Issue]:
+    """What must be settled before S3 can be approved: every blocking finding."""
+    return [
+        Issue(code=f"routing.{f.kind}", message=f.text, path=f.op_key or "", severity="error")
+        for f in r.findings
+        if f.blocking and f.status == "open"
+    ]

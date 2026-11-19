@@ -7,8 +7,10 @@ Runs the real pipeline through Caddy with recorded LLM responses (LLM_MODE=repla
   2. G1 with the STEP sample, a datasheet PDF, a BoM CSV and a photo: assembly tree and GLB
      (glTF, metres), BoM column mapping by rules, bom_file parts, a datasheet conflict that
      becomes a question, answered → new version with source=user.
-  3. Approving S1 runs the 12 stubs to approved placeholders; editing the approved S1 marks
-     all 12 stale; "re-run stale" brings them back. A change set is previewed and applied.
+  3. Approving S1 runs the pipeline: S2, S3 and S4 wait for review, the vendor stage runs by
+     itself, the 8 later stages are placeholders that approve automatically; editing the
+     approved S1 marks all 12 downstream stages stale; "re-run stale" brings them back. A
+     change set is previewed and applied.
   4. Budget exhaustion pauses S1 with a resumable state; continuing finishes it without
      repeating any model call.
   5. Negative controls: cassette miss, bad upload type, oversized upload, engines import no
@@ -159,6 +161,12 @@ def intake_settled(st: dict) -> bool:
 def latest(api: Api, stage: str = "intake") -> dict[str, Any]:
     _, body = api.call("GET", f"/projects/current/stages/{stage}")
     return body["latest"] or {}
+
+
+def approve_when_ready(api: Api, stage: str, timeout: float = 240) -> tuple[int, Any]:
+    """Wait until ``stage`` waits for approval (or fails), then approve it."""
+    wait_for(api, lambda st: st[stage]["status"] in ("awaiting_approval", "failed"), timeout)
+    return api.call("POST", f"/projects/current/stages/{stage}/approve", {})
 
 
 def submit(api: Api, template: dict, budgets: dict | None = None) -> tuple[int, Any]:
@@ -550,11 +558,13 @@ def p2_checks(
     )
     review_bom(api)
     s, body = api.call("POST", "/projects/current/stages/bom/approve", {})
+    approve_when_ready(api, "routing")
+    approve_when_ready(api, "quality")
     st = wait_for(api, lambda st: all(x["status"] == "approved" for x in st.values()), timeout=240)
-    placeholders = sum(1 for k, x in st.items() if k not in ("intake", "bom") and x["placeholder"])
+    placeholders = sum(1 for x in st.values() if x["placeholder"])
     record(
-        "after BoM review and approval all 13 stages approved; the 11 stubs are placeholders",
-        all(x["status"] == "approved" for x in st.values()) and placeholders == 11,
+        "after BoM, routing and quality approval all 13 stages approved; the 8 stubs are placeholders",
+        all(x["status"] == "approved" for x in st.values()) and placeholders == 8,
         ", ".join(f"{k}:{x['status']}" for k, x in st.items() if x["status"] != "approved")
         or "13/13 approved",
     )

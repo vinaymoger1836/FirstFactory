@@ -138,6 +138,17 @@ stage_event = Table(
     Column("created_at", DateTime(timezone=True), server_default=func.now()),
 )
 
+vendor_cache = Table(
+    "vendor_cache",
+    metadata,
+    Column("cache_key", Text, primary_key=True),
+    Column("vendor_class", Text, nullable=False),
+    Column("region", Text, nullable=False),
+    Column("payload", JSONB, nullable=False),
+    Column("fetched_at", DateTime(timezone=True), nullable=False),
+    Column("expires_at", DateTime(timezone=True), nullable=False),
+)
+
 catalog_entry = Table(
     "catalog_entry",
     metadata,

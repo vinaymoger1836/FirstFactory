@@ -101,16 +101,22 @@ def make_host(out: Path) -> None:
                     qty.setdefault(child, {}).setdefault(v, 0.0)
                     qty[child][v] += float(line["qty"])
             uom[child] = line.get("uom", "pcs")
-        for suffix, keep in (("", lambda _pn: True),
-                             ("-partial", lambda pn: items[pn].get("commodity_class") not in removed)):
+        for suffix, keep in (
+            ("", lambda _pn: True),
+            ("-partial", lambda pn: items[pn].get("commodity_class") not in removed),
+        ):
             with (out / f"{prefix}-bom{suffix}.csv").open("w", newline="", encoding="utf-8") as f:
                 w = csv.writer(f)
                 w.writerow(["Part No", "Description", *(f"Qty {v}" for v in variants), "UoM"])
                 for pn in sorted(qty):
                     if keep(pn):
                         w.writerow(
-                            [pn, items[pn]["name"], *(f"{qty[pn].get(v, 0):g}" for v in variants),
-                             uom[pn]]
+                            [
+                                pn,
+                                items[pn]["name"],
+                                *(f"{qty[pn].get(v, 0):g}" for v in variants),
+                                uom[pn],
+                            ]
                         )
 
     # A schematic "photo": a dark power bank with four LEDs and two ports.

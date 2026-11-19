@@ -30,7 +30,9 @@ from fl_domain.library.catalog import (
     CommodityClassEntry,
     MachineClassEntry,
     MtmElementEntry,
+    PolicyEntry,
     ProcessEntry,
+    SamplingPlanEntry,
     ZoneKindEntry,
 )
 from fl_domain.library.pack import Pack, PackValue
@@ -59,6 +61,8 @@ def top_level_models() -> dict[str, type[BaseModel]]:
         "CommodityClassEntry": CommodityClassEntry,
         "ArchetypeEntry": ArchetypeEntry,
         "MtmElementEntry": MtmElementEntry,
+        "SamplingPlanEntry": SamplingPlanEntry,
+        "PolicyEntry": PolicyEntry,
         "Pack": Pack,
         "PackValue": PackValue,
     }

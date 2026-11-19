@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from fl_agents.llm.router import Router
 from fl_agents.settings import Settings, get_settings
 from fl_agents.store.repo import Store, make_engine
+from fl_agents.web import WebClient
 
 __all__ = ["Runtime", "runtime", "set_runtime"]
 
@@ -16,6 +17,7 @@ class Runtime:
     settings: Settings
     store: Store
     router: Router
+    web: WebClient
 
 
 _RT: Runtime | None = None
@@ -31,5 +33,5 @@ def runtime() -> Runtime:
     if _RT is None:
         s = get_settings()
         store = Store(make_engine(s.database_url, "fl-agents"))
-        _RT = Runtime(settings=s, store=store, router=Router(s, store))
+        _RT = Runtime(settings=s, store=store, router=Router(s, store), web=WebClient(s))
     return _RT

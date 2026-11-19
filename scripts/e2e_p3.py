@@ -1,5 +1,8 @@
 """P3a end-to-end checks: S2 BoM stage and golden case G8 (docs/14 §4). Standard library only.
 
+From P3b the stages after the BoM are real: routing and quality wait for approval, so the G1
+flow approves them before it edits the BoM.
+
 G8 (a) golden BoM file → case B, user lines unchanged, MBOM = golden MBOM;
 G8 (b) partial file → case C, exactly the removed classes suggested, nothing added before
        acceptance, approval blocked, rejected suggestions remembered on re-run;
@@ -23,6 +26,7 @@ from e2e_p2 import (
     ROOT,
     Api,
     _yaml_json,
+    approve_when_ready,
     latest,
     new_project,
     review_bom,
@@ -215,13 +219,19 @@ def p3_checks(base: str, psql: Callable[[str], str], record: Record, mode: str) 
         s, body = api.call("POST", "/projects/current/stages/bom/approve", {})
         st = wait_for(
             api,
-            lambda st: st["bom"]["status"] == "approved" and st["routing"]["status"] == "approved",
+            lambda st: (
+                st["bom"]["status"] == "approved"
+                and st["routing"]["status"] in ("awaiting_approval", "failed")
+            ),
             240,
         )
         record(
-            f"{gid} G8a: confirm make/buy → v{run2.get('version')} → approved; routing stub follows",
-            s == 200 and st["bom"]["status"] == "approved" and st["routing"]["placeholder"],
-            f"bom {st['bom']['status']} v{st['bom']['version']}",
+            f"{gid} G8a: confirm make/buy → v{run2.get('version')} → approved; S3 routing starts",
+            s == 200
+            and st["bom"]["status"] == "approved"
+            and st["routing"]["status"] == "awaiting_approval"
+            and not st["routing"]["placeholder"],
+            f"bom {st['bom']['status']} v{st['bom']['version']}, routing {st['routing']['status']}",
         )
         s, xlsx = api.raw(f"/projects/current/stages/bom/runs/{run2.get('version')}/workbook")
         names, rows = _sheets(xlsx) if s == 200 else ([], 0)
@@ -258,6 +268,8 @@ def p3_checks(base: str, psql: Callable[[str], str], record: Record, mode: str) 
                 s == 422 and "user_changed" in json.dumps(body),
                 str(body)[:140],
             )
+            approve_when_ready(api, "routing")
+            approve_when_ready(api, "quality")
             wait_for(
                 api,
                 lambda st: all(x["status"] == "approved" for k, x in st.items() if k != "intake"),

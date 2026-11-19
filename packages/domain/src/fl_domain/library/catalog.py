@@ -29,11 +29,16 @@ __all__ = [
     "MachineClassEntry",
     "MaterialEntry",
     "MtmElementEntry",
+    "MtmUse",
     "ParamSpec",
+    "PolicyEntry",
     "ProcessEntry",
+    "QualityBlock",
+    "SamplingPlanEntry",
     "SkeletonLine",
     "SpecField",
     "TimeModel",
+    "VendorPolicy",
     "ZoneKindEntry",
 ]
 
@@ -46,6 +51,8 @@ EntryKind = Literal[
     "archetype",
     "mtm_element",
     "material",
+    "sampling_plan",
+    "policy",
 ]
 Skill = Literal["unskilled", "semi_skilled", "skilled", "highly_skilled"]
 TaskType = Literal["manual", "machine_paced", "long_test", "offline_rack", "batch", "inspection"]
@@ -123,6 +130,13 @@ class Utilities(DomainModel):
     water_l_h: NonNeg = 0
 
 
+class MtmUse(DomainModel):
+    """One MTM element used by a manual process (docs/05 §1.2 priority 3)."""
+
+    element: Code
+    count: float = Field(gt=0, default=1)
+
+
 class AppliesTo(DomainModel):
     archetype: list[Code] = Field(default_factory=list)
     commodity: list[Code] = Field(default_factory=list)
@@ -153,6 +167,10 @@ class ProcessEntry(_Entry):
     price_inr: PriceRange | None = Field(default=None, description="Fixtures and tooling.")
     mtbf_h: float | None = Field(default=None, gt=0)
     mttr_h: float | None = Field(default=None, gt=0)
+    mtm: list[MtmUse] = Field(
+        default_factory=list,
+        description="MTM elements, used for the time when the formula cannot be evaluated.",
+    )
     example_params: dict[str, float] = Field(
         default_factory=dict,
         description="Parameters used to test the formula when no archetype example applies.",
@@ -204,6 +222,16 @@ class CheckTypeEntry(_Entry):
     default_aql: float | None = Field(default=None, gt=0)
     standards: list[str] = Field(
         default_factory=list, description="Standard names, informational (verify)."
+    )
+    # docs/15 §3 fields (catalog 2026.11.5). `method` is above; limits are written against the
+    # product specification because numeric limits belong to the product, not the catalog.
+    characteristic: str | None = Field(default=None, description="What is checked.")
+    limit: str | None = Field(default=None, description="Accept limit, in words.")
+    instrument_class: str | None = Field(default=None, description="Kind of instrument or fixture.")
+    frequency: str | None = Field(default=None, description="Default frequency, in words.")
+    reaction: str | None = Field(default=None, description="What to do on failure.")
+    supports_compliance: list[str] = Field(
+        default_factory=list, description="Data-pack compliance keys this check supports."
     )
 
 
@@ -337,6 +365,48 @@ class RoutingStep(DomainModel):
     process: Code
     note: str | None = None
     sample_pct: float = Field(default=100, gt=0, le=100)
+    builds: str | None = Field(
+        default=None,
+        description="Skeleton ref this step works on (an assembly, a bought part) or 'product'. "
+        "Empty = the item of the previous step.",
+    )
+    consumes: list[str] = Field(
+        default_factory=list, description="Skeleton refs consumed here (parts and sub-assemblies)."
+    )
+
+
+class PatrolUse(DomainModel):
+    check: Code
+    per_shift: float = Field(gt=0)
+
+
+class OqcUse(DomainModel):
+    check: Code
+    aql: float | None = Field(default=None, gt=0)
+    sample_pct: float | None = Field(default=None, gt=0, le=100)
+    frequency: str | None = None
+    per_week_per_variant: float | None = Field(
+        default=None, gt=0, description="Units tested per variant per week (periodic checks)."
+    )
+
+
+class LabUse(DomainModel):
+    name: str
+    check: Code
+    machine_class: Code | None = None
+    qty: int = Field(default=1, ge=1)
+    frequency: str
+    per_week_per_variant: float | None = Field(
+        default=None, gt=0, description="Units tested per variant per week."
+    )
+
+
+class QualityBlock(DomainModel):
+    """The checks a product type usually has beyond IQC and inline tests (docs/05 §2)."""
+
+    patrol: list[PatrolUse] = Field(default_factory=list)
+    oqc: list[OqcUse] = Field(default_factory=list)
+    lab: list[LabUse] = Field(default_factory=list)
 
 
 class ArchetypeEntry(_Entry):
@@ -348,6 +418,7 @@ class ArchetypeEntry(_Entry):
     typical_routing: list[RoutingStep] = Field(default_factory=list)
     compliance_pack_keys: list[str] = Field(default_factory=list)
     test_policy: dict[str, float | str] = Field(default_factory=dict)
+    quality: QualityBlock = Field(default_factory=QualityBlock)
     variant_deltas: str = ""
 
 
@@ -361,6 +432,64 @@ class MtmElementEntry(_Entry):
     tmu: float | None = Field(default=None, gt=0, description="1 TMU = 0.036 s.")
 
 
+# ── sampling plan ─────────────────────────────────────────────────────
+
+InspectionLevel = Literal["S-1", "S-2", "S-3", "S-4", "I", "II", "III"]
+
+
+class LotRange(DomainModel):
+    min_lot: int = Field(ge=1)
+    max_lot: int | None = Field(default=None, description="None = no upper limit.")
+    letters: dict[InspectionLevel, str]
+
+
+class SamplingPlanEntry(_Entry):
+    """ISO 2859-1 single sampling, normal inspection: code letters and plans (ADR-028).
+
+    ``single_normal[letter][aql]`` is ``"Ac/Re"``, ``"v"`` (use the first plan below) or
+    ``"^"`` (use the first plan above), exactly as the standard's table prints them.
+    """
+
+    kind: Literal["sampling_plan"] = "sampling_plan"
+    standard: str
+    levels: list[InspectionLevel]
+    sample_sizes: dict[str, int]
+    lot_ranges: list[LotRange] = Field(min_length=1)
+    aqls: list[float]
+    single_normal: dict[str, dict[str, str]]
+
+
+class VendorPolicy(DomainModel):
+    """How vendor research scores and filters (docs/09 §2.2). Data, not code."""
+
+    weights: dict[str, float] = Field(
+        default_factory=dict,
+        description="Score weights summing to 100: relevance, certifications, evidence, region.",
+    )
+    directory_domains: list[str] = Field(
+        default_factory=list, description="Listing sites: weaker evidence than a maker's own site."
+    )
+    directory_factor: float = Field(
+        default=0.4, ge=0, le=1, description="Evidence score of a listing site, as a share."
+    )
+    max_vendors_per_class: int = Field(default=8, ge=1, le=8)
+    max_classes: int = Field(default=8, ge=1)
+    pages_per_class: int = Field(default=3, ge=1)
+    cache_ttl_days: int = Field(default=30, ge=1)
+    region_state_names: dict[str, list[str]] = Field(
+        default_factory=dict, description="State code → names a page may use, e.g. KA → Karnataka."
+    )
+
+
+class PolicyEntry(_Entry):
+    """Named defaults that stages use before the user sets a value (estimates, shown as
+    assumptions): ``values`` for numbers, ``vendors`` for vendor research (docs/09 §2.2)."""
+
+    kind: Literal["policy"] = "policy"
+    values: dict[str, float] = Field(default_factory=dict)
+    vendors: VendorPolicy | None = None
+
+
 CatalogEntry = Annotated[
     ProcessEntry
     | MachineClassEntry
@@ -369,7 +498,9 @@ CatalogEntry = Annotated[
     | CommodityClassEntry
     | ArchetypeEntry
     | MtmElementEntry
-    | MaterialEntry,
+    | MaterialEntry
+    | SamplingPlanEntry
+    | PolicyEntry,
     Field(discriminator="kind"),
 ]
 

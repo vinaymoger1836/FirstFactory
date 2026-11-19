@@ -11,6 +11,7 @@ from fl_agents.llm.router import Router
 from fl_agents.pipeline.runtime import Runtime, set_runtime
 from fl_agents.queue import app as queue_app
 from fl_agents.settings import get_settings as agent_settings
+from fl_agents.web import WebClient
 from fl_api import __version__
 from fl_api.db import dispose, store
 from fl_api.routes import attachments, events, health, pipeline, projects
@@ -23,7 +24,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.redis = Redis.from_url(settings.redis_url, decode_responses=True)
     # The API defers pipeline jobs and may call the router for BoM column mapping.
     a = agent_settings()
-    set_runtime(Runtime(settings=a, store=store(), router=Router(a, store())))
+    set_runtime(Runtime(settings=a, store=store(), router=Router(a, store()), web=WebClient(a)))
     async with queue_app.open_async():
         yield
     await app.state.redis.aclose()

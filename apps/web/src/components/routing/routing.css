@@ -1,0 +1,55 @@
+/* S3 routing panel. Tokens only. */
+
+.routing__src {
+  margin: 0 0 var(--space-3);
+}
+.routing__table td,
+.routing__table th {
+  vertical-align: top;
+}
+.routing__table tr[data-dropped] {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+.routing__sample {
+  margin-left: var(--space-2);
+}
+.routing__variants {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+.routing__variants li {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.routing__variants li > span:first-child {
+  min-width: 3.5rem;
+}
+.routing__formula {
+  max-width: 16rem;
+  overflow-wrap: anywhere;
+}
+.routing__flow {
+  overflow-x: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface-2);
+}
+.routing__flow svg {
+  display: block;
+}
+.routing__order {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-1);
+}
+.routing__fix {
+  display: flex;
+  margin-top: var(--space-2);
+}

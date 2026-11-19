@@ -1,0 +1,60 @@
+/* S4 quality plan panel. Tokens only. */
+
+.quality__notes {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+.quality__table td,
+.quality__table th {
+  vertical-align: top;
+}
+.quality__basis {
+  margin-bottom: var(--space-3);
+}
+.quality__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+.quality__policy {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.quality__opt {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-med) var(--ease-out),
+    background var(--dur-med) var(--ease-out);
+}
+.quality__opt[data-on="true"] {
+  border-color: var(--c-accent);
+  background: var(--c-accent-soft);
+}
+.quality__opt:focus-within {
+  outline: 2px solid var(--c-focus);
+  outline-offset: 2px;
+}
+.quality__opt-nums {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+.quality__opt-nums b {
+  font-size: var(--text-lg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .quality__opt {
+    transition: none;
+  }
+}

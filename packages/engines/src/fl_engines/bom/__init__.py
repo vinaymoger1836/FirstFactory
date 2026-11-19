@@ -7,7 +7,9 @@ from fl_engines.bom.build import (
     ExtraLine,
     Proposal,
     UserRow,
+    assembly_id,
     build_bom,
+    leaf_part_no,
     normalise_uom,
     skeleton_quantities,
 )
@@ -22,7 +24,9 @@ __all__ = [
     "ExtraLine",
     "Proposal",
     "UserRow",
+    "assembly_id",
     "build_bom",
+    "leaf_part_no",
     "normalise_uom",
     "skeleton_quantities",
 ]

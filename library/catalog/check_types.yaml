@@ -14,6 +14,12 @@ entries:
     name: Cell OCV and internal resistance
     layers: [iqc]
     method: Measure OCV and 1 kHz AC IR; grade into bins; reject out-of-band cells.
+    characteristic: "Open-circuit voltage and 1 kHz AC internal resistance of each cell"
+    limit: "Within the grade band in the cell datasheet; out-of-band cells are rejected"
+    instrument_class: "Cell grader (OCV and AC IR meter)"
+    frequency: "Every incoming cell (100 %)"
+    reaction: "Put the cell in the quarantine bin; tag the lot; tell the supplier"
+    supports_compliance: ["compliance.power_bank.bis_crs_cells"]
     measures: [open-circuit voltage, AC internal resistance]
     time_s: 4
     process: iqc_cell_grading
@@ -26,6 +32,11 @@ entries:
     name: Pack voltage and IR
     layers: [ipqc]
     method: Inline test of pack voltage, IR and BMS wake-up after soldering.
+    characteristic: "Pack voltage, pack internal resistance and BMS wake-up"
+    limit: "Within the pack limits in the product specification"
+    instrument_class: "Pack IR tester with voltmeter"
+    frequency: "Every pack (100 %)"
+    reaction: "Stop; tag the pack; send it to rework; test again after rework"
     measures: [pack voltage, pack IR, BMS wake]
     time_s: 12
     process: pack_voltage_ir_test
@@ -37,6 +48,11 @@ entries:
     name: Weld pull/peel test
     layers: [ipqc]
     method: Destructive peel test on sample welds at start of shift and after changeover.
+    characteristic: "Peel force and nugget size of sample welds"
+    limit: "At or above the minimum peel force in the weld procedure; no nugget pull-out"
+    instrument_class: "Peel or pull force gauge"
+    frequency: "Start of shift, after changeover and after an electrode change"
+    reaction: "Stop the welder; hold welds made since the last pass; dress or change electrodes; repeat the test"
     measures: [peel force, nugget size]
     time_s: 60
     sampling: periodic
@@ -46,6 +62,11 @@ entries:
     name: Solder joint inspection
     layers: [ipqc]
     method: Visual (or AOI) inspection of solder joints against acceptance criteria.
+    characteristic: "Wetting, bridging and voids on the solder joints"
+    limit: "Meets the workmanship class named in the product specification"
+    instrument_class: "Magnifier or automated optical inspection"
+    frequency: "Every board (100 %)"
+    reaction: "Tag the board; rework the joint; inspect again"
     measures: [wetting, bridging, voids]
     time_s: 8
     sampling: 100pct
@@ -56,6 +77,12 @@ entries:
     name: Power bank functional test
     layers: [eol]
     method: Output V/I per port, protection trips (OCP/SCP/OVP), LEDs, charge input.
+    characteristic: "Output voltage and current per port, protection trips, LED states, charge input"
+    limit: "Within the ratings in the product specification; protections trip as designed"
+    instrument_class: "Functional tester with electronic load"
+    frequency: "Every unit (100 %)"
+    reaction: "Tag the unit; send it to rework or scrap; record the defect code"
+    supports_compliance: ["compliance.power_bank.bis_crs_product"]
     measures: [output voltage, output current, protection trip, LED state]
     time_s: 60
     process: functional_test_pb
@@ -68,6 +95,12 @@ entries:
     name: Capacity verification (charge-discharge)
     layers: [eol, lab]
     method: Full charge and discharge at stated currents; compare delivered mAh with rating.
+    characteristic: "Delivered capacity against rated capacity"
+    limit: "Delivered mAh at or above the rated value less the tolerance in the product specification"
+    instrument_class: "Battery cycler channel"
+    frequency: "Sample set by the test policy (default 2 % of output)"
+    reaction: "Hold the lot; double the sample; if it repeats, stop shipping and investigate the cells"
+    supports_compliance: ["compliance.power_bank.rated_capacity_verification", "compliance.power_bank.bis_crs_product"]
     measures: [delivered capacity mAh, efficiency]
     process: capacity_cycle_test
     machine_class: battery_tester_channel
@@ -79,6 +112,11 @@ entries:
     name: Winding resistance and balance
     layers: [ipqc]
     method: Measure phase resistances; check balance within tolerance.
+    characteristic: "Phase resistance and imbalance between phases"
+    limit: "Each phase and the imbalance within the tolerance in the winding specification"
+    instrument_class: "Winding resistance tester (milli-ohm meter)"
+    frequency: "Every stator (100 %)"
+    reaction: "Tag the stator; check winding and terminations; rewind or scrap"
     measures: [phase resistance, imbalance]
     time_s: 10
     process: winding_resistance_test
@@ -90,6 +128,12 @@ entries:
     name: Hi-pot (dielectric withstand)
     layers: [ipqc, eol]
     method: Apply test voltage between live parts and body for the set time; leakage below limit.
+    characteristic: "Leakage current at the test voltage between live parts and body"
+    limit: "Leakage below the limit at the voltage and time in the product standard; no breakdown"
+    instrument_class: "Hi-pot tester"
+    frequency: "Every unit (100 %)"
+    reaction: "Stop; tag the unit; find the insulation fault; no retest without rework"
+    supports_compliance: ["compliance.ceiling_fan.qco_2023"]
     measures: [leakage current, breakdown]
     time_s: 15
     process: hipot_test
@@ -102,6 +146,11 @@ entries:
     name: Insulation resistance
     layers: [ipqc, eol]
     method: Megger test at 500 V DC between live parts and body.
+    characteristic: "Insulation resistance at 500 V DC"
+    limit: "At or above the minimum in the product standard"
+    instrument_class: "Insulation resistance tester (megger)"
+    frequency: "Every unit (100 %)"
+    reaction: "Tag the unit; find the insulation fault; rework and test again"
     measures: [insulation resistance]
     time_s: 10
     machine_class: hipot_tester
@@ -112,6 +161,11 @@ entries:
     name: Motor no-load test
     layers: [ipqc]
     method: Run motor without load; check speed, current, direction.
+    characteristic: "Speed, current and direction without load"
+    limit: "Within the motor specification"
+    instrument_class: "Motor test bench"
+    frequency: "Every motor (100 %)"
+    reaction: "Tag the motor; check winding, bearings and controller; rework or scrap"
     measures: [rpm, current, direction]
     time_s: 40
     process: motor_test
@@ -123,6 +177,12 @@ entries:
     name: Fan functional test
     layers: [eol]
     method: RPM at each speed step, input power, remote pairing, direction, noise by ear/meter.
+    characteristic: "Speed at each step, input power, remote pairing, direction and noise"
+    limit: "Within the ratings in the product specification"
+    instrument_class: "Fan test bench with power analyser"
+    frequency: "Every unit (100 %)"
+    reaction: "Tag the unit; send it to rework; record the defect code"
+    supports_compliance: ["compliance.ceiling_fan.qco_2023"]
     measures: [rpm per speed, input power, remote, noise]
     process: functional_test_fan
     machine_class: fan_test_bench
@@ -134,6 +194,11 @@ entries:
     name: Fan run-in
     layers: [eol]
     method: Run at rated speed for the set time; watch current, noise and wobble.
+    characteristic: "Current drift, noise and wobble over the run-in time"
+    limit: "No fault during run-in; current drift within the specification"
+    instrument_class: "Run-in rack with current logging"
+    frequency: "Every unit (100 %)"
+    reaction: "Tag the unit; find the cause (balance, bearing, controller); rework and run in again"
     measures: [current drift, noise, wobble]
     time_s: 300
     process: fan_run_in
@@ -145,6 +210,12 @@ entries:
     name: Air delivery and service value (lab)
     layers: [lab]
     method: Periodic air delivery (m³/min) and service value check in a test chamber, per star-label method.
+    characteristic: "Air delivery and service value"
+    limit: "Meets the declared value for the star rating in the product specification"
+    instrument_class: "Air-delivery test chamber"
+    frequency: "Periodic, per the schedule in the quality plan"
+    reaction: "Hold finished stock of the lot; repeat on a second unit; investigate design or parts"
+    supports_compliance: ["compliance.ceiling_fan.bee_star_label", "compliance.ceiling_fan.qco_2023"]
     measures: [air delivery, service value, power]
     time_s: 1800
     sampling: periodic
@@ -155,6 +226,11 @@ entries:
     name: Noise check
     layers: [eol, lab]
     method: Sound level at set distance in a quiet booth (lab) or subjective on line.
+    characteristic: "Sound level at a set distance"
+    limit: "At or below the level declared in the product specification"
+    instrument_class: "Sound level meter in a quiet booth"
+    frequency: "Sampled, per the quality plan"
+    reaction: "Tag the unit; check balance and bearings; repeat"
     measures: [dB(A)]
     time_s: 20
     sampling: sampled_pct
@@ -164,6 +240,11 @@ entries:
     name: Packaged drop test
     layers: [oqc, lab]
     method: Drop packaged units from set height on edges, corners and faces; inspect.
+    characteristic: "Damage and function after dropping the packaged unit"
+    limit: "No damage and full function after the drops in the test procedure"
+    instrument_class: "Drop tester"
+    frequency: "Periodic, per the schedule in the quality plan"
+    reaction: "Hold the lot; review the packaging design; repeat on new samples"
     measures: [damage, function after drop]
     time_s: 600
     machine_class: drop_tester
@@ -174,6 +255,11 @@ entries:
     name: Visual inspection
     layers: [iqc, ipqc, oqc]
     method: Visual check against the defect catalogue.
+    characteristic: "Cosmetic defects and missing parts"
+    limit: "No defects above the limit in the defect catalogue"
+    instrument_class: "Defect catalogue and good lighting"
+    frequency: "Per the sampling plan"
+    reaction: "Reject the unit or lot; tag it; tell the supplier or line lead"
     measures: [cosmetic defects, missing parts]
     time_s: 15
     sampling: aql
@@ -184,6 +270,11 @@ entries:
     name: Dimensional check
     layers: [iqc]
     method: Gauge or calliper check of critical dimensions on sampled parts.
+    characteristic: "Critical dimensions"
+    limit: "Within the tolerance on the drawing"
+    instrument_class: "Calliper, gauge or go/no-go fixture"
+    frequency: "Per the sampling plan"
+    reaction: "Reject the lot or part; tag it; tell the supplier"
     measures: [critical dimensions]
     time_s: 60
     sampling: aql
@@ -194,6 +285,12 @@ entries:
     name: Label verification
     layers: [eol, oqc]
     method: Scan and compare label content (serial, rating, BEE/CRS marks) with the work order.
+    characteristic: "Label content and barcode grade"
+    limit: "Content matches the work order and the barcode scans"
+    instrument_class: "Barcode scanner or verifier"
+    frequency: "Every unit (100 %)"
+    reaction: "Stop labelling; remove the label; reprint and check again"
+    supports_compliance: ["compliance.ceiling_fan.bee_star_label", "compliance.power_bank.bis_crs_product"]
     measures: [barcode grade, content match]
     time_s: 3
     sampling: 100pct
@@ -204,6 +301,11 @@ entries:
     name: Dosing accuracy (flour, water, oil per dough ball)
     layers: [ipqc, eol]
     method: Dispense into a container on a scale for the set number of cycles; compare the mean and spread with the target mass.
+    characteristic: "Dispensed mass per cycle and its spread"
+    limit: "Mean and spread within the dosing tolerance in the product specification"
+    instrument_class: "Precision balance"
+    frequency: "Sample per cycle count set in the quality plan"
+    reaction: "Stop the unit; recalibrate the dosing parts; repeat the test"
     measures: [dispensed mass per cycle, spread]
     time_s: 120
     sampling: sampled_pct
@@ -213,6 +315,11 @@ entries:
     name: Platen temperature profile
     layers: [ipqc, lab]
     method: Heat to the set point and log platen surface temperature at fixed points; check time to temperature and the profile against the design.
+    characteristic: "Surface temperature, time to temperature and spread"
+    limit: "Within the temperature profile in the product specification"
+    instrument_class: "Surface thermocouple logger"
+    frequency: "Sample per the quality plan"
+    reaction: "Hold the unit; check the heater, sensor and control; repeat"
     measures: [surface temperature, time to temperature, temperature spread]
     time_s: 600
     sampling: sampled_pct
@@ -222,6 +329,11 @@ entries:
     name: Water circuit leak test
     layers: [ipqc, eol]
     method: Run the liquid circuit at working pressure for the set time and inspect joints for leaks.
+    characteristic: "Leaks and pressure hold in the liquid circuit"
+    limit: "No leak and no pressure drop in the test time"
+    instrument_class: "Pressure gauge and visual check"
+    frequency: "Every unit (100 %)"
+    reaction: "Tag the unit; re-make the joint; test again"
     measures: [leaks, pressure hold]
     time_s: 45
     sampling: 100pct
@@ -231,6 +343,11 @@ entries:
     name: Earth continuity
     layers: [eol]
     method: Measure resistance between the earth pin and accessible metal parts at the set current.
+    characteristic: "Resistance between the earth pin and accessible metal parts"
+    limit: "At or below the limit in the product standard at the test current"
+    instrument_class: "Earth continuity tester"
+    frequency: "Every unit (100 %)"
+    reaction: "Stop; tag the unit; check the earth path; rework and test again"
     measures: [earth resistance]
     time_s: 5
     sampling: 100pct
@@ -240,6 +357,11 @@ entries:
     name: Power and energy per cycle
     layers: [eol, lab]
     method: Measure input power at steady state and energy for one product cycle; compare with the rating label.
+    characteristic: "Input power and energy for one product cycle"
+    limit: "Within the tolerance of the value on the rating label"
+    instrument_class: "Power analyser"
+    frequency: "Sample per the quality plan"
+    reaction: "Hold the lot; check the heater and control; repeat"
     measures: [input power, energy per cycle]
     time_s: 90
     sampling: sampled_pct
@@ -249,6 +371,11 @@ entries:
     name: Food-contact material certificate check
     layers: [iqc]
     method: Check the supplier's food-contact declaration or test report for each part that touches food or its ingredients.
+    characteristic: "Certificate present and grade matches the drawing"
+    limit: "A valid declaration or test report on file for every food-contact part"
+    instrument_class: "Document check against the drawing"
+    frequency: "Each new lot, each supplier change and once a year"
+    reaction: "Do not use the parts; ask for a valid certificate; quarantine the lot"
     measures: [certificate present, grade matches the drawing]
     sampling: periodic
     provenance: *est

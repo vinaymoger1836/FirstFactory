@@ -1,8 +1,8 @@
 # Process catalog manifest (docs/10 §1). Version string YYYY.MM.patch; projects pin it (ADR-009).
 # Bump the version for ANY content change: the loader refuses to reload a version with
 # different content.
-version: "2026.11.4"
-effective_date: 2026-11-17
+version: "2026.11.5"
+effective_date: 2026-11-19
 description: >
   POC seed covering both golden products (power bank, BLDC ceiling fan) plus common generic
   steps (SMT, reflow, AOI, moulding, ultrasonic welding) for future products. Numbers are
@@ -12,6 +12,10 @@ description: >
   default_material and cad_rarely_modelled.
   2026.11.3 (ADR-027, Proposed): commodity classes gain spec_fields (the attributes that
   identify a part); 10 general mechanical classes and 3 materials added, without prices.
+  2026.11.5 (P3b, ADR-028): check types gain characteristic, limit, instrument_class, frequency,
+  reaction and supports_compliance (docs/15 §3); routing steps gain builds/consumes; archetypes
+  gain a quality block; new kinds sampling_plan (ISO 2859-1) and policy (operating defaults,
+  vendor research).
 files:
   - archetypes.yaml
   - commodity_classes.yaml
@@ -21,3 +25,5 @@ files:
   - processes.yaml
   - mtm_elements.yaml
   - materials.yaml
+  - sampling_plans.yaml
+  - policies.yaml

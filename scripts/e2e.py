@@ -8,7 +8,13 @@ e2e override (infra/docker-compose.e2e.yml: LLM_MODE=replay, cassettes mounted),
   - budget exhaustion pauses a stage with a resumable state;
   - web typecheck, lint and build.
   `--record` runs the same sequence with LLM_MODE=record (real keys in .env) and writes
-  golden/cassettes/*.json.
+  golden/cassettes/*.json; `--record-new` records only what is missing (also vendor searches
+  and pages into golden/web/).
+
+P3b adds (docs/14 §5 P3 acceptance; details in scripts/e2e_p3b.py): S3 routing equal to the
+  golden routings with catalog times, S4 quality plan with docs/15 §3 fields and ISO 2859-1
+  sample sizes, vendor research with evidence, a planted page, the shared cache and the SSRF
+  guard.
 
 P1 adds (docs/14 §5 P1 acceptance):
   - the compose `migrate` step validates the catalog and KA pack and loads them into Postgres
@@ -47,6 +53,7 @@ from pathlib import Path
 
 from e2e_p2 import p2_checks, web_checks
 from e2e_p3 import p3_checks
+from e2e_p3b import p3b_checks
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = [
@@ -59,7 +66,7 @@ COMPOSE = [
     "-f",
     "infra/docker-compose.e2e.yml",
 ]
-PHASE = "P3a"
+PHASE = "P3"
 GOLDEN = {
     "G1": "Power bank: demand, takt, PCT, test positions/channels",
     "G2": "BLDC fan: demand, takt, PCT, run-in positions, varnish ovens",
@@ -73,8 +80,8 @@ GOLDEN = {
 # What each golden case asserts at this phase (fixtures and catalog routing are checked in
 # host_checks; the exact numbers need the engines of later phases).
 GOLDEN_STATUS = {
-    "G1": "PARTIAL: S1 intake through the pipeline (params = params.yaml); numbers from P4",
-    "G2": "PARTIAL: S1 intake through the pipeline (params = params.yaml); numbers from P4",
+    "G1": "PARTIAL: S1-S4 and vendors (routing, AQL, 8/398 channels); takt, stations from P4",
+    "G2": "PARTIAL: S1-S4 and vendors (routing, AQL); takt, stations from P4",
     "G3": "FIXTURE: stored; asserted from P5",
     "G4": "FIXTURE: stored; asserted from P8",
     "G5": "FIXTURE: instances verified against Scholl's table; asserted from P4",
@@ -337,10 +344,17 @@ def main() -> int:
     ap.add_argument("--no-build", action="store_true")
     ap.add_argument("--down", action="store_true")
     ap.add_argument("--record", action="store_true", help="record cassettes (needs real keys)")
+    ap.add_argument(
+        "--record-new",
+        action="store_true",
+        help="record only the model answers, searches and pages that are not recorded yet",
+    )
     args = ap.parse_args()
-    mode = "record" if args.record else "replay"
+    mode = "record" if args.record else "record_missing" if args.record_new else "replay"
     os.environ["LLM_MODE"] = mode
+    os.environ["WEB_MODE"] = "replay" if mode == "replay" else "record"
     os.environ.setdefault("CASSETTE_HOST_DIR", str(ROOT / "golden" / "cassettes"))
+    os.environ.setdefault("WEB_FIXTURE_HOST_DIR", str(ROOT / "golden" / "web"))
 
     if not (ROOT / ".env").exists():
         shutil.copy(ROOT / ".env.example", ROOT / ".env")
@@ -443,6 +457,7 @@ def main() -> int:
     host_checks()
     p2_checks(base, COMPOSE, psql, record, mode)
     p3_checks(base, psql, record, mode)
+    p3b_checks(base, psql, compose_exec, record, mode)
     web_checks(record)
 
     print("==> Golden cases (docs/14 §4)", flush=True)

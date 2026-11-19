@@ -54,7 +54,9 @@ __all__ = [
     "ExtraLine",
     "Proposal",
     "UserRow",
+    "assembly_id",
     "build_bom",
+    "leaf_part_no",
     "normalise_uom",
     "skeleton_quantities",
 ]
@@ -169,6 +171,16 @@ class BuildInput:
 def _local_id(text: str) -> str:
     s = re.sub(r"[^A-Za-z0-9_.\-/]+", "-", text.strip()).strip("-./")
     return (s or "X")[:72]
+
+
+def assembly_id(ref: str) -> str:
+    """Part number of the sub-assembly built from skeleton line ``ref`` (e.g. SA-CELLPACK)."""
+    return _local_id("SA-" + ref.upper().replace("_", ""))
+
+
+def leaf_part_no(ref: str) -> str:
+    """Part number given to a skeleton line when the BoM is drafted from the skeleton (case A)."""
+    return _local_id(ref.upper().replace("_", "-"))
 
 
 def _fid(kind: str, key: str) -> str:

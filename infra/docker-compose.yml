@@ -64,6 +64,8 @@ services:
       LLM_ROLE_VISION: ${LLM_ROLE_VISION:-gemini/gemini-3.5-flash}
       # live | record | replay (cassettes, docs/14 §4). The e2e override sets replay.
       LLM_MODE: ${LLM_MODE:-live}
+      # live | record | replay for vendor-research web access (recorded pages, docs/09 §2).
+      WEB_MODE: ${WEB_MODE:-live}
     depends_on:
       migrate: { condition: service_completed_successfully }
       redis: { condition: service_healthy }

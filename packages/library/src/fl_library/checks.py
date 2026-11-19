@@ -30,7 +30,9 @@ from fl_domain.library.catalog import (
     CommodityClassEntry,
     MachineClassEntry,
     MaterialEntry,
+    PolicyEntry,
     ProcessEntry,
+    SamplingPlanEntry,
     ZoneKindEntry,
 )
 from fl_domain.library.pack import Pack
@@ -139,6 +141,8 @@ def check_catalog(catalog: Catalog) -> list[Issue]:
     commodities = catalog.codes("commodity_class")
     archetypes = catalog.codes("archetype")
     materials = catalog.codes("material")
+    mtm = catalog.codes("mtm_element")
+    needs_check_fields = _version_tuple(catalog.manifest.version) >= (2026, 11, 5)
 
     for e in catalog.entries:
         where = f"{e.kind}:{e.code}"
@@ -151,6 +155,7 @@ def check_catalog(catalog: Catalog) -> list[Issue]:
             _ref(out, zones, [e.zone_kind], "zone_kind", where)
             _ref(out, procs, [e.rework.op if e.rework else None], "rework process", where)
             _ordered(out, e.price_inr, where)
+            _ref(out, mtm, [m.element for m in e.mtm], "mtm_element", where)
             for c in e.consumables:
                 if not is_valid_unit(c.uom):
                     out.append(_err("catalog.units", f"bad uom '{c.uom}'", where))
@@ -197,6 +202,31 @@ def check_catalog(catalog: Catalog) -> list[Issue]:
             _ref(out, machines, [e.machine_class], "machine_class", where)
             if e.sampling == "aql" and e.default_aql is None:
                 out.append(_err("catalog.aql", "AQL sampling needs default_aql", where))
+            if needs_check_fields:
+                for fname in (
+                    "characteristic",
+                    "limit",
+                    "instrument_class",
+                    "frequency",
+                    "reaction",
+                ):
+                    if not (getattr(e, fname) or "").strip():
+                        out.append(
+                            _err(
+                                "catalog.check_fields",
+                                f"check type lacks '{fname}' (docs/15 §3)",
+                                where,
+                            )
+                        )
+        elif isinstance(e, SamplingPlanEntry):
+            out += _check_sampling(e, where)
+        elif isinstance(e, PolicyEntry):
+            if e.vendors and e.vendors.weights:
+                total = sum(e.vendors.weights.values())
+                if abs(total - 100) > 1e-6:
+                    out.append(
+                        _err("catalog.policy", f"vendor weights sum to {total}, not 100", where)
+                    )
         elif isinstance(e, ZoneKindEntry):
             _ref(out, zones, [r.target_kind for r in e.rules], "zone_kind", where)
             _ordered(out, e.fitout_inr_per_m2, where)
@@ -251,6 +281,27 @@ def _check_archetype(catalog: Catalog, a: ArchetypeEntry, where: str) -> list[Is
                 {},
                 positive=False,
             )
+    skeleton_refs = refs | {"product"}
+    for step in a.typical_routing:
+        for r in [step.builds, *step.consumes]:
+            if r is not None and r not in skeleton_refs:
+                out.append(
+                    _err(
+                        "catalog.ref",
+                        f"routing step {step.process}: unknown skeleton ref '{r}'",
+                        where,
+                    )
+                )
+    checks = catalog.codes("check_type")
+    machines = catalog.codes("machine_class")
+    q = a.quality
+    used_checks = [
+        *(u.check for u in q.patrol),
+        *(u.check for u in q.oqc),
+        *(u.check for u in q.lab),
+    ]
+    _ref(out, checks, used_checks, "check_type", where)
+    _ref(out, machines, [u.machine_class for u in q.lab], "machine_class", where)
     for step in a.typical_routing:
         proc = by_code.get(step.process)
         if not isinstance(proc, ProcessEntry):
@@ -262,6 +313,55 @@ def _check_archetype(catalog: Catalog, a: ArchetypeEntry, where: str) -> list[Is
                 _err("catalog.ref", f"process '{step.process}' does not apply to {a.code}", where)
             )
     return out
+
+
+def _version_tuple(version: str) -> tuple[int, ...]:
+    return tuple(int(p) for p in version.split("."))
+
+
+def _check_sampling(e: SamplingPlanEntry, where: str) -> list[Issue]:
+    """The table is complete: every letter has a size and a cell per AQL; letters resolve;
+    arrows point at a plan; lot ranges are contiguous."""
+    out: list[Issue] = []
+    letters = set(e.sample_sizes)
+    sizes = [e.sample_sizes[k] for k in sorted(e.sample_sizes)]
+    if sizes != sorted(sizes):
+        out.append(_err("catalog.sampling", "sample sizes must grow with the code letter", where))
+    prev_max = 1
+    for i, lr in enumerate(e.lot_ranges):
+        if lr.min_lot != prev_max + 1:
+            out.append(_err("catalog.sampling", f"lot range {i} is not contiguous", where))
+        prev_max = lr.max_lot or prev_max
+        if lr.max_lot is None and i != len(e.lot_ranges) - 1:
+            out.append(_err("catalog.sampling", "only the last lot range may be open", where))
+        for lv in e.levels:
+            if lr.letters.get(lv) not in letters:
+                out.append(
+                    _err("catalog.sampling", f"lot range {i}: no letter for level {lv}", where)
+                )
+    for letter, row in e.single_normal.items():
+        if letter not in letters:
+            out.append(_err("catalog.sampling", f"plan row '{letter}' has no sample size", where))
+        for aql, cell in row.items():
+            if cell not in ("v", "^") and not _is_plan(cell):
+                out.append(_err("catalog.sampling", f"{letter}/{aql}: bad cell '{cell}'", where))
+        if len(row) != len(e.aqls):
+            out.append(_err("catalog.sampling", f"row {letter} has {len(row)} AQL cells", where))
+    for letter in letters - set(e.single_normal):
+        out.append(_err("catalog.sampling", f"no plan row for letter {letter}", where))
+    # every arrow must reach a plan in its column
+    keys = list(next(iter(e.single_normal.values())).keys()) if e.single_normal else []
+    order = sorted(e.single_normal)
+    for aql in keys:
+        col = [e.single_normal[ltr].get(aql, "") for ltr in order]
+        if not any(_is_plan(c) for c in col):
+            out.append(_err("catalog.sampling", f"AQL {aql}: no plan in the column", where))
+    return out
+
+
+def _is_plan(cell: str) -> bool:
+    ac, _, re_ = cell.partition("/")
+    return ac.isdigit() and re_.isdigit() and int(re_) > int(ac)
 
 
 def check_pack(pack: Pack, today: date | None = None) -> list[Issue]:
@@ -315,6 +415,15 @@ def check_cross(catalog: Catalog, pack: Pack) -> list[Issue]:
                         _err(
                             "cross.pack_key",
                             f"archetype {e.code}: pack key {k} missing in {pack.manifest.state}",
+                        )
+                    )
+        elif isinstance(e, CheckTypeEntry):
+            for k in e.supports_compliance:
+                if k not in keys:
+                    out.append(
+                        _err(
+                            "cross.pack_key",
+                            f"check {e.code}: pack key {k} missing in {pack.manifest.state}",
                         )
                     )
     return out

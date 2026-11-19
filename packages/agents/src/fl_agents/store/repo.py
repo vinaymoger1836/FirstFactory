@@ -7,13 +7,14 @@ same way. Artifacts are validated by the caller (lifecycle / stage builder) befo
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 from typing import Any
 from uuid import UUID
 
 from pydantic import TypeAdapter
 from sqlalchemy import and_, func, insert, select, text, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from fl_agents.store import tables as t
@@ -549,6 +550,43 @@ class Store:
                 update(t.change_set)
                 .where(and_(t.change_set.c.project_id == pid, t.change_set.c.id == cs_id))
                 .values(**vals)
+            )
+
+    # ── shared vendor cache (docs/09 §2.2) ────────────────────────────
+
+    async def vendor_cache_get(self, key: str) -> Row | None:
+        """A cache row that has not expired, shared across projects."""
+        async with self.engine.connect() as c:
+            r = (
+                await c.execute(
+                    select(t.vendor_cache).where(
+                        and_(
+                            t.vendor_cache.c.cache_key == key, t.vendor_cache.c.expires_at > _now()
+                        )
+                    )
+                )
+            ).first()
+        return dict(r._mapping) if r else None
+
+    async def vendor_cache_put(
+        self, key: str, vendor_class: str, region: str, payload: dict[str, Any], ttl_days: int
+    ) -> None:
+        now = _now()
+        vals = {
+            "cache_key": key,
+            "vendor_class": vendor_class,
+            "region": region,
+            "payload": payload,
+            "fetched_at": now,
+            "expires_at": now + timedelta(days=ttl_days),
+        }
+        async with self.engine.begin() as c:
+            stmt = pg_insert(t.vendor_cache).values(**vals)
+            await c.execute(
+                stmt.on_conflict_do_update(
+                    index_elements=[t.vendor_cache.c.cache_key],
+                    set_={k: v for k, v in vals.items() if k != "cache_key"},
+                )
             )
 
     # ── pipeline overview ─────────────────────────────────────────────

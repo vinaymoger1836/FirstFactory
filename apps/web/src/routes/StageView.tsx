@@ -5,7 +5,11 @@ import { AssemblyTree } from "../components/AssemblyTree";
 import { NoteDialog } from "../components/NoteDialog";
 import { BomPanel } from "../components/bom/BomPanel";
 import { ProvBadge } from "../components/ProvBadge";
+import { QualityPanel } from "../components/quality/QualityPanel";
+import { RoutingPanel } from "../components/routing/RoutingPanel";
+import { VendorPanel } from "../components/vendors/VendorPanel";
 import { blockersOf } from "../lib/bom";
+import { routingBlockers, type RoutingArtifact } from "../lib/stageTypes";
 import { fmtValue, isProv, type ProvLike } from "../lib/prov";
 import {
   api,
@@ -99,9 +103,16 @@ export function StageView() {
   const isLatest = !!run && !!latest && run.version === latest.version;
   const status = run?.status ?? "pending";
   const openQuestions = (run?.questions ?? []).filter((q) => !q.answer);
+  // BoM, routing and quality are reviewed inside their own panels (decisions, not raw values).
+  const hasPanel = ["bom", "routing", "quality", "vendors"].includes(stage);
   const canEdit =
-    stage !== "bom" && isLatest && !!run && !run.placeholder && ["awaiting_approval", "approved"].includes(status);
-  const blockers = isLatest ? blockersOf(run) : 0;
+    !hasPanel && isLatest && !!run && !run.placeholder && ["awaiting_approval", "approved"].includes(status);
+  const blockers = isLatest
+    ? stage === "routing"
+      ? routingBlockers(run?.artifact as unknown as RoutingArtifact | null)
+      : blockersOf(run)
+    : 0;
+  const canReview = isLatest && status === "awaiting_approval";
 
   async function act(path: string, body: unknown, ok: string) {
     setBusy(true);
@@ -322,6 +333,13 @@ export function StageView() {
           onAnswer={(answers) => void act("answer", { answers }, "Review applied. A new version is being built.")}
         />
       )}
+      {run && run.artifact && stage === "routing" && (
+        <RoutingPanel run={run} canReview={canReview} busy={busy} onAnswer={(answers) => void act("answer", { answers }, "Changes applied. A new version is being built.")} />
+      )}
+      {run && run.artifact && stage === "quality" && (
+        <QualityPanel run={run} canReview={canReview} busy={busy} onAnswer={(answers) => void act("answer", { answers }, "Changes applied. A new version is being built.")} />
+      )}
+      {run && run.artifact && stage === "vendors" && <VendorPanel run={run} />}
       {run && run.artifact && stage === "intake" && (
         <IntakeArtifact
           artifact={run.artifact}

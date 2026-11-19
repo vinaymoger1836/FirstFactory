@@ -57,28 +57,37 @@ entries:
       - {ref: manual, name: User manual, commodity: user_manual, kind: packaging, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: packing}
       - {ref: unit_box, name: Retail box, commodity: packaging_carton, kind: packaging, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: packing}
       - {ref: shipper, name: Shipper carton, commodity: packaging_carton, kind: packaging, qty_expr: "1 / units_per_carton", uom: unit, make_or_buy: buy, subassembly: packing}
+    # builds = the skeleton ref a step works on ("product" = the finished product); consumes =
+    # skeleton refs it uses up. Precedence follows from this data flow (ADR-028).
     typical_routing:
-      - {process: iqc_cell_grading}
-      - {process: cell_sort_match}
-      - {process: spot_weld_nickel}
-      - {process: pack_insulation_wrap}
-      - {process: manual_solder}
-      - {process: pack_voltage_ir_test}
-      - {process: enclosure_assembly}
-      - {process: screw_drive}
-      - {process: functional_test_pb}
-      - {process: capacity_cycle_test, sample_pct: 2, note: "Sampled per ADR-018; toggle to 100%."}
-      - {process: label_apply}
-      - {process: pack_unit_box}
-      - {process: carton_pack}
+      - {process: iqc_cell_grading, builds: cells}
+      - {process: cell_sort_match, builds: cells}
+      - {process: spot_weld_nickel, builds: cell_pack, consumes: [cells, nickel]}
+      - {process: pack_insulation_wrap, builds: cell_pack, consumes: [fish_paper, kapton, foam]}
+      - {process: manual_solder, builds: core, consumes: [cell_pack, pcba, solder, flux]}
+      - {process: pack_voltage_ir_test, builds: core}
+      - {process: enclosure_assembly, builds: product, consumes: [core, enclosure_top, enclosure_bottom, light_pipe, button, adhesive]}
+      - {process: screw_drive, builds: product, consumes: [screws]}
+      - {process: functional_test_pb, builds: product}
+      - {process: capacity_cycle_test, builds: product, sample_pct: 2, note: "Sampled per ADR-018; toggle to 100%."}
+      - {process: label_apply, builds: product, consumes: [rating_label, qr_label]}
+      - {process: pack_unit_box, builds: product, consumes: [manual, unit_box]}
+      - {process: carton_pack, builds: product, consumes: [shipper]}
     compliance_pack_keys:
       - compliance.power_bank.bis_crs_product
       - compliance.power_bank.bis_crs_cells
       - compliance.power_bank.rated_capacity_verification
     test_policy:
+      check: capacity_test
       default: functional_100_capacity_sampled
       capacity_sample_pct: 2
       alternative: capacity_100
+    quality:
+      patrol:
+        - {check: weld_pull_test, per_shift: 2}
+      oqc:
+        - {check: visual_inspection}
+        - {check: drop_test, frequency: "One packaged unit per variant each week", per_week_per_variant: 1}
     variant_deltas: >
       Variants differ by cell count (2 vs 4 × 21700), rated capacity, enclosure size and screw
       count; PCBA and ports are common in the golden case.
@@ -135,24 +144,31 @@ entries:
       - {ref: carton, name: Fan carton, commodity: packaging_carton, kind: packaging, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: packing}
       - {ref: blade_sleeve, name: Blade sleeve, commodity: packaging_carton, kind: packaging, qty_expr: "1", uom: unit, make_or_buy: buy, subassembly: packing}
     typical_routing:
-      - {process: stator_winding}
-      - {process: winding_resistance_test}
-      - {process: hipot_test}
-      - {process: varnish_dip_cure}
-      - {process: bearing_press}
-      - {process: motor_assembly}
-      - {process: controller_fit_harness}
-      - {process: motor_test}
-      - {process: final_assembly_fan}
-      - {process: hipot_test, note: "100% final Hi-pot"}
-      - {process: fan_run_in}
-      - {process: functional_test_fan}
-      - {process: label_apply}
-      - {process: blade_pack}
-      - {process: pack_unit_box}
+      - {process: stator_winding, builds: stator, consumes: [lamination, copper, slot_liner]}
+      - {process: winding_resistance_test, builds: stator}
+      - {process: hipot_test, builds: stator}
+      - {process: varnish_dip_cure, builds: stator, consumes: [varnish]}
+      - {process: bearing_press, builds: motor, consumes: [shaft, bearings]}
+      - {process: motor_assembly, builds: motor, consumes: [stator, rotor_shell]}
+      - {process: controller_fit_harness, builds: motor, consumes: [controller, harness]}
+      - {process: motor_test, builds: motor}
+      - {process: final_assembly_fan, builds: product, consumes: [motor, canopy, downrod_kit, screws, split_pins, remote]}
+      - {process: hipot_test, builds: product, note: "100% final Hi-pot"}
+      - {process: fan_run_in, builds: product}
+      - {process: functional_test_fan, builds: product}
+      - {process: label_apply, builds: product, consumes: [rating_label, bee_label]}
+      - {process: blade_pack, builds: product, consumes: [blades, blade_sleeve]}
+      - {process: pack_unit_box, builds: product, consumes: [manual, carton]}
     compliance_pack_keys:
       - compliance.ceiling_fan.qco_2023
       - compliance.ceiling_fan.bee_star_label
+    quality:
+      oqc:
+        - {check: visual_inspection}
+        - {check: drop_test, frequency: "One packaged unit per variant each week", per_week_per_variant: 1}
+      lab:
+        - {name: Air delivery and service value, check: air_delivery_test, qty: 1, frequency: "One unit per variant every month", per_week_per_variant: 0.25}
+        - {name: Noise check in a quiet booth, check: noise_check, qty: 1, frequency: "One unit per variant every week", per_week_per_variant: 1}
     variant_deltas: >
       1200 mm and 900 mm sweeps differ in blades, rotor shell and winding turns/copper; the
       controller PCBA, canopy and down-rod kit are common in the golden case.

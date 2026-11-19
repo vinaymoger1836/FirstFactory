@@ -1,0 +1,89 @@
+/* Vendor leads panel. Tokens only. */
+
+.vendors__search {
+  margin: 0 0 var(--space-4);
+  display: flex;
+}
+.vendors__class {
+  margin: 0 0 var(--space-5);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--c-border);
+}
+.vendors__title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+  text-transform: capitalize;
+}
+.vendors__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+}
+.vendors__item {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  animation: page-in var(--dur-med) var(--ease-out);
+}
+.vendors__head {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-2);
+}
+.vendors__score {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-medium);
+}
+.vendors__bar {
+  display: inline-block;
+  width: 3.5rem;
+  height: 0.4rem;
+  border-radius: var(--radius-pill);
+  background: var(--c-surface-2);
+  overflow: hidden;
+}
+.vendors__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--c-accent);
+  transform-origin: left;
+}
+.vendors__facts {
+  margin-bottom: var(--space-2);
+}
+.vendors__evidence summary,
+.vendors__gaps summary {
+  cursor: pointer;
+  color: var(--c-accent);
+}
+.vendors__evidence ul,
+.vendors__gaps ul {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+}
+.vendors__evidence blockquote {
+  margin: var(--space-1) 0 var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-left: 3px solid var(--c-border-strong);
+  color: var(--c-text-muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vendors__item {
+    animation: none;
+  }
+}

@@ -205,13 +205,20 @@ class Router:
     def mode(self) -> str:
         return self.settings.llm_mode
 
+    def _replays(self, key: str) -> bool:
+        """Answer from the cassette? Always in replay; in record_missing only when one exists
+        (so a recording pass fills gaps and leaves recorded answers alone)."""
+        return self.mode == "replay" or (
+            self.mode == "record_missing" and self.cassettes.get(key) is not None
+        )
+
     def available(self, role: str) -> bool:
         """Whether a role can answer at all (live/record: needs a provider key; replay:
         whatever was available when the cassettes were recorded)."""
         if self.mode == "replay":
             return not self.cassettes.is_unavailable(role)
         ok = bool(self.settings.provider_key(self.settings.role_model(role)))
-        if not ok and self.mode == "record":
+        if not ok and self.mode in ("record", "record_missing"):
             self.cassettes.mark_unavailable(role)
         return ok
 
@@ -281,7 +288,7 @@ class Router:
         est = _estimate(full, out_tokens)
         await self._check_budget(ctx, est)
 
-        if self.mode == "replay":
+        if self._replays(key):
             rec = self.cassettes.get(key)
             if rec is None:
                 await self._log(
@@ -364,7 +371,7 @@ class Router:
             )
             est = _estimate(msgs, 900)
             await self._check_budget(ctx, est)
-            if self.mode == "replay":
+            if self._replays(key):
                 rec = self.cassettes.get(key)
                 if rec is None:
                     await self._log(
@@ -627,14 +634,14 @@ class Router:
                 ctx,
                 role=role,
                 model=model,
-                status="record" if self.mode == "record" else "ok",
+                status="record" if self.mode in ("record", "record_missing") else "ok",
                 prompt_tokens=pt,
                 completion_tokens=ct,
                 latency_ms=latency,
                 key=key,
                 fallback_from=fallback_from,
             )
-            if self.mode == "record":
+            if self.mode in ("record", "record_missing"):
                 self.cassettes.put(
                     key,
                     role=role,

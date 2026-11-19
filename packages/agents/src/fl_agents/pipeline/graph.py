@@ -28,10 +28,16 @@ class PipelineState(TypedDict, total=False):
 def stage_specs() -> dict[StageKey, StageSpec]:
     from fl_agents.stages.bom.spec import BomSpec
     from fl_agents.stages.intake.spec import IntakeSpec
+    from fl_agents.stages.quality.spec import QualitySpec
+    from fl_agents.stages.routing.spec import RoutingSpec
+    from fl_agents.stages.vendors.spec import VendorsSpec
 
     specs: dict[StageKey, StageSpec] = {s: StubSpec(s) for s in STAGE_ORDER}
     specs["intake"] = IntakeSpec()
     specs["bom"] = BomSpec()
+    specs["routing"] = RoutingSpec()
+    specs["quality"] = QualitySpec()
+    specs["vendors"] = VendorsSpec()
     return specs
 
 

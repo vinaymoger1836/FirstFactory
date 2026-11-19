@@ -6,12 +6,17 @@ functions so a version is created, approved or marked stale in one way only.
 
 from __future__ import annotations
 
+import contextlib
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+from pydantic import BaseModel
+
 from fl_agents.store.repo import Row, Store
 from fl_domain.artifacts import ARTIFACT_MODELS
+from fl_domain.artifacts.bom import Bom
+from fl_domain.artifacts.routing import Routing
 from fl_domain.base import Issue
 from fl_domain.common import STAGE_DEPS, STAGE_ORDER, Assumption, StageKey, downstream_closure
 from fl_domain.pipeline import (
@@ -156,7 +161,18 @@ async def validate_artifact_dict(
             catalog = await store.catalog(project["catalog_version"])
         except LookupError:
             catalog = None
-    model, issues = validate_json(stage, data, ValidationContext(catalog=catalog))
+    upstream: dict[str, Any] = {}
+    # Cross-artifact checks (routing vs BoM, quality vs routing) need the approved upstream.
+    wanted: dict[str, tuple[tuple[StageKey, type[BaseModel]], ...]] = {
+        "routing": (("bom", Bom),),
+        "quality": (("bom", Bom), ("routing", Routing)),
+    }
+    for dep, model_cls in wanted.get(stage, ()):
+        row = await store.latest_approved(project["id"], dep)
+        if row is not None and row["artifact"]:
+            with contextlib.suppress(ValueError):  # an older artifact shape: skip the check
+                upstream[dep] = model_cls.model_validate(row["artifact"])
+    model, issues = validate_json(stage, data, ValidationContext(catalog=catalog, **upstream))
     if model is None:
         return None, issues
     return model.model_dump(mode="json"), issues
@@ -172,6 +188,10 @@ def approval_issues(stage: StageKey, artifact: dict[str, Any] | None) -> list[Is
         from fl_domain.validators import bom_approval_issues
 
         return bom_approval_issues(Bom.model_validate(artifact))
+    if stage == "routing" and artifact:
+        from fl_domain.artifacts.routing import Routing, routing_approval_issues
+
+        return routing_approval_issues(Routing.model_validate(artifact))
     return []
 
 

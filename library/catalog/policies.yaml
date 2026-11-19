@@ -1,0 +1,40 @@
+# Policies (ADR-028): named defaults that stages use before the user sets a value. All are
+# estimates, shown in the assumptions register wherever they feed a number.
+kind: policy
+
+entries:
+  - code: operating_defaults
+    name: Operating defaults for quality sizing
+    description: Working weeks, IQC lot days and pallet footprint used before the operating pattern (S5) and inventory (S6) are set.
+    aliases: [working days, lot days, pallet]
+    values:
+      working_weeks_per_year: 50   # 6 days x 50 weeks = the 300 working days of docs/05 §3.1
+      iqc_lot_days: 7              # incoming lot = one week of consumption (until S6 sets order policy)
+      quarantine_lots_per_class: 1 # lots held in quarantine at the same time, per incoming class
+      pallet_footprint_m2: 1.2     # 1.2 m x 1.0 m pallet
+      default_units_per_pallet: 1000
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.4
+      note: Planning defaults for the POC; S5 and S6 replace them with the user's pattern and order policy.
+
+  - code: vendor_research
+    name: Vendor research scoring and limits
+    description: Weights, listing-site domains, region names and limits for the vendor stage (docs/09 §2.2).
+    aliases: [vendor score, supplier research, sourcing]
+    vendors:
+      weights: {relevance: 40, certifications: 15, evidence: 30, region: 15}
+      directory_factor: 0.4
+      directory_domains: [indiamart.com, tradeindia.com, exportersindia.com, justdial.com, alibaba.com, made-in-china.com, thomasnet.com, globalsources.com]
+      max_vendors_per_class: 8
+      max_classes: 8
+      pages_per_class: 3
+      cache_ttl_days: 30
+      region_state_names:
+        KA: [Karnataka, Bengaluru, Bangalore, Mysuru, Mysore, Hubballi, Mangaluru, Tumakuru, Peenya]
+    provenance:
+      source: catalog-estimate
+      as_of: "2026-11"
+      confidence: 0.4
+      note: Scoring policy of this platform (docs/09 §2.2), not market data.

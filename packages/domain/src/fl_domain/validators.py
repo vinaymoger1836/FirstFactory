@@ -28,6 +28,7 @@ from fl_domain.artifacts.product_spec import ProductSpec
 from fl_domain.artifacts.quality import QualityPlan
 from fl_domain.artifacts.routing import Routing
 from fl_domain.artifacts.utilities import UtilityDesign
+from fl_domain.artifacts.vendors import VendorReport
 from fl_domain.artifacts.workorders import Roster, WorkOrdersShifts
 from fl_domain.base import Issue
 from fl_domain.common import StageKey
@@ -52,6 +53,7 @@ __all__ = [
     "validate_roster",
     "validate_routing",
     "validate_utilities",
+    "validate_vendors",
     "validate_workorders_shifts",
 ]
 
@@ -469,10 +471,21 @@ def validate_routing(r: Routing, ctx: ValidationContext) -> list[Issue]:
     out += _check_units(r)
     if ctx.bom is not None:
         consumed = {c for o in r.operations for c in o.consumes}
+        # A gap the findings already explain (a step without a time, an assembly no process
+        # builds) is a warning; any other unconsumed line is an error.
+        draft = any(f.kind in ("time_missing", "no_process") for f in r.findings)
         for i, ln in enumerate(ctx.bom.mbom):
+            parent = ctx.bom.item(ln.parent)
+            if (
+                parent is not None
+                and parent.kind == "assembly"
+                and parent.make_or_buy.value == "buy"
+            ):
+                continue
             if ln.child not in consumed:
+                make = _warn if draft else _err
                 out.append(
-                    _err(
+                    make(
                         "routing.unconsumed",
                         f"MBOM line {ln.parent}>{ln.child} is not consumed by any op",
                         f"bom.mbom[{i}]",
@@ -552,6 +565,32 @@ def validate_quality(q: QualityPlan, ctx: ValidationContext) -> list[Issue]:
         used += [x.check_type for x in q.patrol] + [x.check_type for x in q.oqc]
         for code in sorted(set(used) - checks_known):
             out.append(_err("quality.check", f"unknown check type '{code}'"))
+    for i, ck in enumerate(q.checks):
+        if (
+            ctx.routing is not None
+            and ck.layer in ("ipqc", "eol")
+            and ck.applies_to.startswith("OP-")
+            and ck.applies_to not in {o.op_no for o in ctx.routing.operations}
+        ):
+            out.append(
+                _err(
+                    "quality.op_ref",
+                    f"check {ck.id} applies to unknown {ck.applies_to}",
+                    f"checks[{i}]",
+                )
+            )
+    for d in _dupes(c.id for c in q.checks):
+        out.append(_err("quality.check_dupe", f"duplicate check id {d}"))
+    for name, checks in (("inline", q.inline), ("eol", q.eol)):
+        for i, c in enumerate(checks):
+            if not any(r.check_type == c.check_type and r.applies_to == c.op_no for r in q.checks):
+                out.append(
+                    _warn(
+                        "quality.check_fields",
+                        f"{c.check_type} at {c.op_no} has no check record (docs/15 §3 fields)",
+                        f"{name}[{i}]",
+                    )
+                )
     if ctx.pack is not None:
         for i, link in enumerate(q.compliance):
             if not ctx.pack.history(link.pack_key):
@@ -971,9 +1010,35 @@ def validate_finance(fm: FinanceModel, ctx: ValidationContext) -> list[Issue]:
     return out
 
 
+# ── VendorReport ──────────────────────────────────────────────────────
+
+
+def validate_vendors(v: VendorReport, ctx: ValidationContext) -> list[Issue]:
+    """No evidence, no vendor; one record per domain in a class; at most 8 per class."""
+    out: list[Issue] = []
+    known = (
+        ctx.catalog.codes("commodity_class") | ctx.catalog.codes("machine_class")
+        if ctx.catalog
+        else None
+    )
+    for i, c in enumerate(v.classes):
+        path = f"classes[{i}]"
+        if known is not None and c.vendor_class not in known:
+            out.append(_err("vendors.class", f"unknown class '{c.vendor_class}'", path))
+        for d in _dupes(x.name.casefold() for x in c.vendors):
+            out.append(_err("vendors.dupe", f"{c.vendor_class}: '{d}' listed twice", path))
+        for j, x in enumerate(c.vendors):
+            if not any(e.snippet.strip() for e in x.evidence):
+                out.append(
+                    _err("vendors.evidence", f"{x.name}: no evidence", f"{path}.vendors[{j}]")
+                )
+    return out
+
+
 # ── dispatch ──────────────────────────────────────────────────────────
 
 _VALIDATORS: dict[StageKey, Callable[[Any, ValidationContext], list[Issue]]] = {
+    "vendors": validate_vendors,
     "intake": validate_product_spec,
     "bom": validate_bom,
     "routing": validate_routing,
