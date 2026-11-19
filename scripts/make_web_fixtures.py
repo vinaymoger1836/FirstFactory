@@ -49,8 +49,8 @@ INVENTED = {
     "vendors": [
         {
             "name": "Phantom Power Pvt Ltd",
-            "evidence_quote": "Phantom Power Pvt Ltd is India's leading BIS registered manufacturer "
-            "with 20 years of experience",
+            "evidence_quote": "Phantom Power Pvt Ltd is India's leading BIS registered "
+            "manufacturer with 20 years of experience",
             "city": "Bengaluru",
             "state": "Karnataka",
             "products": ["21700 lithium-ion cells"],
