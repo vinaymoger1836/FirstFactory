@@ -11,9 +11,10 @@ WeasyPrint's system libraries) unless noted.
   install scripts (`allowBuilds`).
 - Lockfiles: `uv.lock` and `pnpm-lock.yaml` are committed. Docker builds use `uv sync --frozen`.
 
-Last updated: 2026-11-16 (P2). The `exclude-newer` date was not moved in P1 or P2; every P2 dependency resolved within it.
+Last updated: 2026-11-19 (P3b). The `exclude-newer` date was not moved in P1 or P2; every P2 dependency resolved within it.
 
 Catalog: **2026.11.2** (P3a, ADR-026: materials, `make_route`, `default_material`, `cad_rarely_modelled`; "sleeve" packaging alias). Projects created before stay pinned to 2026.11.1.
+Catalog: **2026.11.5** (P3b, ADR-028: check-type fields of docs/15 §3, routing `builds`/`consumes`, archetype `quality` block, kinds `sampling_plan` (ISO 2859-1) and `policy`). Projects created before stay pinned to their version.
 Catalog draft: **2026.11.4** (includes 2026.11.3) (ADR-027, Proposed: `spec_fields` on commodity classes, ten mechanical classes, three materials, no prices). 2026.11.2 stays the pinned version of existing projects; the P3b check-field bump becomes 2026.11.5. 2026.11.4 adds the `roti_maker` archetype with 14 part classes, four materials, six check types and one zone kind (no prices).
 
 ## Toolchain
@@ -61,7 +62,7 @@ Catalog draft: **2026.11.4** (includes 2026.11.3) (ADR-027, Proposed: `spec_fiel
 | casadi / nlopt / ezdxf | 3.8.2 / 2.11.0 / 1.4.5 | cadquery dependencies |
 | ruff | 0.17.3 | dev |
 | mypy | 2.4.0 | dev |
-| httpx | 0.28.1 | dev |
+| httpx | 0.28.1 | dev; `fl-agents` (P3b: web fetch for vendor research) |
 | langgraph | 1.2.18 | agents: parent graph and stage subgraphs (P2). MIT |
 | langgraph-checkpoint / -checkpoint-postgres | 4.3.1 / 3.2.0 | agents: Postgres checkpointer (P2). MIT |
 | langchain-core | 1.7.0 | langgraph dependency (P2). MIT |
