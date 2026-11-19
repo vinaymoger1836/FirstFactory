@@ -1,0 +1,59 @@
+{
+  "key": "453feb925a3a0664ea72d11eec7c5c5ee9f4c93a7657e66532b792c4881407f0",
+  "role": "reasoner",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "tools:ProposerDraft",
+  "recorded_at": "2026-11-19T13:58:46+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are the BoM proposer of a factory-planning tool. You propose; engines calculate;\nthe user approves. Rules:\n- Choose only from the lists given (skeleton refs, commodity class codes, material codes,\n  CAD part names). Never invent prices, masses or part numbers.\n- Tools are optional: use them only to check a catalog entry or a CAD part. Keep tool calls\n  few (the limit is 12).\n- Finish with exactly one submit_draft call."
+      },
+      {
+        "role": "user",
+        "content": "Case A: there is no BoM file. Draft the BoM from the product type's skeleton.\n- For each skeleton line decide keep=true/false (false only if the facts clearly rule it out).\n- Link CAD parts to skeleton lines where they are the same thing (cad_links).\n- For every other CAD part, give the closest allowed class code in cad_classes (use\n  catalog_search to find it; leave it empty if no class fits). Each becomes a suggested line.\n- Add extra_lines only for parts this product clearly needs that the skeleton lacks.\n- Pick a material for CAD-linked lines when the default would be wrong.\n\nDATA:\n{\"cad_parts\":[{\"bbox_mm\":[140.0,140.0,60.0],\"count\":1,\"name\":\"canopy\"},{\"bbox_mm\":[20.0,20.0,300.0],\"count\":1,\"name\":\"down_rod\"},{\"bbox_mm\":[220.0,220.0,60.0],\"count\":1,\"name\":\"rotor_shell\"},{\"bbox_mm\":[120.0,120.0,30.0],\"count\":1,\"name\":\"stator\"},{\"bbox_mm\":[450.0,110.0,4.0],\"count\":3,\"name\":\"blade\"}],\"class_codes\":{\"accessory_kit\":\"Accessory kits (brushes, trays, tools in the box)\",\"adhesive\":\"Adhesives and potting compounds\",\"bare_pcb\":\"Bare printed circuit boards\",\"bearings\":\"Ball bearings\",\"consumable_solder\":\"Solder wire\",\"copper_winding_wire\":\"Enamelled copper winding wire\",\"die_cast_rotor\":\"Die-cast rotor / motor shell with magnets (bought)\",\"display_module\":\"Displays, touch panels and indicators\",\"drive_belt\":\"Drive belts and pulleys (V, timing, flat)\",\"electric_motor\":\"Electric motors (AC, DC, BLDC, gear motors)\",\"electronic_components\":\"Electronic components (SMT/THT)\",\"fan_blade\":\"Fan blades (bought)\",\"fasteners\":\"Fasteners (screws, washers, split pins)\",\"flux\":\"Soldering flux\",\"foam_pad\":\"Foam pads and adhesive spacers\",\"food_contact_container\":\"Food-contact containers, hoppers and cups\",\"gears\":\"Gears, sprockets and racks\",\"handles_grips\":\"Handles, levers, knobs and grips\",\"heated_platen\":\"Heated platens and heating plates\",\"heating_element\":\"Heating elements and thermostats\",\"hydraulic_cylinder\":\"Hydraulic and pneumatic cylinders, pistons and rods\",\"insulation_paper\":\"Insulation paper and slot liners (fish paper, barley paper)\",\"insulation_tape\":\"Insulation tape (Kapton/polyimide, PVC)\",\"labels\":\"Labels (rating, QR, BEE)\",\"li_ion_cell\":\"Lithium-ion cells (cylindrical / pouch)\",\"light_pipe_button\":\"Light pipes and buttons\",\"linear_motion\":\"Lead screws, linear guides and rails\",\"machined_parts\":\"Machined and fabricated metal parts (rods, pins, plates, bodies)\",\"molded_enclosure\":\"Moulded plastic enclosures\",\"nickel_strip\":\"Nickel strip for cell interconnects\",\"packaging_carton\":\"Packaging (unit boxes, shipper cartons, sleeves)\",\"pcba\":\"Printed circuit board assemblies\",\"plastic_resin\":\"Thermoplastic resin (PC, ABS, PC/ABS)\",\"power_cord\":\"Mains cords, plugs and inlets\",\"power_supply_unit\":\"Power supplies and converters (AC-DC)\",\"remote_control\":\"Remote controls and receivers (bought)\",\"seals_gaskets\":\"Seals, gaskets and rubber parts\",\"sensors\":\"Sensors (temperature, position, level, current)\",\"shaft\":\"Motor shafts\",\"sheet_metal_parts\":\"Sheet-metal and tube parts (canopy, down-rod, brackets)\",\"solder_paste\":\"Solder paste\",\"solenoid_valve\":\"Solenoid valves\",\"springs\":\"Springs (compression, extension, torsion)\",\"stator_lamination\":\"Stator lamination stacks (bought)\",\"switches_controls\":\"Switches, contactors and control gear\",\"thermal_insulation\":\"Thermal insulation (mica, ceramic fibre, foam)\",\"thermal_protector\":\"Thermal cutouts and fuses\",\"tubing_hoses\":\"Tubing and hoses (food-grade)\",\"user_manual\":\"User manuals and leaflets\",\"varnish_resin\":\"Insulating varnish and thinner\",\"water_pump\":\"Water and liquid dosing pumps\",\"wireless_module\":\"Wireless modules (wifi, Bluetooth)\",\"wiring_harness\":\"Wiring harnesses\"},\"facts\":{\"description\":\"BLDC ceiling fan in 1200 mm and 900 mm sweeps with remote. Controller PCBA, die-cast rotor shell and blades are bought; stator winding, varnishing, motor and final assembly and test are in-house (ADR-017). Blades are packed separately.\\n\",\"product\":\"BLDC ceiling fan (golden G2)\",\"product_type\":\"ceiling_fan\",\"variants\":{\"F1200\":{\"copper_kg\":0.35,\"n_bearings\":2.0,\"n_blades\":3.0,\"n_connectors\":4.0,\"n_labels\":2.0,\"n_screws\":8.0,\"n_solder_joints\":3.0,\"n_speeds\":5.0,\"slots\":18.0,\"sweep_mm\":1200.0,\"turns_per_coil\":80.0,\"units_per_carton\":1.0},\"F900\":{\"copper_kg\":0.28,\"n_bearings\":2.0,\"n_blades\":3.0,\"n_connectors\":4.0,\"n_labels\":2.0,\"n_screws\":8.0,\"n_solder_joints\":3.0,\"n_speeds\":5.0,\"slots\":18.0,\"sweep_mm\":900.0,\"turns_per_coil\":70.0,\"units_per_carton\":1.0}}},\"material_codes\":[\"abs\",\"acetal_pom\",\"alloy_steel\",\"aluminium_die_cast\",\"aluminium_sheet\",\"brass\",\"copper\",\"electrical_steel\",\"fr4_pcba\",\"grey_cast_iron\",\"li_ion_cylindrical\",\"mild_steel\",\"nickel\",\"nylon_pa66\",\"paperboard\",\"pc_abs\",\"polycarbonate\",\"polypropylene\",\"ptfe\",\"silicone_rubber\",\"stainless_304\"],\"skeleton\":[{\"class\":\"stator_lamination\",\"kind\":\"part\",\"name\":\"Stator lamination stack\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"lamination\",\"uom\":\"unit\"},{\"class\":\"copper_winding_wire\",\"kind\":\"consumable\",\"name\":\"Enamelled copper wire\",\"qty\":{\"F1200\":0.35,\"F900\":0.28},\"ref\":\"copper\",\"uom\":\"kg\"},{\"class\":\"insulation_paper\",\"kind\":\"part\",\"name\":\"Slot liner\",\"qty\":{\"F1200\":18.0,\"F900\":18.0},\"ref\":\"slot_liner\",\"uom\":\"unit\"},{\"class\":\"varnish_resin\",\"kind\":\"consumable\",\"name\":\"Insulating varnish\",\"qty\":{\"F1200\":0.04,\"F900\":0.04},\"ref\":\"varnish\",\"uom\":\"l\"},{\"class\":\"die_cast_rotor\",\"kind\":\"part\",\"name\":\"Die-cast rotor shell with magnets\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"rotor_shell\",\"uom\":\"unit\"},{\"class\":\"shaft\",\"kind\":\"part\",\"name\":\"Shaft\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"shaft\",\"uom\":\"unit\"},{\"class\":\"bearings\",\"kind\":\"part\",\"name\":\"Bearings\",\"qty\":{\"F1200\":2.0,\"F900\":2.0},\"ref\":\"bearings\",\"uom\":\"unit\"},{\"class\":\"pcba\",\"kind\":\"part\",\"name\":\"BLDC controller PCBA\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"controller\",\"uom\":\"unit\"},{\"class\":\"wiring_harness\",\"kind\":\"part\",\"name\":\"Wiring harness\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"harness\",\"uom\":\"unit\"},{\"class\":\"remote_control\",\"kind\":\"part\",\"name\":\"Remote and receiver\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"remote\",\"uom\":\"unit\"},{\"class\":\"sheet_metal_parts\",\"kind\":\"part\",\"name\":\"Canopy\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"canopy\",\"uom\":\"unit\"},{\"class\":\"sheet_metal_parts\",\"kind\":\"part\",\"name\":\"Down-rod, shackle and mounting kit\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"downrod_kit\",\"uom\":\"unit\"},{\"class\":\"fasteners\",\"kind\":\"part\",\"name\":\"Screws and washers\",\"qty\":{\"F1200\":8.0,\"F900\":8.0},\"ref\":\"screws\",\"uom\":\"unit\"},{\"class\":\"fasteners\",\"kind\":\"part\",\"name\":\"Split pins\",\"qty\":{\"F1200\":2.0,\"F900\":2.0},\"ref\":\"split_pins\",\"uom\":\"unit\"},{\"class\":\"fan_blade\",\"kind\":\"part\",\"name\":\"Blades\",\"qty\":{\"F1200\":3.0,\"F900\":3.0},\"ref\":\"blades\",\"uom\":\"unit\"},{\"class\":\"labels\",\"kind\":\"part\",\"name\":\"Rating label\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"rating_label\",\"uom\":\"unit\"},{\"class\":\"labels\",\"kind\":\"part\",\"name\":\"BEE star label\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"bee_label\",\"uom\":\"unit\"},{\"class\":\"user_manual\",\"kind\":\"packaging\",\"name\":\"User manual\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"manual\",\"uom\":\"unit\"},{\"class\":\"packaging_carton\",\"kind\":\"packaging\",\"name\":\"Fan carton\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"carton\",\"uom\":\"unit\"},{\"class\":\"packaging_carton\",\"kind\":\"packaging\",\"name\":\"Blade sleeve\",\"qty\":{\"F1200\":1.0,\"F900\":1.0},\"ref\":\"blade_sleeve\",\"uom\":\"unit\"}],\"unclassified_lines\":[]}"
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "fc_afde6786-8613-47ac-ad09-5a37a7c8659e",
+            "type": "function",
+            "function": {
+              "name": "catalog_search",
+              "arguments": "{\"kind\":\"part\",\"query\":\"stator assembly\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "fc_afde6786-8613-47ac-ad09-5a37a7c8659e",
+        "content": "[]"
+      }
+    ]
+  },
+  "response": {
+    "content": "",
+    "message": {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "fc_86f75fae-6df4-4e2c-8cc4-9b82336f46a7",
+          "type": "function",
+          "function": {
+            "name": "submit_draft",
+            "arguments": "{\"cad_classes\":[],\"cad_links\":[{\"cad_part\":\"canopy\",\"class\":\"sheet_metal_parts\"},{\"cad_part\":\"down_rod\",\"class\":\"sheet_metal_parts\"},{\"cad_part\":\"rotor_shell\",\"class\":\"die_cast_rotor\"},{\"cad_part\":\"stator\",\"class\":\"stator_lamination\"},{\"cad_part\":\"blade\",\"class\":\"fan_blade\"}],\"classify\":[],\"extra_lines\":[{\"class\":\"power_cord\",\"kind\":\"part\",\"name\":\"Power cord\",\"qty\":{\"F1200\":1,\"F900\":1},\"ref\":\"power_cord\",\"uom\":\"unit\"}],\"materials\":[{\"cad_part\":\"canopy\",\"material\":\"aluminium_sheet\"},{\"cad_part\":\"down_rod\",\"material\":\"aluminium_sheet\"},{\"cad_part\":\"rotor_shell\",\"material\":\"aluminium_die_cast\"},{\"cad_part\":\"stator\",\"material\":\"electrical_steel\"},{\"cad_part\":\"blade\",\"material\":\"polycarbonate\"}],\"notes\":[\"Blades are packed separately in blade sleeves.\"],\"skeleton\":[{\"keep\":true,\"ref\":\"lamination\"},{\"keep\":true,\"ref\":\"copper\"},{\"keep\":true,\"ref\":\"slot_liner\"},{\"keep\":true,\"ref\":\"varnish\"},{\"keep\":true,\"ref\":\"rotor_shell\"},{\"keep\":true,\"ref\":\"shaft\"},{\"keep\":true,\"ref\":\"bearings\"},{\"keep\":true,\"ref\":\"controller\"},{\"keep\":true,\"ref\":\"harness\"},{\"keep\":true,\"ref\":\"remote\"},{\"keep\":true,\"ref\":\"canopy\"},{\"keep\":true,\"ref\":\"downrod_kit\"},{\"keep\":true,\"ref\":\"screws\"},{\"keep\":true,\"ref\":\"split_pins\"},{\"keep\":true,\"ref\":\"blades\"},{\"keep\":true,\"ref\":\"rating_label\"},{\"keep\":true,\"ref\":\"bee_label\"},{\"keep\":true,\"ref\":\"manual\"},{\"keep\":true,\"ref\":\"carton\"},{\"keep\":true,\"ref\":\"blade_sleeve\"}]}"
+          }
+        }
+      ]
+    }
+  },
+  "usage": {
+    "prompt_tokens": 2794,
+    "completion_tokens": 1460
+  }
+}

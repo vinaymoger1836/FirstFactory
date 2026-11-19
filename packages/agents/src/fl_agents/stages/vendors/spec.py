@@ -15,7 +15,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from fl_agents.llm.errors import CassetteMiss, LlmOutputInvalid
+from fl_agents.llm.errors import CassetteMiss, LlmOutputInvalid, LlmUnavailable
 from fl_agents.pipeline.stage import StageCtx, StageSpec, Summary
 from fl_agents.stages.common import bom_of
 from fl_agents.stages.vendors import prompts
@@ -152,11 +152,14 @@ class VendorsSpec(StageSpec):
                     cc.name, cc.aliases, page.title, page.url, page.text
                 )
                 try:
-                    out = await ctx.llm("extractor", msgs, PageVendorsOut, out_tokens=700)
+                    out = await ctx.llm("extractor", msgs, PageVendorsOut, out_tokens=1500)
                     cands = [v.model_dump() for v in out.vendors]
                 except LlmOutputInvalid:
                     cands = []
                     gaps.append(f"{url}: the model's answer could not be read")
+                except LlmUnavailable as e:
+                    cands = []
+                    gaps.append(f"{url}: the model could not read this page ({str(e)[:80]})")
                 except CassetteMiss:
                     cands = []
                     gaps.append(f"{url}: no recorded model answer for this page (replay)")

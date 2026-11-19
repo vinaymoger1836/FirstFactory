@@ -1,0 +1,30 @@
+{
+  "key": "d737405d27d8685f061d9bbc62f7495fc6f56922b18f06cf74721ccdbbc57485",
+  "role": "writer",
+  "model": "groq/openai/gpt-oss-120b",
+  "schema": "SummaryOut",
+  "recorded_at": "2026-11-19T13:57:49+00:00",
+  "request": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply with one JSON object only, no prose and no code fences. It must match this JSON Schema: {\"properties\":{\"summary\":{\"title\":\"Summary\",\"type\":\"string\"},\"highlights\":{\"items\":{\"type\":\"string\"},\"maxItems\":5,\"title\":\"Highlights\",\"type\":\"array\"}},\"required\":[\"summary\"],\"title\":\"SummaryOut\",\"type\":\"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "Write a short summary of this bill of materials for a first-time factory founder: what it contains, what still needs their decision. Plain words; no numbers that are not in the facts. Highlights: up to 5 short items.\n\nFACTS:\nCase: drafted from CAD and the product type (no BoM file)\nProposer: AI (reasoner)\nLines: 26; suggestions waiting: 22; open questions: 0; make/buy decisions to confirm: 7\nTotal PB10K: 715 INR (catalog estimates)\nTotal PB20K: 1215 INR (catalog estimates)"
+      }
+    ]
+  },
+  "response": {
+    "content": "{\"summary\":\"The bill of materials is drafted from a CAD model and defines the product type, but there is no separate BoM file. It contains 26 lines, with 22 suggested items waiting for confirmation and no open questions. Seven make‑or‑buy decisions still need to be confirmed. Catalog cost estimates are 715 INR for PB10K and 1,215 INR for PB20K.\",\"highlights\":[\"26 lines in draft\",\"22 suggestions pending\",\"7 make/buy decisions to confirm\",\"Cost estimate PB10K: 715 INR\",\"Cost estimate PB20K: 1,215 INR\"]}",
+    "message": {
+      "role": "assistant",
+      "content": "{\"summary\":\"The bill of materials is drafted from a CAD model and defines the product type, but there is no separate BoM file. It contains 26 lines, with 22 suggested items waiting for confirmation and no open questions. Seven make‑or‑buy decisions still need to be confirmed. Catalog cost estimates are 715 INR for PB10K and 1,215 INR for PB20K.\",\"highlights\":[\"26 lines in draft\",\"22 suggestions pending\",\"7 make/buy decisions to confirm\",\"Cost estimate PB10K: 715 INR\",\"Cost estimate PB20K: 1,215 INR\"]}"
+    }
+  },
+  "usage": {
+    "prompt_tokens": 387,
+    "completion_tokens": 354
+  }
+}

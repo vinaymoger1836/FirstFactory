@@ -95,11 +95,19 @@ class Api:
 
 
 def _send(req: urllib.request.Request, timeout: float) -> tuple[int, Any]:
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            raw, status = r.read().decode(), r.status
-    except urllib.error.HTTPError as e:
-        raw, status = e.read().decode(), e.code
+    # A read-only request is retried on a timeout (a hiccup between the host and Docker).
+    attempts = 3 if req.get_method() == "GET" else 1
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                raw, status = r.read().decode(), r.status
+            break
+        except urllib.error.HTTPError as e:
+            raw, status = e.read().decode(), e.code
+            break
+        except TimeoutError:
+            if attempt == attempts - 1:
+                raise
     try:
         return status, json.loads(raw) if raw else None
     except json.JSONDecodeError:
@@ -398,7 +406,7 @@ def p2_checks(
         rows = usage or []
         statuses = sorted({u["status"] for u in rows})
         total = sum(u["prompt_tokens"] + u["completion_tokens"] for u in rows)
-        want = "replay" if mode == "replay" else "record"
+        want = "record" if mode == "record" else "replay"
         record(
             f"{gid}: model calls are {want}ed and within the 30k intake budget",
             bool(rows) and statuses == [want] and total <= 30_000,

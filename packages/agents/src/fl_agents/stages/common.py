@@ -23,7 +23,14 @@ async def upstream_artifact(ctx: StageCtx, stage: StageKey) -> dict[str, Any]:
 
 
 async def bom_of(ctx: StageCtx) -> Bom:
-    return Bom.model_validate(await upstream_artifact(ctx, "bom"))
+    """The BoM this run is built on: the pinned upstream version, or (for S4, which depends on
+    routing only) the latest approved one."""
+    if (ctx.run["upstream"] or {}).get("bom"):
+        return Bom.model_validate(await upstream_artifact(ctx, "bom"))
+    row = await ctx.rt.store.latest_approved(ctx.project_id, "bom")
+    if row is None or not row["artifact"]:
+        raise RuntimeError("the approved bom artifact is missing")
+    return Bom.model_validate(row["artifact"])
 
 
 async def archetype_of(ctx: StageCtx, spec: dict[str, Any]) -> ArchetypeEntry:

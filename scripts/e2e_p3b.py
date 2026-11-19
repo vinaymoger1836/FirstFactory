@@ -191,8 +191,16 @@ def p3b_checks(
         # complete and equal to the golden routing
         g = _golden_routing(folder)
         gops = g["operations"]
+        root = _yaml_json(ROOT / f"golden/{folder}/bom.yaml")["root"]  # the engine calls it PRODUCT
         want = [(o["process"], o["item"], sorted(o.get("consumes", []))) for o in gops]
-        got = [(o["process"]["code"], o["item"], sorted(o["consumes"])) for o in ops]
+        got = [
+            (
+                o["process"]["code"],
+                root if o["item"] == "PRODUCT" else o["item"],
+                sorted(o["consumes"]),
+            )
+            for o in ops
+        ]
         record(
             f"{gid} S3: operations equal the golden routing (process, item, consumed parts)",
             want == got,
