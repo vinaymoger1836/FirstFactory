@@ -4,9 +4,9 @@ How to turn this design into code with Claude Code, one phase at a time. Each ph
 
 Owner's working rules in `CLAUDE.md` apply to every phase: Claude Code never commits or pushes (you do), nothing sensitive or generated goes into git, no unit tests after small changes (one end-to-end check when needed, usually at phase end), and the UI follows the accessibility and light/dark theme rules.
 
-## 0. Status (2026-11-13)
+## 0. Status (2026-11-19)
 
-**P0 and P1 are complete** (reports: `docs/phase-reports/P0.md`, `P1.md` in the repo). The next phase is **P2**. What changed in the design after P1, and where each change lands:
+**P0 to P3 are complete** (reports: `docs/phase-reports/P0.md`, `P1.md`, `P2.md`, `P3a.md`, `P3b.md` in the repo). The next phase is **P4** (capacity and inventory). Earlier note: as of 2026-11-13 P0 and P1 were complete and P2 was next. What changed in the design after P1, and where each change lands:
 
 | Change | Docs | Lands in |
 |---|---|---|

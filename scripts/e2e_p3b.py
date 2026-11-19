@@ -15,7 +15,6 @@ For G1 and G2, through the real pipeline with the golden BoM file:
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 import unicodedata
@@ -83,6 +82,16 @@ def norm(text: str) -> str:
         {0x2018: "'", 0x2019: "'", 0x201C: '"', 0x201D: '"', 0x2013: "-", 0x2014: "-", 0xA0: " "}
     )
     return re.sub(r"\s+", " ", t.casefold()).strip()
+
+
+def _fixture_pages() -> dict[str, dict[str, Any]]:
+    """Recorded pages by their final URL (a redirect changes the URL a page is stored under)."""
+    out: dict[str, dict[str, Any]] = {}
+    for f in (ROOT / "golden" / "web" / "pages").glob("*.json"):
+        d = json.loads(f.read_text(encoding="utf-8"))
+        out[d["url"]] = d
+        out[d.get("requested", d["url"])] = d
+    return out
 
 
 def _golden_routing(folder: str) -> dict[str, Any]:
@@ -416,17 +425,11 @@ def p3b_checks(
         missing_pages = 0
         for _c, v in vendors:
             for e in v["evidence"]:
-                pf = (
-                    ROOT
-                    / "golden"
-                    / "web"
-                    / "pages"
-                    / f"{hashlib.sha256(e['url'].encode()).hexdigest()}.json"
-                )
-                if not pf.is_file():
+                page = _fixture_pages().get(e["url"])
+                if page is None:
                     missing_pages += 1
                     continue
-                text = norm(json.loads(pf.read_text(encoding="utf-8"))["text"])
+                text = norm(page["text"])
                 if norm(e["snippet"]) not in text or norm(v["name"]) not in text:
                     unverified.append(f"{v['name']} @ {e['url']}")
         record(
